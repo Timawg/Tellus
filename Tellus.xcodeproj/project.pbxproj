@@ -14,6 +14,8 @@
 		F5EC34072AB274E5004A2F57 /* TellusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC34062AB274E5004A2F57 /* TellusTests.swift */; };
 		F5EC34112AB274E5004A2F57 /* TellusUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC34102AB274E5004A2F57 /* TellusUITests.swift */; };
 		F5EC34132AB274E5004A2F57 /* TellusUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC34122AB274E5004A2F57 /* TellusUITestsLaunchTests.swift */; };
+		F5EC34202AB29704004A2F57 /* Country.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC341F2AB29704004A2F57 /* Country.swift */; };
+		F5EC34262AB96F1F004A2F57 /* PassportStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC34252AB96F1F004A2F57 /* PassportStatus.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,6 +46,8 @@
 		F5EC340C2AB274E5004A2F57 /* TellusUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TellusUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5EC34102AB274E5004A2F57 /* TellusUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TellusUITests.swift; sourceTree = "<group>"; };
 		F5EC34122AB274E5004A2F57 /* TellusUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TellusUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		F5EC341F2AB29704004A2F57 /* Country.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Country.swift; sourceTree = "<group>"; };
+		F5EC34252AB96F1F004A2F57 /* PassportStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassportStatus.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,10 +98,12 @@
 		F5EC33F42AB274E4004A2F57 /* Tellus */ = {
 			isa = PBXGroup;
 			children = (
+				F5EC34252AB96F1F004A2F57 /* PassportStatus.swift */,
 				F5EC33F52AB274E4004A2F57 /* TellusApp.swift */,
 				F5EC33F72AB274E4004A2F57 /* ContentView.swift */,
 				F5EC33F92AB274E5004A2F57 /* Assets.xcassets */,
 				F5EC33FB2AB274E5004A2F57 /* Preview Content */,
+				F5EC341F2AB29704004A2F57 /* Country.swift */,
 			);
 			path = Tellus;
 			sourceTree = "<group>";
@@ -258,7 +264,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				F5EC33F82AB274E4004A2F57 /* ContentView.swift in Sources */,
+				F5EC34202AB29704004A2F57 /* Country.swift in Sources */,
 				F5EC33F62AB274E4004A2F57 /* TellusApp.swift in Sources */,
+				F5EC34262AB96F1F004A2F57 /* PassportStatus.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
