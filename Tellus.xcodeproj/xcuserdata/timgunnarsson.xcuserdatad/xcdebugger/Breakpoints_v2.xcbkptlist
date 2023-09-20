@@ -14,8 +14,8 @@
             filePath = "Tellus/ContentView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "124"
-            endingLineNumber = "124"
+            startingLineNumber = "177"
+            endingLineNumber = "177"
             landmarkName = "updateRegion()"
             landmarkType = "7">
          </BreakpointContent>
@@ -23,17 +23,17 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "8E4A3222-F638-47D8-91E4-856BB0FE418D"
+            uuid = "F400336C-C401-42EE-8BBF-6CA5B233B6F2"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Tellus/ContentView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "101"
-            endingLineNumber = "101"
-            landmarkName = "body"
-            landmarkType = "24">
+            startingLineNumber = "148"
+            endingLineNumber = "148"
+            landmarkName = "updateAdvisoryStatus()"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

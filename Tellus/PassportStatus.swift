@@ -7,10 +7,33 @@
 
 import Foundation
 
-import Foundation
-
-// MARK: - Welcome
-struct PassportStatus: Codable {
+struct PassportStatus: Codable, Equatable {
+    
+    enum Status: String {
+        case visaFree = "visa-free"
+        case electronicVisa = "eta"
+        case visaOnArrival = "visa on arrival"
+        case visaRequired = "visa required"
+        case covidBan = "covid ban"
+        case noAdmission = "not admitted"
+        
+        init?(value: String?) {
+            guard let value else {
+                return nil
+            }
+            let eVisaStrings = ["eta", "evisa", "visa on arrival / evisa"]
+            
+            if eVisaStrings.contains(value.lowercased()) {
+                self = .electronicVisa
+            } else {
+                self.init(rawValue: value)
+            }
+        }
+    }
+    static func == (lhs: PassportStatus, rhs: PassportStatus) -> Bool {
+        rhs.passport == lhs.passport && rhs.destination == lhs.destination && lhs.status == rhs.status
+    }
+    
     let passport, destination, dur, status: String
     let category, lastUpdated: String
     let error: Error

@@ -13,8 +13,11 @@ struct ContentView: View {
     @State var region: MKCoordinateRegion = .init(.world)
     @State var countries: [Country] = []
     @State var current: Country!
-    @State var nationality: Country?
+    @State var nationality: Country? = getPersistedNationality()
     @State var passportStatus: PassportStatus?
+    @State var passportStatusColors: [Color] = []
+    @State var advisoryStatus: AdvisoryStatus?
+    @State var advisoryStatusColors: [Color] = []
 
     var body: some View {
         Map(coordinateRegion:$region)
@@ -26,7 +29,16 @@ struct ContentView: View {
                             AsyncFlagView(flag: flag)
                             Text(name)
                         }
-                        Text(passportStatus?.category.capitalized ?? "")
+                        HStack {
+                            CircularStatusView(colors: $advisoryStatusColors)
+                                .frame(width: 20, height: 20, alignment: .center)
+                            Text(advisoryStatus?.data.eng.advisoryText ?? "")
+                        }
+                        HStack {
+                            CircularStatusView(colors: $passportStatusColors)
+                                .frame(width: 20, height: 20, alignment: .center)
+                            Text(passportStatus?.category.capitalized ?? "")
+                        }
                     }
                 }
             }
@@ -89,18 +101,59 @@ struct ContentView: View {
                         }
                 }
             }.task {
-                countries = await retrieveCountries()
+                countries = await retrieveCountries().sorted { $0.name?.common ?? "" < $1.name?.common ?? "" }
                 current = countries.randomElement()
             }.onChange(of: current) { newValue in
                 Task {
-                    passportStatus = await retrievePassportStatus()
+                    await updateAdvisoryStatus()
+                    await updatePassportStatus()
                 }
                 updateRegion()
             }.onChange(of: nationality) { newValue in
+                persist(nationality: newValue)
                 Task {
-                    passportStatus = await retrievePassportStatus()
+                    await updatePassportStatus()
                 }
             }
+    }
+    
+    func persist(nationality: Country?) {
+        if let nationality, let encoded = try? JSONEncoder().encode(nationality) {
+            UserDefaults.standard.set(encoded, forKey: "nationality")
+        }
+    }
+    
+    static func getPersistedNationality() -> Country? {
+        guard let data = UserDefaults.standard.object(forKey: "nationality") as? Data else {
+            return nil
+        }
+        return try? JSONDecoder().decode(Country.self, from: data)
+    }
+    
+    func updatePassportStatus() async {
+        passportStatus = await retrievePassportStatus()
+        passportStatusColors = {
+            switch PassportStatus.Status(value: passportStatus?.category) {
+            case .visaFree: return .secure
+            case .visaOnArrival, .electronicVisa: return .semisecure
+            case .visaRequired: return .caution
+            case .covidBan, .noAdmission: return .danger
+            default: return []
+            }
+        }()
+    }
+    
+    func updateAdvisoryStatus() async {
+        advisoryStatus = await retrieveAdvisoryStatus()
+        advisoryStatusColors = {
+            switch DataClass.State(value: advisoryStatus?.data.advisoryState){
+            case .secure: return .secure
+            case .caution: return .semisecure
+            case .avoid: return .caution
+            case .danger: return .danger
+            default: return []
+            }
+        }()
     }
     
     func updateRegion() {
@@ -170,7 +223,22 @@ struct ContentView: View {
         }
         let data = try! await URLSession.shared.data(from: url).0
         
-        let status = try! JSONDecoder().decode(PassportStatus.self, from: data)
+        let status = try? JSONDecoder().decode(PassportStatus.self, from: data)
+        return status
+    }
+    
+    func retrieveAdvisoryStatus() async -> AdvisoryStatus? {
+        guard let destination = current.cca2 else {
+            return nil
+        }
+        
+        let urlString = "https://data.international.gc.ca/travel-voyage/cta-cap-\(destination).json"
+        guard let url = URL(string: urlString) else {
+            return nil
+        }
+        let data = try! await URLSession.shared.data(from: url).0
+        
+        let status = try? JSONDecoder().decode(AdvisoryStatus.self, from: data)
         return status
     }
 }
@@ -198,8 +266,49 @@ struct AsyncFlagView: View {
     }
 }
 
+struct CircularStatusView: View {
+    
+    @Binding var colors: [Color]
+    
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: colors),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                ).shadow(radius: 4)
+        }
+    }
+}
+
+extension Array where Element == Color {
+    
+    static var secure: [Color] {
+        return [.mint, .green, .gray]
+    }
+
+    static var semisecure: [Color] {
+        return [.green, .blue, .gray]
+    }
+
+    static var caution: [Color] {
+        return [.yellow, .orange, .gray]
+    }
+
+    static var avoid: [Color] {
+        return [.orange, .red.opacity(0.8), .gray]
+    }
+
+    static var danger: [Color] {
+        return [.red.opacity(0.8), .red, .black.opacity(0.8)]
+    }
+}
+
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        CircularStatusView(colors: .constant(.secure))
     }
 }

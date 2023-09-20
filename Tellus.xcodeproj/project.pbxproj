@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F55BBEF22ABA9D1E005E32E1 /* AdvisoryStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = F55BBEF12ABA9D1E005E32E1 /* AdvisoryStatus.swift */; };
 		F5EC33F62AB274E4004A2F57 /* TellusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC33F52AB274E4004A2F57 /* TellusApp.swift */; };
 		F5EC33F82AB274E4004A2F57 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC33F72AB274E4004A2F57 /* ContentView.swift */; };
 		F5EC33FA2AB274E5004A2F57 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F5EC33F92AB274E5004A2F57 /* Assets.xcassets */; };
@@ -36,6 +37,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		F55BBEF12ABA9D1E005E32E1 /* AdvisoryStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvisoryStatus.swift; sourceTree = "<group>"; };
 		F5EC33F22AB274E4004A2F57 /* Tellus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tellus.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5EC33F52AB274E4004A2F57 /* TellusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TellusApp.swift; sourceTree = "<group>"; };
 		F5EC33F72AB274E4004A2F57 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -104,6 +106,7 @@
 				F5EC33F92AB274E5004A2F57 /* Assets.xcassets */,
 				F5EC33FB2AB274E5004A2F57 /* Preview Content */,
 				F5EC341F2AB29704004A2F57 /* Country.swift */,
+				F55BBEF12ABA9D1E005E32E1 /* AdvisoryStatus.swift */,
 			);
 			path = Tellus;
 			sourceTree = "<group>";
@@ -266,6 +269,7 @@
 				F5EC33F82AB274E4004A2F57 /* ContentView.swift in Sources */,
 				F5EC34202AB29704004A2F57 /* Country.swift in Sources */,
 				F5EC33F62AB274E4004A2F57 /* TellusApp.swift in Sources */,
+				F55BBEF22ABA9D1E005E32E1 /* AdvisoryStatus.swift in Sources */,
 				F5EC34262AB96F1F004A2F57 /* PassportStatus.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
