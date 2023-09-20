@@ -32,12 +32,13 @@ struct ContentView: View {
                         HStack {
                             CircularStatusView(colors: $advisoryStatusColors)
                                 .frame(width: 20, height: 20, alignment: .center)
-                            Text(advisoryStatus?.data.eng.advisoryText ?? "")
+                            Text(advisoryStatus?.data.eng.advisoryText ?? "").animation(.some(.easeIn), value: advisoryStatus)
+                                .multilineTextAlignment(.center)
                         }
                         HStack {
                             CircularStatusView(colors: $passportStatusColors)
                                 .frame(width: 20, height: 20, alignment: .center)
-                            Text(passportStatus?.category.capitalized ?? "")
+                            Text(passportStatus?.category.capitalized ?? "").animation(.some(.easeIn), value: passportStatus)
                         }
                     }
                 }

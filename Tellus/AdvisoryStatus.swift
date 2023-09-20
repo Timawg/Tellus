@@ -8,13 +8,21 @@
 import Foundation
  
 // MARK: - Welcome
-struct AdvisoryStatus: Codable {
+struct AdvisoryStatus: Codable, Equatable {
+    static func == (lhs: AdvisoryStatus, rhs: AdvisoryStatus) -> Bool {
+        lhs.data == rhs.data
+    }
+    
     let metadata: Metadata
     let data: DataClass
 }
  
 // MARK: - DataClass
-struct DataClass: Codable {
+struct DataClass: Codable, Equatable {
+    static func == (lhs: DataClass, rhs: DataClass) -> Bool {
+        lhs.countryISO == rhs.countryISO
+    }
+    
     let countryISO: String
     let advisoryState, hasAdvisoryWarning, hasRegionalAdvisory, hasContent: Int
     let updateMetadata: String
