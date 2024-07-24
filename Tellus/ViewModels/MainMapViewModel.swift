@@ -9,7 +9,7 @@ import Foundation
 import MapKit
 import Combine
 
-class FlightAnnotation: NSObject, MKAnnotation {
+class FlightAnnotation: NSObject, MKAnnotation, Identifiable {
     let id: String
     let coordinate: CLLocationCoordinate2D
     let track: Float?
@@ -46,6 +46,11 @@ final class MainMapViewModel {
     var advisoryStatus: AdvisoryStatus?
     var flightData: FlightData?
     var flightAnnotations: [FlightAnnotation] = []
+    var selectedFlight: FlightAnnotation?
+    
+    var selectedState: StateVector? {
+        return flightData?.states.first { $0.icao24 == selectedFlight?.id }
+    }
     
     func selectRandomCountry() {
         guard let randomCountry = countries.randomElement() else {

@@ -13,10 +13,12 @@ protocol AdmissoryServiceProtocol: Service {
 
 final class AdmissoryService: AdmissoryServiceProtocol {
 
-    let networkService: NetworkServiceProtocol
+    private let networkService: NetworkServiceProtocol
+    private let requestFactory: URLRequestFactory
     
-    init(networkService: NetworkServiceProtocol) {
+    init(networkService: NetworkServiceProtocol, requestFactory: URLRequestFactory = .default) {
         self.networkService = networkService
+        self.requestFactory = requestFactory
     }
         
     let rootURL: String = "https://rough-sun-2523.fly.dev/api"
@@ -32,13 +34,14 @@ final class AdmissoryService: AdmissoryServiceProtocol {
         }
         
         var httpMethod: HTTPMethod {
-            return .GET
+            return .get
         }
     }
     
     func getAdmissoryStatus(passport: String, destination: String) async throws -> AdmissoryStatus {
-        let endpoint = AdmissoryEndpoint.admissoryStatus(passport: passport, destination: destination)
-        return try await networkService.send(request: endpoint.createURLRequest(base: rootURL))
+        let endpoint: AdmissoryEndpoint = .admissoryStatus(passport: passport, destination: destination)
+        let request = try requestFactory.createURLRequest(root: rootURL, endpoint: endpoint, queryItems: nil, cachePolicy: .reloadRevalidatingCacheData)
+        return try await networkService.send(request: request)
     }
 }
 

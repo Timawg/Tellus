@@ -13,14 +13,15 @@ protocol CountriesServiceProtocol: Service {
 
 final class CountriesService: CountriesServiceProtocol {
 
-    let networkService: NetworkServiceProtocol
-    
-    init(networkService: NetworkServiceProtocol) {
-        self.networkService = networkService
-    }
-        
     let rootURL: String = "https://restcountries.com/v3.1"
+    let networkService: NetworkServiceProtocol
+    let requestFactory: URLRequestFactory
     
+    init(networkService: NetworkServiceProtocol, requestFactory: URLRequestFactory = .default) {
+        self.networkService = networkService
+        self.requestFactory = requestFactory
+    }
+
     enum CountriesEndpoint: Endpoint {
         case all
         
@@ -32,13 +33,13 @@ final class CountriesService: CountriesServiceProtocol {
         }
         
         var httpMethod: HTTPMethod {
-            return .GET
+            return .get
         }
     }
     
     func getAllCountries() async throws -> [Country] {
-        let endpoint = CountriesEndpoint.all
-        return try await networkService.send(request: endpoint.createURLRequest(base: rootURL))
+        let request = try requestFactory.createURLRequest(root: rootURL, endpoint: CountriesEndpoint.all, queryItems: nil, cachePolicy: .returnCacheDataElseLoad)
+        return try await networkService.send(request: request)
     }
 }
 

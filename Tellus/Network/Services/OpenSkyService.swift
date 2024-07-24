@@ -14,9 +14,11 @@ protocol OpenSkyServiceProtocol: Service {
 final class OpenSkyService: OpenSkyServiceProtocol {
 
     let networkService: NetworkServiceProtocol
+    let requestFactory: URLRequestFactory
     
-    init(networkService: NetworkServiceProtocol) {
+    init(networkService: NetworkServiceProtocol, requestFactory: URLRequestFactory = .default) {
         self.networkService = networkService
+        self.requestFactory = requestFactory
     }
         
     let rootURL: String = "https://opensky-network.org/api"
@@ -32,13 +34,14 @@ final class OpenSkyService: OpenSkyServiceProtocol {
         }
         
         var httpMethod: HTTPMethod {
-            return .GET
+            return .get
         }
     }
     
     func getAllFlights() async throws -> FlightData {
-        let endpoint = OpenSkyEndpoint.all
-        return try await networkService.send(request: endpoint.createURLRequest(base: rootURL))
+        let endpoint: OpenSkyEndpoint = .all
+        let request = try requestFactory.createURLRequest(root: rootURL, endpoint: endpoint, queryItems: nil, cachePolicy: .useProtocolCachePolicy)
+        return try await networkService.send(request: request)
     }
 }
 

@@ -14,9 +14,11 @@ protocol AdvisoryServiceProtocol: Service {
 final class AdvisoryService: AdvisoryServiceProtocol {
     
     let networkService: NetworkServiceProtocol
+    let requestFactory: URLRequestFactory
     
-    init(networkService: NetworkServiceProtocol) {
+    init(networkService: NetworkServiceProtocol, requestFactory: URLRequestFactory = .default) {
         self.networkService = networkService
+        self.requestFactory = requestFactory
     }
         
     let rootURL: String = "https://data.international.gc.ca/travel-voyage"
@@ -32,13 +34,14 @@ final class AdvisoryService: AdvisoryServiceProtocol {
         }
         
         var httpMethod: HTTPMethod {
-            return .GET
+            return .get
         }
     }
     
     func getAdvisoryStatus(destination: String) async throws -> AdvisoryStatus {
         let endpoint = AdvisoryEndpoint.advisoryStatus(destination: destination)
-        return try await networkService.send(request: endpoint.createURLRequest(base: rootURL))
+        let request = try requestFactory.createURLRequest(root: rootURL, endpoint: endpoint, queryItems: nil, cachePolicy: .reloadRevalidatingCacheData)
+       return try await networkService.send(request: request)
     }
 }
 
