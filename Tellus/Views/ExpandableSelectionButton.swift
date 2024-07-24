@@ -11,7 +11,7 @@ import SwiftUI
 struct ExpandableSelectionButton<Content: View, Selectable: Identifiable>: View {
     
     let selectables: [Selectable]
-    @State var selected: Selectable
+    @Binding var selected: Selectable?
     @ViewBuilder let content: (Selectable) -> Content
     @State var present: Bool = false
     
@@ -28,7 +28,7 @@ struct ExpandableSelectionButton<Content: View, Selectable: Identifiable>: View 
                 VStack {
                     if present {
                         ScrollView {
-                            VStack {
+                            LazyVStack {
                                 ForEach(selectables) { selectable in
                                     Button {
                                         selected = selectable
@@ -52,7 +52,11 @@ struct ExpandableSelectionButton<Content: View, Selectable: Identifiable>: View 
                     }
                     HStack(alignment: .center) {
                         Spacer()
-                        content(selected)
+                        if let selected {
+                            content(selected)
+                        } else {
+                            ProgressView()
+                        }
                         Spacer()
                         Image(systemName: "chevron.up.chevron.down")
                             .foregroundStyle(Color.white)
@@ -62,21 +66,9 @@ struct ExpandableSelectionButton<Content: View, Selectable: Identifiable>: View 
                     .frame(maxHeight: 40)
                 }
             }
-            .frame(maxWidth: 50, maxHeight: present ? 400 : 50)
+            .frame(maxHeight: present ? 400 : 50)
             .clipped()
             .padding()
         }        
-    }
-}
-
-#Preview {
-    VStack {
-        Spacer()
-        ExpandableSelectionButton(selectables: countries, selected: countries.randomElement()!) { country in
-            Text(country.url)
-                .foregroundStyle(Color.white)
-           Text(country.name)
-                .foregroundStyle(Color.white)
-        }
     }
 }

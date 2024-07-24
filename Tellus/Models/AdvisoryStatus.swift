@@ -7,7 +7,6 @@
 
 import Foundation
  
-// MARK: - Welcome
 struct AdvisoryStatus: Codable, Equatable {
     static func == (lhs: AdvisoryStatus, rhs: AdvisoryStatus) -> Bool {
         lhs.data == rhs.data

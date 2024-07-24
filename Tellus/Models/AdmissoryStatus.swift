@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct PassportStatus: Codable, Equatable {
+struct AdmissoryStatus: Codable, Equatable {
     
     enum Status: String {
         case visaFree = "visa-free"
@@ -30,13 +30,13 @@ struct PassportStatus: Codable, Equatable {
             }
         }
     }
-    static func == (lhs: PassportStatus, rhs: PassportStatus) -> Bool {
+    static func == (lhs: AdmissoryStatus, rhs: AdmissoryStatus) -> Bool {
         rhs.passport == lhs.passport && rhs.destination == lhs.destination && lhs.status == rhs.status
     }
     
     let passport, destination, dur, status: String
     let category, lastUpdated: String
-    let error: Error
+    let error: AdmissoryError
 
     enum CodingKeys: String, CodingKey {
         case passport, destination, dur, status, category
@@ -46,7 +46,7 @@ struct PassportStatus: Codable, Equatable {
 }
 
 // MARK: - Error
-struct Error: Codable {
+struct AdmissoryError: Codable {
     let status: Bool
     let error: String
 }
