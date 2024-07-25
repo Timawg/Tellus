@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		24A86F5C2B81524E00B3D94E /* ExpandableSelectionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24A86F5B2B81524E00B3D94E /* ExpandableSelectionButton.swift */; };
+		F54422B82C526D2800CF1A1C /* FlightMarkerAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F54422B72C526D2800CF1A1C /* FlightMarkerAnnotationView.swift */; };
+		F54422BA2C526D8F00CF1A1C /* ClusteredMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F54422B92C526D8E00CF1A1C /* ClusteredMap.swift */; };
 		F55BBEF22ABA9D1E005E32E1 /* AdvisoryStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = F55BBEF12ABA9D1E005E32E1 /* AdvisoryStatus.swift */; };
 		F5EC33F62AB274E4004A2F57 /* TellusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC33F52AB274E4004A2F57 /* TellusApp.swift */; };
 		F5EC33F82AB274E4004A2F57 /* MainMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC33F72AB274E4004A2F57 /* MainMapView.swift */; };
@@ -55,6 +57,8 @@
 
 /* Begin PBXFileReference section */
 		24A86F5B2B81524E00B3D94E /* ExpandableSelectionButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandableSelectionButton.swift; sourceTree = "<group>"; };
+		F54422B72C526D2800CF1A1C /* FlightMarkerAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightMarkerAnnotationView.swift; sourceTree = "<group>"; };
+		F54422B92C526D8E00CF1A1C /* ClusteredMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClusteredMap.swift; sourceTree = "<group>"; };
 		F55BBEF12ABA9D1E005E32E1 /* AdvisoryStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvisoryStatus.swift; sourceTree = "<group>"; };
 		F5EC33F22AB274E4004A2F57 /* Tellus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tellus.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5EC33F52AB274E4004A2F57 /* TellusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TellusApp.swift; sourceTree = "<group>"; };
@@ -187,6 +191,8 @@
 				24A86F5B2B81524E00B3D94E /* ExpandableSelectionButton.swift */,
 				F5FCC84E2C5051E200569DC5 /* CircularStatusView.swift */,
 				F5FCC8502C50520300569DC5 /* AsyncFlagView.swift */,
+				F54422B72C526D2800CF1A1C /* FlightMarkerAnnotationView.swift */,
+				F54422B92C526D8E00CF1A1C /* ClusteredMap.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -379,11 +385,13 @@
 				F5FCC8592C50534E00569DC5 /* HTTPMethod.swift in Sources */,
 				F5FCC8642C5063C500569DC5 /* OpenSkyService.swift in Sources */,
 				F5FCC8492C504D8D00569DC5 /* AdmissoryStatus + Color.swift in Sources */,
+				F54422BA2C526D8F00CF1A1C /* ClusteredMap.swift in Sources */,
 				F5FCC8462C504C4800569DC5 /* MainMapViewModel.swift in Sources */,
 				F5FCC85C2C50534E00569DC5 /* NetworkService.swift in Sources */,
 				F5FCC84B2C504D9A00569DC5 /* AdvisoryStatus + Color.swift in Sources */,
 				F5EC33F82AB274E4004A2F57 /* MainMapView.swift in Sources */,
 				F5FCC85B2C50534E00569DC5 /* AdvisoryService.swift in Sources */,
+				F54422B82C526D2800CF1A1C /* FlightMarkerAnnotationView.swift in Sources */,
 				F5EC34202AB29704004A2F57 /* Country.swift in Sources */,
 				F5FCC85D2C50534E00569DC5 /* Endpoint.swift in Sources */,
 				F5FCC8662C5066FB00569DC5 /* FlightData.swift in Sources */,

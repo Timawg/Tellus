@@ -39,6 +39,7 @@ final class MainMapViewModel {
     }
 
     var region: MKCoordinateRegion = .init(.world)
+    var visibleRect: MKMapRect = .world
     var countries: [Country] = []
     var current: Country?
     var nationality: Country? = getPersistedNationality()
@@ -137,6 +138,18 @@ final class MainMapViewModel {
         return MKCoordinateRegion(center: centerCoordinate, span: span)
     }
     
+    func calculateVisibleRegion(visibleMapRect: MKMapRect) -> (latitude: CoordinateSpan, longitude: CoordinateSpan) {
+        let region = MKCoordinateRegion(visibleMapRect)
+        let minLatitude = region.center.latitude - region.span.latitudeDelta / 2
+        let maxLatitude = region.center.latitude + region.span.latitudeDelta / 2
+        let minLongitude = region.center.longitude - region.span.longitudeDelta / 2
+        let maxLongitude = region.center.longitude + region.span.longitudeDelta / 2
+
+        let latitudeSpan = CoordinateSpan(minimum: minLatitude, maximum: maxLatitude)
+        let longitudeSpan = CoordinateSpan(minimum: minLongitude, maximum: maxLongitude)
+        return (latitude: latitudeSpan, longitude: longitudeSpan)
+    }
+    
     func findRegion(by name: String) async -> MKCoordinateRegion? {
         let request = MKLocalSearch.Request()
         request.naturalLanguageQuery = name
@@ -177,6 +190,7 @@ final class MainMapViewModel {
     }
     
     func retrieveFlightData() async throws -> FlightData? {
-        return try await openSkyService.getAllFlights()
+        let visibleRegion = calculateVisibleRegion(visibleMapRect: visibleRect)
+        return try await openSkyService.getAllFlights(latitudeSpan: visibleRegion.latitude, longitudeSpan: visibleRegion.longitude)
     }
 }

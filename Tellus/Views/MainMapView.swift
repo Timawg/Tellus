@@ -12,7 +12,7 @@ import Observation
 struct MainMapView: View {
     
     @Bindable var viewModel: MainMapViewModel
-
+    
     @ViewBuilder
     var statusViews: some View {
         if let name = viewModel.current?.name?.common, let flag = viewModel.current?.flags?.png {
@@ -62,6 +62,8 @@ struct MainMapView: View {
     var body: some View {
         ClusteredMap(region: $viewModel.region, annotations: viewModel.flightAnnotations) { annotation in
             viewModel.selectedFlight = annotation as? FlightAnnotation
+        } visibleRegionChanged: { rect in
+            viewModel.visibleRect = rect
         }
         .edgesIgnoringSafeArea([.top,.bottom])
         .overlay(alignment: .top) {
@@ -135,6 +137,7 @@ struct MainMapView: View {
         }
         .sheet(item: $viewModel.selectedFlight) { identifiable in
             ListView(viewModel: viewModel)
+                .presentationDetents([.medium, .large])
         }
     }
 }
@@ -142,6 +145,28 @@ struct MainMapView: View {
 struct ListView: View {
     
     var viewModel: MainMapViewModel
+    
+    @ViewBuilder
+    func infoStack(description: String, value: String) -> some View {
+        HStack {
+            Text(description)
+            Spacer()
+            Text(value)
+        }
+        .foregroundStyle(.white)
+    }
+    
+    func velocityText(metersPerSecond: Float) -> String {
+        let speedInMetersPerSecond = Measurement(value: Double(metersPerSecond), unit: UnitSpeed.metersPerSecond)
+
+        // Step 2: Convert the speed to kilometers per hour
+        let speedInKilometersPerHour = speedInMetersPerSecond.converted(to: .kilometersPerHour)
+
+        // Step 3: Use MeasurementFormatter to format the speed
+        let formatter = MeasurementFormatter()
+        formatter.unitStyle = .short
+        return formatter.string(from: speedInKilometersPerHour)
+    }
 
     var body: some View {
         ZStack {
@@ -151,194 +176,33 @@ struct ListView: View {
                 endPoint: .bottom
             )
             .edgesIgnoringSafeArea(.all)
-
+            
             VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Origin Country:")
-                                .foregroundColor(.white)
-                            Spacer()
-                            Text(viewModel.selectedState?.originCountry ?? "")
-                                .foregroundColor(.white)
-                        }
+                    infoStack(description: "Origin Country:", value: viewModel.selectedState?.originCountry ?? "")
                 if let latitude = viewModel.selectedState?.latitude {
-                            HStack {
-                                Text("Latitude:")
-                                    .foregroundColor(.white)
-                                Spacer()
-                                Text("\(latitude)")
-                                    .foregroundColor(.white)
-                            }
-                        }
-                if let longitude = viewModel.selectedState?.longitude {
-                            HStack {
-                                Text("Longitude:")
-                                    .foregroundColor(.white)
-                                Spacer()
-                                Text("\(longitude)")
-                                    .foregroundColor(.white)
-                            }
-                        }
-                if let trueTrack = viewModel.selectedState?.trueTrack {
-                            HStack {
-                                Text("True Track:")
-                                    .foregroundColor(.white)
-                                Spacer()
-                                Text("\(trueTrack)")
-                                    .foregroundColor(.white)
-                            }
-                        }
-                if let velocity = viewModel.selectedState?.velocity {
-                            HStack {
-                                Text("Velocity:")
-                                    .foregroundColor(.white)
-                                Spacer()
-                                Text("\(velocity)")
-                                    .foregroundColor(.white)
-                            }
-                        }
-                if let geoAltitude = viewModel.selectedState?.geoAltitude {
-                            HStack {
-                                Text("Geo Altitude:")
-                                    .foregroundColor(.white)
-                                Spacer()
-                                Text("\(geoAltitude)")
-                                    .foregroundColor(.white)
-                            }
-                        }
-                    }
-                    .padding()
+                    infoStack(description: "Latitude:", value: "\(latitude) °")
                 }
-            .background(Color.clear)
-            .navigationTitle("Flight: \(viewModel.selectedState?.callsign ?? "")")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        dismissSheet()
-                    }
+                if let longitude = viewModel.selectedState?.longitude {
+                    infoStack(description: "Longitude:", value: "\(longitude) °")
+                }
+                if let trueTrack = viewModel.selectedState?.trueTrack {
+                    infoStack(description:"True Track:" , value: "\(trueTrack)°")
+                }
+                if let velocity = viewModel.selectedState?.velocity {
+                    infoStack(description: "Velocity:", value: velocityText(metersPerSecond: velocity))
+                }
+                if let geoAltitude = viewModel.selectedState?.geoAltitude {
+                    infoStack(description: "Altitude:", value: "\(geoAltitude) meters")
                 }
             }
+            .background(Color.clear)
+            .padding()
         }
+    }
     
-
     @Environment(\.presentationMode) var presentationMode
-
+    
     private func dismissSheet() {
         presentationMode.wrappedValue.dismiss()
     }
 }
-
-
-struct ClusteredMap: UIViewRepresentable {
-    @Binding var region: MKCoordinateRegion
-    var annotations: [MKAnnotation]
-    let didSelect: (any Identifiable) -> Void
-
-    class Coordinator: NSObject, MKMapViewDelegate {
-        var parent: ClusteredMap
-
-        init(parent: ClusteredMap) {
-            self.parent = parent
-        }
-
-        func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-            parent.region = mapView.region
-        }
-
-        func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            UIView.animate(withDuration: 0.2) {
-                view.transform = .init(scaleX: 2, y: 2)
-            }
-            
-            if let annotation = view.annotation as? FlightAnnotation {
-                parent.didSelect(annotation)
-            }
-        }
-        func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-            if annotation is MKClusterAnnotation {
-                let identifier = "flight"
-                var view = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
-                if view == nil {
-                    view = FlightMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
-                }
-
-                if let annotation = annotation as? FlightAnnotation, let degrees = annotation.track {
-                    UIView.animate(withDuration: 0.2) {
-                        view?.transform = .init(rotationAngle:(CGFloat(degrees) * .pi) / 180.0)
-                    }
-                }
-                return view
-            }
-
-            let identifier = "flight"
-            var view = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
-            if view == nil {
-                view = FlightMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
-
-            }
-            if let annotation = annotation as? FlightAnnotation, let degrees = annotation.track {
-                UIView.animate(withDuration: 0.2) {
-                    view?.transform = .init(rotationAngle:(CGFloat(degrees) * .pi) / 180.0)
-                }
-            }
-            return view
-        }
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(parent: self)
-    }
-
-    func makeUIView(context: Context) -> MKMapView {
-        let mapView = MKMapView()
-        mapView.delegate = context.coordinator
-        mapView.register(FlightMarkerAnnotationView.self, forAnnotationViewWithReuseIdentifier: "flight")
-        mapView.addAnnotations(annotations)
-        mapView.showsCompass = true
-        mapView.showsScale = true
-        mapView.showsTraffic = true
-        mapView.showsUserLocation = true
-        mapView.isZoomEnabled = true
-        mapView.isScrollEnabled = true
-        mapView.isRotateEnabled = true
-        mapView.isPitchEnabled = true
-        mapView.setRegion(region, animated: true)
-        return mapView
-    }
-
-    func updateUIView(_ uiView: MKMapView, context: Context) {
-        uiView.removeAnnotations(uiView.annotations)
-        uiView.addAnnotations(annotations)
-        uiView.setRegion(region, animated: true)
-    }
-}
-
-class FlightMarkerAnnotationView: MKAnnotationView {
-    
-    private var imageView: UIImageView!
-    
-    override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
-        super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
-        setupImageView()
-    }
-    
-    required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
-        setupImageView()
-    }
-    
-    private func setupImageView() {
-        // Create the UIImageView and add it as a subview
-        let image = UIImage(systemName: "airplane")?.withRenderingMode(.alwaysTemplate)
-        imageView = UIImageView(image: image)
-        imageView.tintColor = .blue
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(imageView)
-        
-        // Center the imageView within the annotation view
-        NSLayoutConstraint.activate([
-            imageView.centerXAnchor.constraint(equalTo: self.centerXAnchor),
-            imageView.centerYAnchor.constraint(equalTo: self.centerYAnchor)
-        ])
-    }
-}
-
