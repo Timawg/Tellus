@@ -14,7 +14,6 @@ struct ExpandableSelectionButton<Content: View, Selectable: Identifiable>: View 
     @Binding var selected: Selectable?
     @ViewBuilder let content: (Selectable) -> Content
     @State var present: Bool = false
-    
     var body: some View {
         Button {
             withAnimation {
@@ -69,6 +68,6 @@ struct ExpandableSelectionButton<Content: View, Selectable: Identifiable>: View 
             .frame(maxHeight: present ? 400 : 50)
             .clipped()
             .padding()
-        }        
+        }
     }
 }

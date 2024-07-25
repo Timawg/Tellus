@@ -39,32 +39,16 @@ struct ClusteredMap: UIViewRepresentable {
                 parent.didSelect(annotation)
             }
         }
+        
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-            if annotation is MKClusterAnnotation {
-                let identifier = "flight"
-                var view = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
-                if view == nil {
-                    view = FlightMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
-                }
-
-                if let annotation = annotation as? FlightAnnotation, let degrees = annotation.track {
-                    UIView.animate(withDuration: 0.2) {
-                        view?.transform = .init(rotationAngle:(CGFloat(degrees) * .pi) / 180.0)
-                    }
-                }
-                return view
-            }
-
             let identifier = "flight"
             var view = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
             if view == nil {
                 view = FlightMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
 
             }
-            if let annotation = annotation as? FlightAnnotation, let degrees = annotation.track {
-                UIView.animate(withDuration: 0.2) {
-                    view?.transform = .init(rotationAngle:(CGFloat(degrees) * .pi) / 180.0)
-                }
+            if let annotation = annotation as? FlightAnnotation, let annotationView = view, let degrees = annotation.track {
+                annotationView.transform = .init(rotationAngle: -1.5708).rotated(by: CGFloat(degrees) * .pi / 180.0)
             }
             return view
         }

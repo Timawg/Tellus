@@ -45,14 +45,14 @@ final class OpenSkyService: OpenSkyServiceProtocol {
         var queryItems: [URLQueryItem]? {
             switch self {
             case .all(latitude: let latitudeSpan, longitude: let longitudeSpan):
-                let items: [URLQueryItem]? = {
-                    var items: [URLQueryItem]?
+                let items: [URLQueryItem] = {
+                    var items = [URLQueryItem]()
                     if let latitudeSpan {
-                        items? += [.init(name: "lamin", value: "\(latitudeSpan.minimum)"), .init(name: "lamax", value: "\(latitudeSpan.maximum)")]
+                        items += [.init(name: "lamin", value: "\(latitudeSpan.minimum)"), .init(name: "lamax", value: "\(latitudeSpan.maximum)")]
                     }
                     
                     if let longitudeSpan {
-                        items? += [.init(name: "lomin", value: "\(longitudeSpan.minimum)"), .init(name: "lomax", value: "\(longitudeSpan.maximum)")]
+                        items += [.init(name: "lomin", value: "\(longitudeSpan.minimum)"), .init(name: "lomax", value: "\(longitudeSpan.maximum)")]
                     }
                     return items
                 }()

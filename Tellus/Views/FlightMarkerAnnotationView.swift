@@ -11,7 +11,7 @@ import MapKit
 final class FlightMarkerAnnotationView: MKAnnotationView {
     
     private var imageView: UIImageView!
-    
+
     override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
         setupImageView()

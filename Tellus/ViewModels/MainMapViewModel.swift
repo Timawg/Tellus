@@ -9,10 +9,10 @@ import Foundation
 import MapKit
 import Combine
 
-class FlightAnnotation: NSObject, MKAnnotation, Identifiable {
+final class FlightAnnotation: NSObject, MKAnnotation, Identifiable {
     let id: String
-    let coordinate: CLLocationCoordinate2D
-    let track: Float?
+    var coordinate: CLLocationCoordinate2D
+    var track: Float?
     
     init(id: String, coordinate: CLLocationCoordinate2D, track: Float?) {
         self.id = id
@@ -81,7 +81,7 @@ final class MainMapViewModel {
         advisoryStatus = await retrieveAdvisoryStatus()
     }
     
-    func updateFlightData() async {
+    func updateFlightData() {
         Timer.publish(every: 15, on: .main, in: .common)
             .autoconnect()
             .sink { _ in
