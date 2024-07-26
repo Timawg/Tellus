@@ -13,6 +13,40 @@ struct MainMapView: View {
     
     @Bindable var viewModel: MainMapViewModel
     
+    var body: some View {
+        MapRepresentable(region: $viewModel.region, annotations: viewModel.flightAnnotations) { annotation in
+            viewModel.selectedFlight = annotation as? FlightAnnotation
+        } visibleRegionChanged: { rect in
+            viewModel.visibleRect = rect
+        }
+        .edgesIgnoringSafeArea([.top,.bottom])
+        .overlay(alignment: .top) {
+            statusViews
+        }
+        .overlay(alignment: .bottom) {
+            bottomStack
+        }.task {
+            await viewModel.retrieveCountries()
+            viewModel.updateRegion()
+            viewModel.startUpdatingFlightData()
+        }.onChange(of: viewModel.current) { oldValue, newValue in
+            viewModel.updateRegion()
+            Task {
+                await viewModel.updateAdvisoryStatus()
+                await viewModel.updateAdmissoryStatus()
+            }
+        }.onChange(of: viewModel.nationality) { oldValue, newValue in
+            viewModel.persist(nationality: newValue)
+            Task {
+                await viewModel.updateAdmissoryStatus()
+            }
+        }
+        .sheet(item: $viewModel.selectedFlight) { identifiable in
+            ListView(viewModel: viewModel)
+                .presentationDetents([.fraction(0.25), .medium])
+        }
+    }
+
     @ViewBuilder
     var statusViews: some View {
         if let name = viewModel.current?.name?.common, let flag = viewModel.current?.flags?.png {
@@ -46,6 +80,50 @@ struct MainMapView: View {
     }
     
     @ViewBuilder
+    var bottomStack: some View {
+        VStack {
+            HStack(spacing: 15) {
+                LinearGradient(colors: [.tellusDark, .tellusLight], startPoint: .top, endPoint: .bottom)
+                    .frame(width: 50, height: 50, alignment: .center)
+                    .clipShape(.rect(cornerSize: .init(width: 50, height: 50)))
+                    .shadow(color: .white, radius: 15)
+                    .overlay {
+                        Image(systemName: "globe.americas.fill")
+                            .renderingMode(.template)
+                            .foregroundColor(.white)
+                            .symbolEffect(.variableColor, options: .nonRepeating, value: viewModel.current)
+                    }.onTapGesture {
+                        viewModel.selectRandomCountry()
+                    }
+                Spacer()
+                LinearGradient(colors: [.tellusDark, .tellusLight], startPoint: .top, endPoint: .bottom)
+                    .frame(width: 50, height: 50, alignment: .center)
+                    .clipShape(.rect(cornerSize: .init(width: 50, height: 50)))
+                    .shadow(color: .white, radius: 15)
+                    .overlay {
+                        AsyncFlagView(flag: viewModel.nationality?.flags?.png)
+                        Image("passport-icon").resizable()
+                            .frame(maxWidth: 25, maxHeight: 30, alignment: .center)
+                        Picker("Select Country", selection: $viewModel.nationality) {
+                            Text(viewModel.nationality?.name?.common ?? "").hidden().tag(viewModel.nationality)
+                            ForEach(viewModel.countries, id: \.self) { country in
+                                HStack(alignment: .center, spacing: 8) {
+                                    if let name = country.name?.common {
+                                        Text(name)
+                                    }
+                                }.tag(Optional(country))
+                            }
+                        }
+                    }.onTapGesture {
+                        viewModel.updateRegion()
+                    }
+            }
+            .padding()
+            selectionButton
+        }
+    }
+    
+    @ViewBuilder
     var selectionButton: some View {
         ExpandableSelectionButton(selectables: viewModel.countries, selected: $viewModel.current) { country in
             if let flag = country.flags?.png, let name = country.name?.common {
@@ -56,89 +134,6 @@ struct MainMapView: View {
                     .tint(.white)
                 Spacer()
             }
-        }
-    }
-    
-    var body: some View {
-        ClusteredMap(region: $viewModel.region, annotations: viewModel.flightAnnotations) { annotation in
-            viewModel.selectedFlight = annotation as? FlightAnnotation
-        } visibleRegionChanged: { rect in
-            viewModel.visibleRect = rect
-        }
-        .edgesIgnoringSafeArea([.top,.bottom])
-        .overlay(alignment: .top) {
-            statusViews
-        }
-        .overlay(alignment: .bottom) {
-            VStack {
-                HStack(spacing: 15) {
-                    RoundedRectangle(cornerSize: .init(width: 200, height: 50))
-                        .frame(width: 50, height: 50, alignment: .center)
-                        .shadow(color: .white, radius: 15)
-                        .overlay {
-                            RoundedRectangle(cornerSize: .init(width: 200, height: 50))
-                                .foregroundColor(.clear)
-                                .background(content: {
-                                    LinearGradient(colors: [.tellusDark, .tellusLight], startPoint: .top, endPoint: .bottom).cornerRadius(50)
-                                })
-                                .frame(width: 50, height: 50, alignment: .center)
-                                .overlay {
-                                    Image(systemName: "globe.americas.fill")
-                                        .renderingMode(.template)
-                                        .foregroundColor(.white)
-                                        .symbolEffect(.variableColor, options: .nonRepeating, value: viewModel.current)
-                                }
-                        }.onTapGesture {
-                            viewModel.selectRandomCountry()
-                        }
-                    Spacer()
-                    RoundedRectangle(cornerSize: .init(width: 200, height: 50))
-                        .foregroundColor(.clear)
-                        .background(content: {
-                            LinearGradient(colors: [.tellusDark, .tellusLight], startPoint: .top, endPoint: .bottom)
-                                .cornerRadius(50)
-                        })
-                        .frame(width: 50, height: 50, alignment: .center)
-                        .shadow(color: .white, radius: 15)
-                        .overlay {
-                            AsyncFlagView(flag: viewModel.nationality?.flags?.png)
-                            Image("passport-icon").resizable()
-                                .frame(maxWidth: 25, maxHeight: 30, alignment: .center)
-                            Picker("Select Country", selection: $viewModel.nationality) {
-                                Text(viewModel.nationality?.name?.common ?? "").hidden().tag(viewModel.nationality)
-                                ForEach(viewModel.countries, id: \.self) { country in
-                                    HStack(alignment: .center, spacing: 8) {
-                                        if let name = country.name?.common {
-                                            Text(name)
-                                        }
-                                    }.tag(Optional(country))
-                                }
-                            }
-                        }.onTapGesture {
-                            viewModel.updateRegion()
-                        }
-                }
-                .padding()
-                selectionButton
-            }
-        }.task {
-            await viewModel.retrieveCountries()
-            viewModel.updateFlightData()
-        }.onChange(of: viewModel.current) { oldValue, newValue in
-            viewModel.updateRegion()
-            Task {
-                await viewModel.updateAdvisoryStatus()
-                await viewModel.updateAdmissoryStatus()
-            }
-        }.onChange(of: viewModel.nationality) { oldValue, newValue in
-            viewModel.persist(nationality: newValue)
-            Task {
-                await viewModel.updateAdmissoryStatus()
-            }
-        }
-        .sheet(item: $viewModel.selectedFlight) { identifiable in
-            ListView(viewModel: viewModel)
-                .presentationDetents([.fraction(0.25), .medium])
         }
     }
 }
@@ -159,11 +154,7 @@ struct ListView: View {
     
     func velocityText(metersPerSecond: Float) -> String {
         let speedInMetersPerSecond = Measurement(value: Double(metersPerSecond), unit: UnitSpeed.metersPerSecond)
-
-        // Step 2: Convert the speed to kilometers per hour
         let speedInKilometersPerHour = speedInMetersPerSecond.converted(to: .kilometersPerHour)
-
-        // Step 3: Use MeasurementFormatter to format the speed
         let formatter = MeasurementFormatter()
         formatter.unitStyle = .short
         return formatter.string(from: speedInKilometersPerHour)

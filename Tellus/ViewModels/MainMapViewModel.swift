@@ -9,18 +9,6 @@ import Foundation
 import MapKit
 import Combine
 
-final class FlightAnnotation: NSObject, MKAnnotation, Identifiable {
-    let id: String
-    var coordinate: CLLocationCoordinate2D
-    var track: Float?
-    
-    init(id: String, coordinate: CLLocationCoordinate2D, track: Float?) {
-        self.id = id
-        self.coordinate = coordinate
-        self.track = track
-    }
-}
-
 @Observable
 final class MainMapViewModel {
     
@@ -29,23 +17,27 @@ final class MainMapViewModel {
     private let advisoryService: AdvisoryServiceProtocol
     private let openSkyService: OpenSkyServiceProtocol
     private var cancellables = Set<AnyCancellable>()
+    @ObservationIgnored private var flightData: FlightData?
     
-    init(countriesService: CountriesServiceProtocol, admissoryService: AdmissoryServiceProtocol, advisoryService: AdvisoryServiceProtocol,
-         openSkyService: OpenSkyServiceProtocol) {
+    init(
+        countriesService: CountriesServiceProtocol,
+        admissoryService: AdmissoryServiceProtocol,
+        advisoryService: AdvisoryServiceProtocol,
+        openSkyService: OpenSkyServiceProtocol
+    ) {
         self.countriesService = countriesService
         self.admissoryService = admissoryService
         self.advisoryService = advisoryService
         self.openSkyService = openSkyService
     }
 
+    @ObservationIgnored var visibleRect: MKMapRect = .world
     var region: MKCoordinateRegion = .init(.world)
-    var visibleRect: MKMapRect = .world
     var countries: [Country] = []
     var current: Country?
     var nationality: Country? = getPersistedNationality()
-    var admissoryStatus: AdmissoryStatus?
     var advisoryStatus: AdvisoryStatus?
-    var flightData: FlightData?
+    var admissoryStatus: AdmissoryStatus?
     var flightAnnotations: [FlightAnnotation] = []
     var selectedFlight: FlightAnnotation?
     
@@ -81,25 +73,12 @@ final class MainMapViewModel {
         advisoryStatus = await retrieveAdvisoryStatus()
     }
     
-    func updateFlightData() {
+    func startUpdatingFlightData() {
+        updateFlightData()
         Timer.publish(every: 15, on: .main, in: .common)
             .autoconnect()
             .sink { _ in
-                Task {
-                    do {
-                        let data = try await self.retrieveFlightData()
-                        self.flightData = data
-                        let flightAnnotations: [FlightAnnotation]? = data?.states.compactMap { state -> FlightAnnotation? in
-                            guard let latitude = state.latitude, let longitude = state.longitude else {
-                                return nil
-                            }
-                            return .init(id: state.icao24, coordinate: .init(latitude: CLLocationDegrees(latitude), longitude: CLLocationDegrees(longitude)), track: state.trueTrack)
-                        }
-                        self.flightAnnotations = flightAnnotations ?? []
-                    } catch {
-                        print(error)
-                    }
-                }
+                self.updateFlightData()
             }.store(in: &cancellables)
     }
     
@@ -123,22 +102,25 @@ final class MainMapViewModel {
             }
         }
     }
+
+    func retrieveCountries() async {
+
+        self.countries = try! await countriesService.getAllCountries()
+        self.selectRandomCountry()
+    }
     
-    func calculateRegion(area: Double, latitude: CLLocationDegrees, longitude: CLLocationDegrees) -> MKCoordinateRegion {
+    private func calculateRegion(area: Double, latitude: CLLocationDegrees, longitude: CLLocationDegrees) -> MKCoordinateRegion {
         
-        // Calculate deltas
         let latitudeDelta = sqrt(area) / 110
         let longitudeDelta = (sqrt(area) / 110) + latitudeDelta
         
-        // Calculate the span
         let span = MKCoordinateSpan(latitudeDelta: latitudeDelta, longitudeDelta: longitudeDelta)
         
-        // Create the coordinate region
         let centerCoordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
         return MKCoordinateRegion(center: centerCoordinate, span: span)
     }
     
-    func calculateVisibleRegion(visibleMapRect: MKMapRect) -> (latitude: CoordinateSpan, longitude: CoordinateSpan) {
+    private func calculateVisibleRegion(visibleMapRect: MKMapRect) -> (latitude: CoordinateSpan, longitude: CoordinateSpan) {
         let region = MKCoordinateRegion(visibleMapRect)
         let minLatitude = region.center.latitude - region.span.latitudeDelta / 2
         let maxLatitude = region.center.latitude + region.span.latitudeDelta / 2
@@ -150,20 +132,14 @@ final class MainMapViewModel {
         return (latitude: latitudeSpan, longitude: longitudeSpan)
     }
     
-    func findRegion(by name: String) async -> MKCoordinateRegion? {
+    private func findRegion(by name: String) async -> MKCoordinateRegion? {
         let request = MKLocalSearch.Request()
         request.naturalLanguageQuery = name
         let results = try? await MKLocalSearch(request: request).start()
         return results?.boundingRegion
     }
     
-    func retrieveCountries() async {
-
-        self.countries = try! await countriesService.getAllCountries()
-        self.selectRandomCountry()
-    }
-    
-    func retrieveAdmissoryStatus() async -> AdmissoryStatus? {
+    private func retrieveAdmissoryStatus() async -> AdmissoryStatus? {
         guard let current else {
             return nil
         }
@@ -176,7 +152,7 @@ final class MainMapViewModel {
         return try? await admissoryService.getAdmissoryStatus(passport: passport, destination: destination)
     }
     
-    func retrieveAdvisoryStatus() async -> AdvisoryStatus? {
+    private func retrieveAdvisoryStatus() async -> AdvisoryStatus? {
         guard let current else {
             return nil
         }
@@ -189,8 +165,30 @@ final class MainMapViewModel {
         return status
     }
     
-    func retrieveFlightData() async throws -> FlightData? {
+    private func retrieveFlightData() async throws -> FlightData {
         let visibleRegion = calculateVisibleRegion(visibleMapRect: visibleRect)
         return try await openSkyService.getAllFlights(latitudeSpan: visibleRegion.latitude, longitudeSpan: visibleRegion.longitude)
+    }
+
+    private func updateFlightData() {
+        Task {
+            do {
+                let data = try await self.retrieveFlightData()
+                self.flightData = data
+                self.flightAnnotations = self.getFlightAnnotations(from: data)
+            } catch {
+                #warning("Handle error")
+            }
+        }
+    }
+    
+    private func getFlightAnnotations(from data: FlightData) -> [FlightAnnotation] {
+        let flightAnnotations: [FlightAnnotation] = data.states.compactMap { state -> FlightAnnotation? in
+            guard let latitude = state.latitude, let longitude = state.longitude else {
+                return nil
+            }
+            return .init(id: state.icao24, coordinate: .init(latitude: CLLocationDegrees(latitude), longitude: CLLocationDegrees(longitude)), track: state.trueTrack)
+        }
+        return flightAnnotations
     }
 }

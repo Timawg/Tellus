@@ -15,22 +15,22 @@ final class FlightMarkerAnnotationView: MKAnnotationView {
     override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
         setupImageView()
+        clusteringIdentifier = "flight"
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         setupImageView()
+        clusteringIdentifier = "flight"
     }
     
     private func setupImageView() {
-        // Create the UIImageView and add it as a subview
         let image = UIImage(systemName: "airplane")?.withRenderingMode(.alwaysTemplate)
         imageView = UIImageView(image: image)
-        imageView.tintColor = .blue
+        imageView.tintColor = UIColor(resource: .tellusDark)
         imageView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(imageView)
         
-        // Center the imageView within the annotation view
         NSLayoutConstraint.activate([
             imageView.centerXAnchor.constraint(equalTo: self.centerXAnchor),
             imageView.centerYAnchor.constraint(equalTo: self.centerYAnchor)

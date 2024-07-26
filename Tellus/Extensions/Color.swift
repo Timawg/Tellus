@@ -31,7 +31,6 @@ extension Array where Element == Color {
     }
 }
 
-
 extension Color {
     
     static var tellusDark: Color {
