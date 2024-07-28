@@ -33,6 +33,18 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
             if let annotation = view.annotation as? T {
                 parent.selectedAnnotation = annotation
+                
+                UIView.animate(withDuration: 0.25) {
+                    view.transform = view.transform.scaledBy(x: 1.5, y: 1.5)
+                }
+            }
+        }
+        
+        func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
+            parent.selectedAnnotation = nil
+            
+            UIView.animate(withDuration: 0.25) {
+                view.transform = view.transform.scaledBy(x: 0.75, y: 0.75)
             }
         }
         
@@ -111,18 +123,14 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         
         if let selectedAnnotation, let view = uiView.view(for: selectedAnnotation) {
             let selected = uiView.selectedAnnotations.contains(where: { (($0 as? FlightAnnotation)?.id as? String) == ((selectedAnnotation as? FlightAnnotation)?.id as? String) })
-            guard selected else {
+            guard !selected else {
                 return
             }
-            UIView.animate(withDuration: 0.25) {
-                view.transform = view.transform.scaledBy(x: 1.25, y: 1.25)
-            }
+            
+
         } else {
             if let previousSelected = uiView.selectedAnnotations.first, let view = uiView.view(for: previousSelected) {
                 uiView.deselectAnnotation(previousSelected, animated: false)
-                UIView.animate(withDuration: 0.25) {
-                    view.transform = view.transform.scaledBy(x: 0.5, y: 0.5)
-                }
             }
         }
 
