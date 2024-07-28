@@ -1,5 +1,5 @@
 //
-//  ClusteredMap.swift
+//  MapRepresentable.swift
 //  Tellus
 //
 //  Created by Tim Gunnarsson on 2024-07-25.
@@ -9,10 +9,10 @@ import Foundation
 import MapKit
 import SwiftUI
 
-struct MapRepresentable: UIViewRepresentable {
+struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
     @Binding var region: MKCoordinateRegion
     var annotations: [MKAnnotation]
-    let didSelect: (any Identifiable) -> Void
+    @Binding var selectedAnnotation: T?
     let visibleRegionChanged: (MKMapRect) -> Void
 
     class Coordinator: NSObject, MKMapViewDelegate {
@@ -31,8 +31,8 @@ struct MapRepresentable: UIViewRepresentable {
         }
     
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            if let annotation = view.annotation as? FlightAnnotation {
-                parent.didSelect(annotation)
+            if let annotation = view.annotation as? T {
+                parent.selectedAnnotation = annotation
             }
         }
         
@@ -63,13 +63,10 @@ struct MapRepresentable: UIViewRepresentable {
         mapView.addAnnotations(annotations)
         mapView.showsCompass = true
         mapView.showsScale = true
-        mapView.showsTraffic = true
-        mapView.showsUserLocation = true
         mapView.isZoomEnabled = true
         mapView.isScrollEnabled = true
         mapView.isRotateEnabled = true
         mapView.isPitchEnabled = true
-        mapView.mapType = .hybridFlyover
         mapView.setRegion(region, animated: false)
         return mapView
     }
@@ -108,6 +105,23 @@ struct MapRepresentable: UIViewRepresentable {
                     if let view = uiView.view(for: newAnnotation), let degrees = newAnnotation.track {
                         view.transform = .init(rotationAngle: CGFloat(degrees) * .pi / 180.0)
                     }
+                }
+            }
+        }
+        
+        if let selectedAnnotation, let view = uiView.view(for: selectedAnnotation) {
+            let selected = uiView.selectedAnnotations.contains(where: { (($0 as? FlightAnnotation)?.id as? String) == ((selectedAnnotation as? FlightAnnotation)?.id as? String) })
+            guard selected else {
+                return
+            }
+            UIView.animate(withDuration: 0.25) {
+                view.transform = view.transform.scaledBy(x: 1.25, y: 1.25)
+            }
+        } else {
+            if let previousSelected = uiView.selectedAnnotations.first, let view = uiView.view(for: previousSelected) {
+                uiView.deselectAnnotation(previousSelected, animated: false)
+                UIView.animate(withDuration: 0.25) {
+                    view.transform = view.transform.scaledBy(x: 0.5, y: 0.5)
                 }
             }
         }

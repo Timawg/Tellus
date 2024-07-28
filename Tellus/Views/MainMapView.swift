@@ -7,16 +7,13 @@
 
 import SwiftUI
 import MapKit
-import Observation
 
 struct MainMapView: View {
     
     @Bindable var viewModel: MainMapViewModel
     
     var body: some View {
-        MapRepresentable(region: $viewModel.region, annotations: viewModel.flightAnnotations) { annotation in
-            viewModel.selectedFlight = annotation as? FlightAnnotation
-        } visibleRegionChanged: { rect in
+        MapRepresentable(region: $viewModel.region, annotations: viewModel.flightAnnotations, selectedAnnotation: $viewModel.selectedFlight) { rect in
             viewModel.visibleRect = rect
         }
         .edgesIgnoringSafeArea([.top,.bottom])
@@ -41,10 +38,14 @@ struct MainMapView: View {
                 await viewModel.updateAdmissoryStatus()
             }
         }
-        .sheet(item: $viewModel.selectedFlight) { identifiable in
+        .sheet(item: $viewModel.selectedFlight) {
+            viewModel.selectedFlight = nil
+        } content: { identifiable in
             ListView(viewModel: viewModel)
                 .presentationDetents([.fraction(0.25), .medium])
+                .presentationBackground(.clear)
         }
+
     }
 
     @ViewBuilder
@@ -152,7 +153,7 @@ struct ListView: View {
         .foregroundStyle(.white)
     }
     
-    func velocityText(metersPerSecond: Float) -> String {
+    private func velocityText(metersPerSecond: Float) -> String {
         let speedInMetersPerSecond = Measurement(value: Double(metersPerSecond), unit: UnitSpeed.metersPerSecond)
         let speedInKilometersPerHour = speedInMetersPerSecond.converted(to: .kilometersPerHour)
         let formatter = MeasurementFormatter()
@@ -187,14 +188,8 @@ struct ListView: View {
                     infoStack(description: "Altitude:", value: "\(geoAltitude) meters")
                 }
             }
-            .background(Color.clear)
+            .background(.clear)
             .padding()
         }
-    }
-    
-    @Environment(\.presentationMode) var presentationMode
-    
-    private func dismissSheet() {
-        presentationMode.wrappedValue.dismiss()
     }
 }
