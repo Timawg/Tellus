@@ -1,4 +1,4 @@
-- Flight data provided by Open Sky API
+- Flight data provided by Open Sky API, updates at an interval of 15 seconds to avoid throttling.
 - Country data provided by RESTCountries API
 - Advisory data provided by Government of Canada
 - Passport data scraped from Passport Index
