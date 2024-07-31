@@ -15,25 +15,24 @@ final class FlightMarkerAnnotationView: MKAnnotationView {
     override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
         setupImageView()
-        clusteringIdentifier = "flight"
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         setupImageView()
-        clusteringIdentifier = "flight"
     }
     
     private func setupImageView() {
-        let image = UIImage(systemName: "airplane")?.withRenderingMode(.alwaysTemplate)
+        let image = UIImage(imageLiteralResourceName: "aircraft")
         imageView = UIImageView(image: image)
-        imageView.tintColor = UIColor(resource: .tellusDark)
         imageView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(imageView)
         
         NSLayoutConstraint.activate([
             imageView.centerXAnchor.constraint(equalTo: self.centerXAnchor),
-            imageView.centerYAnchor.constraint(equalTo: self.centerYAnchor)
+            imageView.centerYAnchor.constraint(equalTo: self.centerYAnchor),
+            imageView.heightAnchor.constraint(equalToConstant: 25),
+            imageView.widthAnchor.constraint(equalToConstant: 20),
         ])
     }
 }

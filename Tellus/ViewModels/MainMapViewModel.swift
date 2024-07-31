@@ -177,7 +177,7 @@ final class MainMapViewModel {
                 self.flightData = data
                 self.flightAnnotations = self.getFlightAnnotations(from: data)
             } catch {
-                #warning("Handle error")
+               print(error)
             }
         }
     }
