@@ -13,7 +13,7 @@ struct MainMapView: View {
     @Bindable var viewModel: MainMapViewModel
     
     var body: some View {
-        MapRepresentable(region: $viewModel.region, annotations: viewModel.flightAnnotations, selectedAnnotation: $viewModel.selectedFlight) { rect in
+        MapRepresentable(region: $viewModel.region, selectedAnnotation: $viewModel.selectedFlight, annotations: viewModel.flightAnnotations) { rect in
             viewModel.visibleRect = rect
         }
         .edgesIgnoringSafeArea([.top,.bottom])
@@ -77,6 +77,7 @@ struct MainMapView: View {
                 }
                 .shadow(color: .white, radius: 15)
             }
+            .foregroundStyle(.white)
         }
     }
     
