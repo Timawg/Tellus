@@ -13,8 +13,15 @@ struct MainMapView: View {
     @Bindable var viewModel: MainMapViewModel
     
     var body: some View {
-        MapRepresentable(region: $viewModel.region, selectedAnnotation: $viewModel.selectedFlight, annotations: viewModel.flightAnnotations) { rect in
+        MapRepresentable(
+            region: $viewModel.region,
+            selectedAnnotation: $viewModel.selectedFlight,
+            annotations: viewModel.flightAnnotations
+        ) {
+            viewModel.stopUpdatingFlightData()
+        } regionDidChange: { rect in
             viewModel.visibleRect = rect
+            viewModel.startUpdatingFlightData()
         }
         .edgesIgnoringSafeArea([.top,.bottom])
         .overlay(alignment: .top) {
@@ -43,9 +50,7 @@ struct MainMapView: View {
         } content: { identifiable in
             ListView(viewModel: viewModel)
                 .presentationDetents([.fraction(0.25), .medium])
-                .presentationBackground(.clear)
         }
-
     }
 
     @ViewBuilder
@@ -61,17 +66,18 @@ struct MainMapView: View {
                     if let status = viewModel.advisoryStatus {
                         CircularStatusView(colors: status.colors)
                             .frame(width: 20, height: 20, alignment: .center)
-                        Text(status.data.eng.advisoryText).animation(.some(.easeIn), value: status)
+                        Text(status.data.eng.advisoryText)
+                            .animation(.some(.easeIn), value: status)
                             .multilineTextAlignment(.center)
                     }
-                    
                 }
                 .shadow(color: .white, radius: 15)
                 HStack {
                     if let status = viewModel.admissoryStatus {
                         CircularStatusView(colors: status.colors)
                             .frame(width: 20, height: 20, alignment: .center)
-                        Text(status.category.capitalized).animation(.some(.easeIn), value: status)
+                        Text(status.category.capitalized)
+                            .animation(.some(.easeIn), value: status)
                             .multilineTextAlignment(.center)
                     }
                 }
@@ -104,7 +110,8 @@ struct MainMapView: View {
                     .shadow(color: .white, radius: 15)
                     .overlay {
                         AsyncFlagView(flag: viewModel.nationality?.flags?.png)
-                        Image("passport-icon").resizable()
+                        Image("passport-icon")
+                            .resizable()
                             .frame(maxWidth: 25, maxHeight: 30, alignment: .center)
                         Picker("Select Country", selection: $viewModel.nationality) {
                             Text(viewModel.nationality?.name?.common ?? "").hidden().tag(viewModel.nationality)

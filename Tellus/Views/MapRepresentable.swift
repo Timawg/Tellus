@@ -13,7 +13,8 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
     @Binding var region: MKCoordinateRegion
     @Binding var selectedAnnotation: T?
     var annotations: [MKAnnotation]
-    let visibleRegionChanged: (MKMapRect) -> Void
+    let regionWillChange: () -> Void
+    let regionDidChange: (MKMapRect) -> Void
 
     class Coordinator: NSObject, MKMapViewDelegate {
         var parent: MapRepresentable
@@ -21,15 +22,16 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         init(parent: MapRepresentable) {
             self.parent = parent
         }
+        
+        func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
+            parent.regionWillChange()
+        }
 
         func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
             parent.region = mapView.region
+            parent.regionDidChange(mapView.visibleMapRect)
         }
 
-        func mapViewDidChangeVisibleRegion(_ mapView: MKMapView) {
-            parent.visibleRegionChanged(mapView.visibleMapRect)
-        }
-    
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
             if let annotation = view.annotation as? T {
                 parent.selectedAnnotation = annotation

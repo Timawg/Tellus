@@ -16,7 +16,7 @@ final class MainMapViewModel {
     private let admissoryService: AdmissoryServiceProtocol
     private let advisoryService: AdvisoryServiceProtocol
     private let openSkyService: OpenSkyServiceProtocol
-    private var cancellables = Set<AnyCancellable>()
+    private var timerSubscription: AnyCancellable?
     @ObservationIgnored private var flightData: FlightData?
     
     init(
@@ -73,13 +73,26 @@ final class MainMapViewModel {
         advisoryStatus = await retrieveAdvisoryStatus()
     }
     
+    var timerPublisher: Timer.TimerPublisher {
+        return Timer.publish(every: 15, on: .main, in: .common)
+    }
+    
+    @MainActor
     func startUpdatingFlightData() {
-        updateFlightData()
-        Timer.publish(every: 15, on: .main, in: .common)
-            .autoconnect()
-            .sink { _ in
-                self.updateFlightData()
-            }.store(in: &cancellables)
+        Task {
+            await updateFlightData()
+            timerSubscription = timerPublisher
+                .autoconnect()
+                .sink(receiveValue: { _ in
+                    Task {
+                        await self.updateFlightData()
+                    }
+                })
+        }
+    }
+    
+    func stopUpdatingFlightData() {
+        timerSubscription?.cancel()
     }
     
     func updateRegion() {
@@ -170,16 +183,16 @@ final class MainMapViewModel {
         return try await openSkyService.getAllFlights(latitudeSpan: visibleRegion.latitude, longitudeSpan: visibleRegion.longitude)
     }
 
-    private func updateFlightData() {
-        Task {
-            do {
-                let data = try await self.retrieveFlightData()
-                self.flightData = data
-                self.flightAnnotations = self.getFlightAnnotations(from: data)
-            } catch {
-               print(error)
-            }
+    @MainActor
+    private func updateFlightData() async {
+        do {
+            let data = try await self.retrieveFlightData()
+            self.flightData = data
+            self.flightAnnotations = self.getFlightAnnotations(from: data)
+        } catch {
+            print(error)
         }
+        
     }
     
     private func getFlightAnnotations(from data: FlightData) -> [FlightAnnotation] {
