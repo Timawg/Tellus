@@ -11,7 +11,8 @@ import MapKit
 struct MainMapView: View {
     
     @Bindable var viewModel: MainMapViewModel
-    
+    @State private var showingLocalLaws = false
+
     var body: some View {
         MapRepresentable(
             region: $viewModel.region,
@@ -90,6 +91,23 @@ struct MainMapView: View {
                             .animation(.some(.easeIn), value: status)
                             .multilineTextAlignment(.center)
                     }
+                }
+                if !viewModel.localLaws.isEmpty {
+                    Button {
+                        showingLocalLaws = true
+                    } label: {
+                        Label("Local laws & culture", systemImage: "building.columns")
+                            .font(.subheadline.weight(.semibold))
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 7)
+                            .background(Capsule().fill(.white.opacity(0.15)))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .sheet(isPresented: $showingLocalLaws) {
+                if let information = viewModel.advisoryStatus?.data.eng {
+                    LocalLawsView(countryName: name, information: information, sections: viewModel.localLaws)
                 }
             }
             .foregroundStyle(.white)
@@ -266,5 +284,96 @@ struct ListView: View {
             .background(.clear)
             .padding()
         }
+    }
+}
+
+/// The destination's laws and culture advice from the Canadian government,
+/// with each topic (Drugs, Driving, …) collapsed so the list is easy to scan.
+struct LocalLawsView: View {
+
+    let countryName: String
+    let information: Information
+    let sections: [LawSection]
+
+    @Environment(\.dismiss) private var dismiss
+
+    private var introduction: LawSection? {
+        sections.first { $0.title == nil }
+    }
+
+    private var topics: [LawSection] {
+        sections.filter { $0.title != nil }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if let introduction {
+                    Section("Laws & culture") {
+                        blocks(introduction.blocks)
+                    }
+                }
+                if !topics.isEmpty {
+                    Section(introduction == nil ? "Laws & culture" : "Topics") {
+                        ForEach(topics) { topic in
+                            DisclosureGroup {
+                                blocks(topic.blocks)
+                                    .padding(.vertical, 4)
+                            } label: {
+                                Text(topic.title ?? "")
+                                    .font(.body.weight(.semibold))
+                            }
+                        }
+                    }
+                }
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Advice from the Government of Canada, written for Canadian travellers. Updated \(information.friendlyDate).")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        if let url = information.travelAdviceURL {
+                            Link("Read the full advice on travel.gc.ca", destination: url)
+                                .font(.footnote.weight(.semibold))
+                        }
+                    }
+                }
+            }
+            .navigationTitle(countryName)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        // Solid, so the colourful map doesn't show through behind long text.
+        .presentationBackground(Color(uiColor: .systemGroupedBackground))
+        .preferredColorScheme(.dark)
+    }
+
+    @ViewBuilder
+    private func blocks(_ blocks: [LawSection.Block]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
+                switch block {
+                case .paragraph(let text):
+                    Text(text)
+                case .bullet(let text):
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text("•")
+                        Text(text)
+                    }
+                    .padding(.leading, 4)
+                case .subheading(let text):
+                    Text(text)
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.top, 4)
+                }
+            }
+        }
+        .font(.subheadline)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

@@ -37,6 +37,9 @@ final class MainMapViewModel {
     var current: Country?
     var nationality: Country? = getPersistedNationality()
     var advisoryStatus: AdvisoryStatus?
+    /// The advisory's laws and culture advice, split into topics, without the
+    /// parts that only apply to Canadians.
+    var localLaws: [LawSection] = []
     var admissoryStatus: AdmissoryStatus?
     var loadingError: String?
     var flightAnnotations: [FlightAnnotation] = []
@@ -84,7 +87,11 @@ final class MainMapViewModel {
     }
     
     func updateAdvisoryStatus() async {
-        advisoryStatus = await retrieveAdvisoryStatus()
+        let status = await retrieveAdvisoryStatus()
+        advisoryStatus = status
+        localLaws = status.map {
+            LawSection.sections(fromHTML: $0.data.eng.lawsCulture).withoutCanadaSpecificAdvice()
+        } ?? []
     }
     
     var timerPublisher: Timer.TimerPublisher {
