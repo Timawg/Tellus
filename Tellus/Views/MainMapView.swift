@@ -45,6 +45,12 @@ struct MainMapView: View {
                 await viewModel.updateAdvisoryStatus()
                 await viewModel.updateAdmissoryStatus()
             }
+            Task {
+                await viewModel.updateWeather()
+            }
+            Task {
+                await viewModel.updateExchangeRates()
+            }
         }.onChange(of: viewModel.selectedFlight?.id) {
             Task {
                 await viewModel.loadFlightDetails()
@@ -53,6 +59,10 @@ struct MainMapView: View {
             viewModel.persist(nationality: newValue)
             Task {
                 await viewModel.updateAdmissoryStatus()
+            }
+            Task {
+                // The home currency follows the passport.
+                await viewModel.updateExchangeRates()
             }
         }
         .sheet(item: $viewModel.selectedFlight) {
@@ -82,6 +92,7 @@ struct MainMapView: View {
                     Text(name)
                         .font(.headline)
                 }
+                liveInfoStrip
                 if let status = viewModel.advisoryStatus {
                     HStack {
                         CircularStatusView(colors: status.colors)
@@ -117,6 +128,8 @@ struct MainMapView: View {
                         country: country,
                         guide: viewModel.destinationGuide,
                         isLoading: viewModel.isLoadingDestinationGuide,
+                        weather: viewModel.destinationWeather,
+                        exchangeRates: viewModel.exchangeRates,
                         neighbours: viewModel.neighbours(of: country)
                     ) { neighbour in
                         viewModel.current = neighbour
@@ -133,6 +146,44 @@ struct MainMapView: View {
         }
     }
     
+    /// Weather and local time at the capital, and the exchange rate from the
+    /// home currency, in one line under the country name.
+    @ViewBuilder
+    var liveInfoStrip: some View {
+        let weather = viewModel.destinationWeather
+        let rate = viewModel.exchangeRates.first
+        if weather != nil || rate != nil {
+            HStack(spacing: 14) {
+                if let weather {
+                    Label {
+                        Text(DestinationWeather.temperatureText(weather.temperature))
+                    } icon: {
+                        Image(systemName: weather.symbolName)
+                            .symbolRenderingMode(.multicolor)
+                    }
+                    .accessibilityLabel("\(weather.condition.description), \(DestinationWeather.temperatureText(weather.temperature))")
+                    TimelineView(.everyMinute) { context in
+                        Label {
+                            Text(weather.localTime(at: context.date))
+                        } icon: {
+                            Image(systemName: "clock")
+                        }
+                        .accessibilityLabel("Local time")
+                        .accessibilityValue(Text(weather.localTime(at: context.date)))
+                    }
+                }
+                if let rate {
+                    Label("1 \(rate.home) = \(ExchangeRate.format(rate.rate)) \(rate.destination)", systemImage: "banknote")
+                }
+            }
+            .font(.footnote.weight(.medium))
+            .foregroundStyle(.white.opacity(0.9))
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .transition(.opacity)
+        }
+    }
+
     @ViewBuilder
     var bottomStack: some View {
         FloatingGlassGroup {

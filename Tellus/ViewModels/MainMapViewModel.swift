@@ -17,6 +17,8 @@ final class MainMapViewModel {
     private let advisoryService: AdvisoryServiceProtocol
     private let openSkyService: OpenSkyServiceProtocol
     private let flightDetailsService: FlightDetailsServiceProtocol
+    private let weatherService: WeatherServiceProtocol
+    private let exchangeRateService: ExchangeRateServiceProtocol
     private var timerSubscription: AnyCancellable?
     private var flightData: FlightData?
 
@@ -25,13 +27,58 @@ final class MainMapViewModel {
         admissoryService: AdmissoryServiceProtocol,
         advisoryService: AdvisoryServiceProtocol,
         openSkyService: OpenSkyServiceProtocol,
-        flightDetailsService: FlightDetailsServiceProtocol
+        flightDetailsService: FlightDetailsServiceProtocol,
+        weatherService: WeatherServiceProtocol,
+        exchangeRateService: ExchangeRateServiceProtocol
     ) {
         self.countriesService = countriesService
         self.admissoryService = admissoryService
         self.advisoryService = advisoryService
         self.openSkyService = openSkyService
         self.flightDetailsService = flightDetailsService
+        self.weatherService = weatherService
+        self.exchangeRateService = exchangeRateService
+    }
+
+    /// Weather at the selected country's capital.
+    var destinationWeather: DestinationWeather?
+    /// What one unit of the home currency buys in each of the selected
+    /// country's currencies. Empty when they share a currency.
+    var exchangeRates: [ExchangeRate] = []
+
+    /// The currency rates are shown from: the passport country's, else the
+    /// device's region's, else US dollars.
+    var homeCurrency: String {
+        nationality?.currencies?.keys.sorted().first
+            ?? Locale.current.currency?.identifier
+            ?? "USD"
+    }
+
+    @MainActor
+    func updateWeather() async {
+        guard let country = current else { return }
+        destinationWeather = nil
+        let weather = try? await weatherService.getWeather(for: country)
+        // Another country may have been chosen while loading.
+        guard current?.cca2 == country.cca2 else { return }
+        destinationWeather = weather
+    }
+
+    @MainActor
+    func updateExchangeRates() async {
+        guard let country = current else { return }
+        exchangeRates = []
+        let home = homeCurrency
+        let destinationCurrencies = (country.currencies ?? [:]).keys.sorted().filter { $0 != home }
+        guard !destinationCurrencies.isEmpty,
+              let rates = try? await exchangeRateService.getRates(base: home) else {
+            exchangeRates = []
+            return
+        }
+        guard current?.cca2 == country.cca2, homeCurrency == home else { return }
+        exchangeRates = destinationCurrencies.compactMap { code in
+            rates.rates[code].map { ExchangeRate(home: home, destination: code, rate: $0, date: rates.date) }
+        }
     }
 
     @ObservationIgnored var visibleRect: MKMapRect = .world
