@@ -40,9 +40,10 @@ final class MainMapViewModel {
     var current: Country?
     var nationality: Country? = getPersistedNationality()
     var advisoryStatus: AdvisoryStatus?
-    /// The advisory's laws and culture advice, split into topics, without the
-    /// parts that only apply to Canadians.
-    var localLaws: [LawSection] = []
+    /// The advisory's entry, health, laws and climate advice and emergency
+    /// numbers, without the parts that only apply to Canadians.
+    var destinationGuide: DestinationGuide?
+    var isLoadingDestinationGuide = false
     var admissoryStatus: AdmissoryStatus?
     var loadingError: String?
     var flightAnnotations: [FlightAnnotation] = []
@@ -126,12 +127,33 @@ final class MainMapViewModel {
         admissoryStatus = await retrieveAdmissoryStatus()
     }
     
+    @MainActor
     func updateAdvisoryStatus() async {
+        let country = current?.cca2
+        destinationGuide = nil
+        isLoadingDestinationGuide = true
         let status = await retrieveAdvisoryStatus()
+        guard current?.cca2 == country else { return }
         advisoryStatus = status
-        localLaws = status.map {
-            LawSection.sections(fromHTML: $0.data.eng.lawsCulture).withoutCanadaSpecificAdvice()
-        } ?? []
+        guard let information = status?.data.eng else {
+            isLoadingDestinationGuide = false
+            return
+        }
+        // Parsing a country's advice takes tens of milliseconds, so keep it
+        // off the main thread.
+        let guide = await Task.detached(priority: .userInitiated) {
+            DestinationGuide(information: information)
+        }.value
+        // Another country may have been chosen while parsing.
+        guard current?.cca2 == country else { return }
+        destinationGuide = guide
+        isLoadingDestinationGuide = false
+    }
+
+    /// Countries sharing a border with `country`, by name.
+    func neighbours(of country: Country) -> [Country] {
+        let codes = Set(country.borders ?? [])
+        return countries.filter { $0.cca3.map(codes.contains) ?? false }
     }
     
     var timerPublisher: Timer.TimerPublisher {

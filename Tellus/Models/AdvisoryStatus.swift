@@ -144,11 +144,12 @@ struct Generated: Codable {
     let date: String
 }
 
-// MARK: - Local laws
+// MARK: - Advice sections
 
-/// One topic from the "Laws and culture" advice, such as Drugs or Driving.
-/// `title` is nil for the general advice that comes before the first topic.
-struct LawSection: Identifiable, Equatable {
+/// One topic from a section of the travel advice, such as Drugs or Driving in
+/// "Laws and culture". `title` is nil for the general advice that comes before
+/// the first topic.
+struct AdviceSection: Identifiable, Equatable {
     enum Block: Equatable {
         case paragraph(AttributedString)
         case bullet(AttributedString)
@@ -160,13 +161,13 @@ struct LawSection: Identifiable, Equatable {
     var blocks: [Block]
 }
 
-extension Array where Element == LawSection {
+extension Array where Element == AdviceSection {
     /// The advice is written for Canadians. This drops what only applies to
     /// them: child abduction (about treaties with Canada), prisoner transfers
     /// to Canada, and the consular parts of dual citizenship, keeping whether
     /// the country recognises dual citizenship and its own rules for it.
-    func withoutCanadaSpecificAdvice() -> [LawSection] {
-        compactMap { section -> LawSection? in
+    func withoutCanadaSpecificAdvice() -> [AdviceSection] {
+        compactMap { section -> AdviceSection? in
             guard let title = section.title?.lowercased() else { return section }
             if title.contains("child abduction") || title.contains("canad") {
                 return nil
@@ -183,17 +184,17 @@ extension Array where Element == LawSection {
                 return !block.isText && next?.isText != true ? nil : block
             }
             return blocks.contains(where: \.isText)
-                ? LawSection(id: section.id, title: section.title, blocks: blocks)
+                ? AdviceSection(id: section.id, title: section.title, blocks: blocks)
                 : nil
         }
         .enumerated()
-        .map { LawSection(id: $0.offset, title: $0.element.title, blocks: $0.element.blocks) }
+        .map { AdviceSection(id: $0.offset, title: $0.element.title, blocks: $0.element.blocks) }
     }
 }
 
-extension LawSection.Block {
+extension AdviceSection.Block {
 
-    fileprivate var isText: Bool {
+    var isText: Bool {
         if case .subheading = self { return false }
         return true
     }
@@ -201,16 +202,16 @@ extension LawSection.Block {
     /// The block without sentences about Canadian consular help ("our ability to
     /// offer you consular services…"), or nil if nothing else is left. Blocks
     /// linking to the Canadian government are dropped whole.
-    fileprivate func withoutCanadianServices() -> LawSection.Block? {
+    fileprivate func withoutCanadianServices() -> AdviceSection.Block? {
         let attributed: AttributedString
-        let makeBlock: (AttributedString) -> LawSection.Block
+        let makeBlock: (AttributedString) -> AdviceSection.Block
         switch self {
         case .subheading:
             return self
         case .paragraph(let text):
-            (attributed, makeBlock) = (text, LawSection.Block.paragraph)
+            (attributed, makeBlock) = (text, AdviceSection.Block.paragraph)
         case .bullet(let text):
-            (attributed, makeBlock) = (text, LawSection.Block.bullet)
+            (attributed, makeBlock) = (text, AdviceSection.Block.bullet)
         }
         if attributed.runs.contains(where: { $0.link?.host?.hasSuffix("gc.ca") == true }) {
             return nil
@@ -242,24 +243,32 @@ extension Information {
     }
 }
 
-extension LawSection {
+extension AdviceSection {
 
     private static let tagPattern = try! NSRegularExpression(pattern: #"<(/?)([a-zA-Z0-9]+)([^>]*)>"#)
     private static let hrefPattern = try! NSRegularExpression(pattern: #"href\s*=\s*"([^"]*)""#)
+    private static let commentPattern = try! NSRegularExpression(pattern: #"<!--.*?-->"#, options: .dotMatchesLineSeparators)
 
     /// Splits the advice HTML into topics on its `<h3>` headings. The API uses a
-    /// small set of tags (p, ul/li, h3/h4, a, b, i, span); links are kept and
+    /// small set of tags (p, ul/li, h3/h4, details/summary, a, b, i, span);
+    /// `<h4>`, `<h5>` and `<summary>` become subheadings, links are kept, and
     /// other tags are dropped, keeping their text.
-    static func sections(fromHTML html: String) -> [LawSection] {
-        var sections: [LawSection] = []
+    static func sections(fromHTML rawHTML: String) -> [AdviceSection] {
+        // The health advice carries HTML comments marking where its parts start and end.
+        let html = commentPattern.stringByReplacingMatches(
+            in: rawHTML,
+            range: NSRange(location: 0, length: (rawHTML as NSString).length),
+            withTemplate: ""
+        )
+        var sections: [AdviceSection] = []
         var inline = ""             // Markdown for the paragraph, bullet or heading being read
-        var heading: Int?           // 3 or 4 while inside <h3> / <h4>
+        var heading: Int?           // 3 inside <h3>, 4 inside <h4>, <h5> or <summary>
         var inListItem = false
         var openLinks: [String?] = []
 
         func append(_ block: Block) {
             if sections.isEmpty {
-                sections.append(LawSection(id: 0, title: nil, blocks: []))
+                sections.append(AdviceSection(id: 0, title: nil, blocks: []))
             }
             sections[sections.count - 1].blocks.append(block)
         }
@@ -272,7 +281,7 @@ extension LawSection {
             guard !text.isEmpty else { return }
             switch heading {
             case 3:
-                sections.append(LawSection(id: sections.count, title: text, blocks: []))
+                sections.append(AdviceSection(id: sections.count, title: text, blocks: []))
             case 4:
                 append(.subheading(text))
             default:
@@ -299,10 +308,10 @@ extension LawSection {
             let isClosing = match.range(at: 1).length > 0
             let tag = nsHTML.substring(with: match.range(at: 2)).lowercased()
             switch (tag, isClosing) {
-            case ("h3", false), ("h4", false):
+            case ("h3", false), ("h4", false), ("h5", false), ("summary", false):
                 flush()
                 heading = tag == "h3" ? 3 : 4
-            case ("h3", true), ("h4", true):
+            case ("h3", true), ("h4", true), ("h5", true), ("summary", true):
                 flush()
                 heading = nil
             case ("li", false):
@@ -311,7 +320,7 @@ extension LawSection {
             case ("li", true):
                 flush()
                 inListItem = false
-            case ("p", _), ("ul", _), ("ol", _), ("div", _):
+            case ("p", _), ("ul", _), ("ol", _), ("div", _), ("details", _), ("section", _):
                 flush()
             case ("br", _):
                 inline += " "
@@ -334,7 +343,7 @@ extension LawSection {
         return sections
             .filter { !$0.blocks.isEmpty }
             .enumerated()
-            .map { LawSection(id: $0.offset, title: $0.element.title, blocks: $0.element.blocks) }
+            .map { AdviceSection(id: $0.offset, title: $0.element.title, blocks: $0.element.blocks) }
     }
 
     /// Absolute URL for a link, or nil for in-page anchors.

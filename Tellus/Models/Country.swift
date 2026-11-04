@@ -55,6 +55,29 @@ struct Country: Codable, Hashable, Identifiable {
         guard let cca2 else { return nil }
         return "https://flagcdn.com/w320/\(cca2.lowercased()).png"
     }
+
+    /// "Swedish krona (kr)", one per currency.
+    var currencyDescriptions: [String] {
+        (currencies ?? [:]).sorted { $0.key < $1.key }.map { code, currency in
+            let name = currency.name ?? code
+            if let symbol = currency.symbol, symbol != code {
+                return "\(name) (\(symbol))"
+            }
+            return "\(name) (\(code))"
+        }
+    }
+
+    var languageNames: [String] {
+        (languages ?? [:]).values.sorted()
+    }
+
+    /// International dialling code, e.g. "+46". Countries sharing a root with
+    /// many suffixes (like +1 for North America) show just the root.
+    var callingCode: String? {
+        guard let root = idd?.root, !root.isEmpty else { return nil }
+        guard let suffixes = idd?.suffixes, suffixes.count == 1 else { return root }
+        return root + suffixes[0]
+    }
 }
  
 // MARK: - CapitalInfo
@@ -75,18 +98,10 @@ struct CoatOfArms: Codable {
 }
  
 // MARK: - Currencies
-struct Currencies: Codable {
-    let egp, ils, jod: EGP?
- 
-    enum CodingKeys: String, CodingKey {
-        case egp = "EGP"
-        case ils = "ILS"
-        case jod = "JOD"
-    }
-}
- 
-// MARK: - EGP
-struct EGP: Codable {
+/// Keyed by ISO 4217 code, e.g. "SEK".
+typealias Currencies = [String: CurrencyInfo]
+
+struct CurrencyInfo: Codable {
     let name, symbol: String?
 }
  
@@ -107,9 +122,8 @@ struct Idd: Codable {
 }
  
 // MARK: - Languages
-struct Languages: Codable {
-    let ara: String?
-}
+/// Language names keyed by ISO 639-3 code, e.g. "swe": "Swedish".
+typealias Languages = [String: String]
  
 // MARK: - Maps
 struct Maps: Codable {
