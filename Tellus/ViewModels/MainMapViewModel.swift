@@ -38,8 +38,11 @@ final class MainMapViewModel {
     var nationality: Country? = getPersistedNationality()
     var advisoryStatus: AdvisoryStatus?
     var admissoryStatus: AdmissoryStatus?
+    var loadingError: String?
     var flightAnnotations: [FlightAnnotation] = []
     var selectedFlight: FlightAnnotation?
+    /// Set while OpenSky is rate limiting us; live flights resume at this time.
+    var flightsPausedUntil: Date?
     
     var selectedState: StateVector? {
         return flightData?.states.first { $0.icao24 == selectedFlight?.id }
@@ -117,9 +120,13 @@ final class MainMapViewModel {
     }
 
     func retrieveCountries() async {
-
-        self.countries = try! await countriesService.getAllCountries()
-        self.selectRandomCountry()
+        do {
+            self.countries = try await countriesService.getAllCountries()
+            self.loadingError = nil
+            self.selectRandomCountry()
+        } catch {
+            self.loadingError = "Could not load countries. Please check your connection and try again."
+        }
     }
     
     private func calculateRegion(area: Double, latitude: CLLocationDegrees, longitude: CLLocationDegrees) -> MKCoordinateRegion {
@@ -189,6 +196,9 @@ final class MainMapViewModel {
             let data = try await self.retrieveFlightData()
             self.flightData = data
             self.flightAnnotations = self.getFlightAnnotations(from: data)
+            self.flightsPausedUntil = nil
+        } catch HTTPError.rateLimited(let retryAfter) {
+            self.flightsPausedUntil = retryAfter.map { Date().addingTimeInterval($0) }
         } catch {
             print(error)
         }

@@ -36,11 +36,15 @@ final class AdvisoryService: AdvisoryServiceProtocol {
         var httpMethod: HTTPMethod {
             return .get
         }
+
+        var cachePolicy: URLRequest.CachePolicy {
+            return .reloadRevalidatingCacheData
+        }
     }
-    
+
     func getAdvisoryStatus(destination: String) async throws -> AdvisoryStatus {
         let endpoint = AdvisoryEndpoint.advisoryStatus(destination: destination)
-        let request = try requestFactory.createURLRequest(root: rootURL, endpoint: endpoint, queryItems: nil, cachePolicy: .reloadRevalidatingCacheData)
+        let request = try requestFactory.createURLRequest(root: rootURL, endpoint: endpoint)
        return try await networkService.send(request: request)
     }
 }

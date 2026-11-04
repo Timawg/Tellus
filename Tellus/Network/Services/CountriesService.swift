@@ -13,7 +13,11 @@ protocol CountriesServiceProtocol: Service {
 
 final class CountriesService: CountriesServiceProtocol {
 
-    let rootURL: String = "https://restcountries.com/v3.1"
+    // The RestCountries v3.1 "all countries" endpoint has been deprecated and
+    // now requires an API key. We instead read the open dataset RestCountries is
+    // built from (mledoze/countries), served over the jsDelivr CDN. Same shape,
+    // one request, no auth.
+    let rootURL: String = "https://cdn.jsdelivr.net/gh/mledoze/countries@master"
     let networkService: NetworkServiceProtocol
     let requestFactory: URLRequestFactory
     
@@ -28,7 +32,7 @@ final class CountriesService: CountriesServiceProtocol {
         var path: String {
             switch self {
             case .all:
-                "/all"
+                "/countries.json"
             }
         }
         
@@ -38,7 +42,7 @@ final class CountriesService: CountriesServiceProtocol {
     }
     
     func getAllCountries() async throws -> [Country] {
-        let request = try requestFactory.createURLRequest(root: rootURL, endpoint: CountriesEndpoint.all, queryItems: nil, cachePolicy: .returnCacheDataElseLoad)
+        let request = try requestFactory.createURLRequest(root: rootURL, endpoint: CountriesEndpoint.all)
         return try await networkService.send(request: request)
     }
 }

@@ -26,6 +26,12 @@ final class FlightMarkerAnnotationView: MKAnnotationView {
         let image = UIImage(imageLiteralResourceName: "aircraft")
         imageView = UIImageView(image: image)
         imageView.translatesAutoresizingMaskIntoConstraints = false
+        // Drop shadow so aircraft stand out against the map.
+        imageView.layer.shadowColor = UIColor.black.cgColor
+        imageView.layer.shadowOpacity = 0.5
+        imageView.layer.shadowRadius = 3
+        imageView.layer.shadowOffset = CGSize(width: 0, height: 1)
+        imageView.layer.masksToBounds = false
         addSubview(imageView)
         
         NSLayoutConstraint.activate([

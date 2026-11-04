@@ -51,19 +51,30 @@ struct MainMapView: View {
             ListView(viewModel: viewModel)
                 .presentationDetents([.fraction(0.25), .medium])
         }
+        .alert("Unable to Load Countries", isPresented: .init(
+            get: { viewModel.loadingError != nil },
+            set: { if !$0 { viewModel.loadingError = nil } }
+        )) {
+            Button("Retry") {
+                Task { await viewModel.retrieveCountries() }
+            }
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(viewModel.loadingError ?? "")
+        }
     }
 
     @ViewBuilder
     var statusViews: some View {
-        if let name = viewModel.current?.name?.common, let flag = viewModel.current?.flags?.png {
-            VStack {
+        if let name = viewModel.current?.name?.common, let flag = viewModel.current?.flagURL {
+            VStack(spacing: 10) {
                 HStack(alignment: .center, spacing: 8) {
                     AsyncFlagView(flag: flag)
                     Text(name)
+                        .font(.headline)
                 }
-                .shadow(color: .white, radius: 15)
-                HStack {
-                    if let status = viewModel.advisoryStatus {
+                if let status = viewModel.advisoryStatus {
+                    HStack {
                         CircularStatusView(colors: status.colors)
                             .frame(width: 20, height: 20, alignment: .center)
                         Text(status.data.eng.advisoryText)
@@ -71,9 +82,8 @@ struct MainMapView: View {
                             .multilineTextAlignment(.center)
                     }
                 }
-                .shadow(color: .white, radius: 15)
-                HStack {
-                    if let status = viewModel.admissoryStatus {
+                if let status = viewModel.admissoryStatus {
+                    HStack {
                         CircularStatusView(colors: status.colors)
                             .frame(width: 20, height: 20, alignment: .center)
                         Text(status.category.capitalized)
@@ -81,9 +91,22 @@ struct MainMapView: View {
                             .multilineTextAlignment(.center)
                     }
                 }
-                .shadow(color: .white, radius: 15)
             }
             .foregroundStyle(.white)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .environment(\.colorScheme, .dark)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(.white.opacity(0.15), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
+            .padding(.horizontal)
+            .padding(.top, 8)
         }
     }
     
@@ -94,7 +117,7 @@ struct MainMapView: View {
                 LinearGradient(colors: [.tellusDark, .tellusLight], startPoint: .top, endPoint: .bottom)
                     .frame(width: 50, height: 50, alignment: .center)
                     .clipShape(.rect(cornerSize: .init(width: 50, height: 50)))
-                    .shadow(color: .white, radius: 15)
+                    .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
                     .overlay {
                         Image(systemName: "globe.americas.fill")
                             .renderingMode(.template)
@@ -104,12 +127,14 @@ struct MainMapView: View {
                         viewModel.selectRandomCountry()
                     }
                 Spacer()
+                flightsPausedNotice
+                Spacer()
                 LinearGradient(colors: [.tellusDark, .tellusLight], startPoint: .top, endPoint: .bottom)
                     .frame(width: 50, height: 50, alignment: .center)
                     .clipShape(.rect(cornerSize: .init(width: 50, height: 50)))
-                    .shadow(color: .white, radius: 15)
+                    .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
                     .overlay {
-                        AsyncFlagView(flag: viewModel.nationality?.flags?.png)
+                        AsyncFlagView(flag: viewModel.nationality?.flagURL)
                         Image("passport-icon")
                             .resizable()
                             .frame(maxWidth: 25, maxHeight: 30, alignment: .center)
@@ -127,15 +152,45 @@ struct MainMapView: View {
                         viewModel.updateRegion()
                     }
             }
+            .animation(.easeInOut, value: viewModel.flightsPausedUntil == nil)
             .padding()
             selectionButton
+        }
+    }
+
+    /// Explains why no aircraft are showing while OpenSky is rate limiting us.
+    @ViewBuilder
+    var flightsPausedNotice: some View {
+        if let pausedUntil = viewModel.flightsPausedUntil {
+            Label {
+                Text("Live flights paused until \(pausedUntil, style: .time)")
+            } icon: {
+                Image(systemName: "airplane")
+            }
+            .font(.footnote)
+            .foregroundStyle(.white)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .environment(\.colorScheme, .dark)
+            )
+            .overlay(
+                Capsule()
+                    .strokeBorder(.white.opacity(0.15), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
+            .transition(.opacity)
+            .accessibilityElement(children: .combine)
         }
     }
     
     @ViewBuilder
     var selectionButton: some View {
         ExpandableSelectionButton(selectables: viewModel.countries, selected: $viewModel.current) { country in
-            if let flag = country.flags?.png, let name = country.name?.common {
+            if let flag = country.flagURL, let name = country.name?.common {
                 AsyncFlagView(flag: flag)
                     .frame(minWidth: 40, minHeight: 25)
                 Spacer()

@@ -16,8 +16,8 @@ protocol URLRequestFactory {
         
     func createURL(root: String, endpoint: Endpoint) -> URL?
 
-    func createURLRequest(root: String, endpoint: Endpoint, queryItems: [URLQueryItem]?, cachePolicy: URLRequest.CachePolicy) throws -> URLRequest
-    
+    func createURLRequest(root: String, endpoint: Endpoint) throws -> URLRequest
+
 }
 
 extension URLRequestFactory {
@@ -25,25 +25,22 @@ extension URLRequestFactory {
     func createURL(root: String, endpoint: Endpoint) -> URL? {
         URL(string: root + endpoint.path)
     }
-    
-    func createURLRequest(root: String, endpoint: Endpoint, queryItems: [URLQueryItem]? = nil, cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy) throws -> URLRequest {
-        guard let url = createURL(root: root, endpoint: endpoint) else {
+
+    /// Builds a request from everything the endpoint describes: path, method,
+    /// query items and cache policy.
+    func createURLRequest(root: String, endpoint: Endpoint) throws -> URLRequest {
+        guard var url = createURL(root: root, endpoint: endpoint) else {
             throw URLError(.badURL)
         }
-        
-        return createURLRequest(url: url, method: endpoint.httpMethod, queryItems: queryItems, cachePolicy: cachePolicy)
-    }
-    
-    private func createURLRequest(url: URL, method: HTTPMethod, queryItems: [URLQueryItem]? = nil, cachePolicy: URLRequest.CachePolicy) -> URLRequest {
-        var url = url
-        if let queryItems {
+        if let queryItems = endpoint.queryItems, !queryItems.isEmpty {
             url.append(queryItems: queryItems)
         }
 
-        var request = URLRequest(url: url, cachePolicy: cachePolicy)
-        request.httpMethod = method.rawValue
-        if let body = method.body {
-            request.httpBody = try? JSONEncoder().encode(body)
+        var request = URLRequest(url: url, cachePolicy: endpoint.cachePolicy)
+        request.httpMethod = endpoint.httpMethod.rawValue
+        if let body = endpoint.httpMethod.body {
+            request.httpBody = try JSONEncoder().encode(body)
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
         return request
     }

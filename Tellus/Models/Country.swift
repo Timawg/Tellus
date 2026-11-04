@@ -43,7 +43,18 @@ struct Country: Codable, Hashable, Identifiable {
     let timezones, continents: [String]?
     let flags, coatOfArms: CoatOfArms?
     let startOfWeek: String?
-    let capitalInfo: CapitalInfo
+    let capitalInfo: CapitalInfo?
+
+    /// Flag image URL. The country dataset only provides an emoji flag, so the
+    /// displayable PNG is derived from the ISO 3166-1 alpha-2 code via flagcdn.
+    /// Falls back to the API-provided `flags.png` when present.
+    var flagURL: String? {
+        if let png = flags?.png {
+            return png
+        }
+        guard let cca2 else { return nil }
+        return "https://flagcdn.com/w320/\(cca2.lowercased()).png"
+    }
 }
  
 // MARK: - CapitalInfo

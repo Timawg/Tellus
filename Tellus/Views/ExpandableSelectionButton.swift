@@ -69,6 +69,7 @@ struct ExpandableSelectionButton<Content: View, Selectable: Identifiable>: View 
                 }
                 .frame(maxHeight: present ? 400 : 50)
                 .clipped()
+                .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
                 .padding()
         }
     }
