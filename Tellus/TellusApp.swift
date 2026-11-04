@@ -17,12 +17,14 @@ struct TellusApp: App {
         let admissoryService: AdmissoryServiceProtocol
         let countriesService: CountriesServiceProtocol
         let openSkyService: OpenSkyServiceProtocol
-        
+        let flightDetailsService: FlightDetailsServiceProtocol
+
         init() {
             self.advisoryService = AdvisoryService(networkService: networkService)
             self.admissoryService = AdmissoryService(networkService: networkService)
             self.countriesService = CountriesService(networkService: networkService)
             self.openSkyService = OpenSkyService(networkService: networkService)
+            self.flightDetailsService = FlightDetailsService(networkService: networkService)
         }
     }
 
@@ -33,7 +35,8 @@ struct TellusApp: App {
             countriesService: serviceContainer.countriesService,
             admissoryService: serviceContainer.admissoryService,
             advisoryService: serviceContainer.advisoryService, 
-            openSkyService: serviceContainer.openSkyService
+            openSkyService: serviceContainer.openSkyService,
+            flightDetailsService: serviceContainer.flightDetailsService
         )
         WindowGroup {
             MainMapView(viewModel: mainMapViewModel)

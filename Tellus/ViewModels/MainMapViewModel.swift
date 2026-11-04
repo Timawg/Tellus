@@ -16,19 +16,22 @@ final class MainMapViewModel {
     private let admissoryService: AdmissoryServiceProtocol
     private let advisoryService: AdvisoryServiceProtocol
     private let openSkyService: OpenSkyServiceProtocol
+    private let flightDetailsService: FlightDetailsServiceProtocol
     private var timerSubscription: AnyCancellable?
-    @ObservationIgnored private var flightData: FlightData?
-    
+    private var flightData: FlightData?
+
     init(
         countriesService: CountriesServiceProtocol,
         admissoryService: AdmissoryServiceProtocol,
         advisoryService: AdvisoryServiceProtocol,
-        openSkyService: OpenSkyServiceProtocol
+        openSkyService: OpenSkyServiceProtocol,
+        flightDetailsService: FlightDetailsServiceProtocol
     ) {
         self.countriesService = countriesService
         self.admissoryService = admissoryService
         self.advisoryService = advisoryService
         self.openSkyService = openSkyService
+        self.flightDetailsService = flightDetailsService
     }
 
     @ObservationIgnored var visibleRect: MKMapRect = .world
@@ -59,7 +62,44 @@ final class MainMapViewModel {
     }
 
     var selectedState: StateVector? {
-        return flightData?.states.first { $0.icao24 == selectedFlight?.id }
+        selectedFlight.flatMap { state(for: $0.id) }
+    }
+
+    /// Latest live values for a flight, if it's in the current data.
+    func state(for icao24: String) -> StateVector? {
+        flightData?.states.first { $0.icao24 == icao24 }
+    }
+
+    /// Registration details for the selected flight, once loaded.
+    var selectedAircraft: AircraftInfo?
+    /// Scheduled route for the selected flight, if adsbdb knows it and the
+    /// aircraft's position fits it.
+    var selectedRoute: FlightRoute?
+    var isLoadingFlightDetails = false
+
+    @MainActor
+    func loadFlightDetails() async {
+        // On deselect, keep the details so the sheet doesn't empty while it
+        // slides away; they're replaced when the next flight is selected.
+        guard let flightID = selectedFlight?.id else { return }
+        selectedAircraft = nil
+        selectedRoute = nil
+        let callsign = selectedState?.callsign?.trimmingCharacters(in: .whitespaces) ?? ""
+
+        isLoadingFlightDetails = true
+        async let aircraft = try? flightDetailsService.getAircraft(icao24: flightID)
+        async let route = callsign.isEmpty ? nil : try? flightDetailsService.getRoute(callsign: callsign)
+        let (loadedAircraft, loadedRoute) = await (aircraft, route)
+
+        // Another flight may have been selected while we waited.
+        guard selectedFlight?.id == flightID else { return }
+        isLoadingFlightDetails = false
+        selectedAircraft = loadedAircraft
+        if let loadedRoute,
+           let latitude = selectedState?.latitude, let longitude = selectedState?.longitude,
+           loadedRoute.isPlausible(forAircraftAt: CLLocation(latitude: CLLocationDegrees(latitude), longitude: CLLocationDegrees(longitude))) {
+            selectedRoute = loadedRoute
+        }
     }
     
     func selectRandomCountry() {

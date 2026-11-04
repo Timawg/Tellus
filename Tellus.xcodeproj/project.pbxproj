@@ -39,6 +39,8 @@
 		F5FCC8622C50610F00569DC5 /* CountriesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FCC8612C50610F00569DC5 /* CountriesService.swift */; };
 		F5FCC8642C5063C500569DC5 /* OpenSkyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FCC8632C5063C500569DC5 /* OpenSkyService.swift */; };
 		F5FCC8662C5066FB00569DC5 /* FlightData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FCC8652C5066FB00569DC5 /* FlightData.swift */; };
+		A7E1F0A22EB9000100C0FFEE /* FlightDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0A12EB9000100C0FFEE /* FlightDetails.swift */; };
+		A7E1F0A42EB9000100C0FFEE /* FlightDetailsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0A32EB9000100C0FFEE /* FlightDetailsService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -94,6 +96,8 @@
 		F5FCC8612C50610F00569DC5 /* CountriesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountriesService.swift; sourceTree = "<group>"; };
 		F5FCC8632C5063C500569DC5 /* OpenSkyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenSkyService.swift; sourceTree = "<group>"; };
 		F5FCC8652C5066FB00569DC5 /* FlightData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightData.swift; sourceTree = "<group>"; };
+		A7E1F0A12EB9000100C0FFEE /* FlightDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightDetails.swift; sourceTree = "<group>"; };
+		A7E1F0A32EB9000100C0FFEE /* FlightDetailsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightDetailsService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -248,6 +252,7 @@
 				F5EC341F2AB29704004A2F57 /* Country.swift */,
 				F55BBEF12ABA9D1E005E32E1 /* AdvisoryStatus.swift */,
 				F5FCC8652C5066FB00569DC5 /* FlightData.swift */,
+				A7E1F0A12EB9000100C0FFEE /* FlightDetails.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -267,6 +272,7 @@
 			isa = PBXGroup;
 			children = (
 				F5FCC8552C50534E00569DC5 /* AdvisoryService.swift */,
+				A7E1F0A32EB9000100C0FFEE /* FlightDetailsService.swift */,
 				F5FCC85E2C505F9D00569DC5 /* AdmissoryService.swift */,
 				F5FCC8612C50610F00569DC5 /* CountriesService.swift */,
 				F5FCC8632C5063C500569DC5 /* OpenSkyService.swift */,
@@ -421,6 +427,8 @@
 				F5EC34202AB29704004A2F57 /* Country.swift in Sources */,
 				F5FCC85D2C50534E00569DC5 /* Endpoint.swift in Sources */,
 				F5FCC8662C5066FB00569DC5 /* FlightData.swift in Sources */,
+				A7E1F0A22EB9000100C0FFEE /* FlightDetails.swift in Sources */,
+				A7E1F0A42EB9000100C0FFEE /* FlightDetailsService.swift in Sources */,
 				F5EC33F62AB274E4004A2F57 /* TellusApp.swift in Sources */,
 				F54422C22C59774800CF1A1C /* FlightAnnotationAnimator.swift in Sources */,
 				F5FCC84D2C5051AC00569DC5 /* Color.swift in Sources */,
