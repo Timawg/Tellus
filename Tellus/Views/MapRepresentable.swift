@@ -106,11 +106,15 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         uiView.removeAnnotations(annotationsToRemove)
         uiView.addAnnotations(annotationsToAdd)
 
-        annotationsToUpdate.forEach { newAnnotation in
-            if let existingAnnotation = currentAnnotationsDict[newAnnotation.id] {
-                UIView.animate(withDuration: 1) {
+        // One animation for every moved aircraft, rather than one each.
+        if !annotationsToUpdate.isEmpty {
+            UIView.animate(withDuration: 1) {
+                annotationsToUpdate.forEach { newAnnotation in
+                    guard let existingAnnotation = currentAnnotationsDict[newAnnotation.id] else {
+                        return
+                    }
                     existingAnnotation.coordinate = newAnnotation.coordinate
-                    
+
                     if let view = uiView.view(for: existingAnnotation), let degrees = newAnnotation.track {
                         view.transform = .init(rotationDegrees: CGFloat(degrees))
                     }

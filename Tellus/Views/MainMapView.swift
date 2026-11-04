@@ -127,7 +127,7 @@ struct MainMapView: View {
                         viewModel.selectRandomCountry()
                     }
                 Spacer()
-                flightsPausedNotice
+                flightsNotice
                 Spacer()
                 LinearGradient(colors: [.tellusDark, .tellusLight], startPoint: .top, endPoint: .bottom)
                     .frame(width: 50, height: 50, alignment: .center)
@@ -153,38 +153,50 @@ struct MainMapView: View {
                     }
             }
             .animation(.easeInOut, value: viewModel.flightsPausedUntil == nil)
+            .animation(.easeInOut, value: viewModel.isShowingSubsetOfFlights)
             .padding()
             selectionButton
         }
     }
 
-    /// Explains why no aircraft are showing while OpenSky is rate limiting us.
+    /// Explains why some or all aircraft are missing from the map: OpenSky is
+    /// rate limiting us, or there are more flights than we draw at once.
     @ViewBuilder
-    var flightsPausedNotice: some View {
+    var flightsNotice: some View {
         if let pausedUntil = viewModel.flightsPausedUntil {
-            Label {
+            noticeCapsule {
                 Text("Live flights paused until \(pausedUntil, style: .time)")
-            } icon: {
-                Image(systemName: "airplane")
             }
-            .font(.footnote)
-            .foregroundStyle(.white)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(
-                Capsule()
-                    .fill(.ultraThinMaterial)
-                    .environment(\.colorScheme, .dark)
-            )
-            .overlay(
-                Capsule()
-                    .strokeBorder(.white.opacity(0.15), lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
-            .transition(.opacity)
-            .accessibilityElement(children: .combine)
+        } else if viewModel.isShowingSubsetOfFlights {
+            noticeCapsule {
+                Text("\(viewModel.flightAnnotations.count, format: .number) of \(viewModel.totalFlightCount, format: .number) flights\nZoom in for more")
+            }
         }
+    }
+
+    func noticeCapsule(@ViewBuilder text: () -> some View) -> some View {
+        Label {
+            text()
+        } icon: {
+            Image(systemName: "airplane")
+        }
+        .font(.footnote)
+        .foregroundStyle(.white)
+        .multilineTextAlignment(.center)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            Capsule()
+                .fill(.ultraThinMaterial)
+                .environment(\.colorScheme, .dark)
+        )
+        .overlay(
+            Capsule()
+                .strokeBorder(.white.opacity(0.15), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
+        .transition(.opacity)
+        .accessibilityElement(children: .combine)
     }
     
     @ViewBuilder

@@ -43,7 +43,18 @@ final class MainMapViewModel {
     var selectedFlight: FlightAnnotation?
     /// Set while OpenSky is rate limiting us; live flights resume at this time.
     var flightsPausedUntil: Date?
-    
+    /// Flights OpenSky returned for the visible area, before capping to
+    /// `maxVisibleFlights`.
+    var totalFlightCount = 0
+
+    /// Most aircraft drawn at once. MapKit starts to stutter beyond a few
+    /// hundred moving markers.
+    static let maxVisibleFlights = 500
+
+    var isShowingSubsetOfFlights: Bool {
+        flightAnnotations.count < totalFlightCount
+    }
+
     var selectedState: StateVector? {
         return flightData?.states.first { $0.icao24 == selectedFlight?.id }
     }
@@ -195,7 +206,13 @@ final class MainMapViewModel {
         do {
             let data = try await self.retrieveFlightData()
             self.flightData = data
-            self.flightAnnotations = self.getFlightAnnotations(from: data)
+            let annotations = self.getFlightAnnotations(from: data)
+            self.totalFlightCount = annotations.count
+            self.flightAnnotations = annotations.nearest(
+                to: visibleRect,
+                limit: Self.maxVisibleFlights,
+                keeping: selectedFlight?.id
+            )
             self.flightsPausedUntil = nil
         } catch HTTPError.rateLimited(let retryAfter) {
             self.flightsPausedUntil = retryAfter.map { Date().addingTimeInterval($0) }
