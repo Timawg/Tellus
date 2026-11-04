@@ -57,6 +57,12 @@ struct MainMapView: View {
             Task {
                 await viewModel.updateDisasterAlerts()
             }
+            Task {
+                await viewModel.updateInternetOutages()
+            }
+            Task {
+                await viewModel.updateOutbreakReports()
+            }
         }.onChange(of: viewModel.selectedFlight?.id) {
             Task {
                 await viewModel.loadFlightDetails()
@@ -138,6 +144,8 @@ struct MainMapView: View {
                         weather: viewModel.destinationWeather,
                         exchangeRates: viewModel.exchangeRates,
                         alerts: viewModel.disasterAlerts,
+                        outages: viewModel.internetOutages,
+                        outbreaks: viewModel.outbreakReports,
                         recentEvents: viewModel.recentEvents,
                         neighbours: viewModel.neighbours(of: country)
                     ) { neighbour in
@@ -155,23 +163,39 @@ struct MainMapView: View {
         }
     }
     
-    /// The most serious active disaster alert (cyclone, earthquake, flood…),
-    /// tinted by its level. Tapping it opens the guide, which lists them all.
+    /// One banner for the most pressing thing happening in the country: an
+    /// active disaster, an ongoing internet disruption, or a WHO outbreak
+    /// report from the last 30 days. Tapping it opens the guide, which lists
+    /// them all.
+    private var cardAlert: (title: String, symbol: String, color: Color, accessibility: String)? {
+        if let alert = viewModel.disasterAlerts.first(where: \.isUrgent) {
+            return (alert.name, alert.kind.symbolName, alert.level == .red ? .red : .orange, "\(alert.level.rawValue) alert: \(alert.name)")
+        }
+        if viewModel.internetOutages.contains(where: \.isOngoing) {
+            return ("Internet disruption detected", "wifi.exclamationmark", .purple, "Internet disruption detected")
+        }
+        if let report = viewModel.outbreakReports.first,
+           report.published > Date().addingTimeInterval(-30 * 24 * 60 * 60) {
+            return ("Outbreak: \(report.disease)", "cross.case.fill", .orange, "Recent outbreak report: \(report.disease)")
+        }
+        return nil
+    }
+
     @ViewBuilder
     var alertBanner: some View {
-        if let alert = viewModel.disasterAlerts.first(where: \.isUrgent) {
+        if let alert = cardAlert {
             Button {
                 showingDestinationGuide = true
             } label: {
-                Label(alert.name, systemImage: alert.kind.symbolName)
+                Label(alert.title, systemImage: alert.symbol)
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Capsule().fill((alert.level == .red ? Color.red : Color.orange).opacity(0.85)))
+                    .background(Capsule().fill(alert.color.opacity(0.85)))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("\(alert.level.rawValue) alert: \(alert.name)")
+            .accessibilityLabel(alert.accessibility)
             .accessibilityHint("Opens the destination guide")
             .transition(.opacity)
         }

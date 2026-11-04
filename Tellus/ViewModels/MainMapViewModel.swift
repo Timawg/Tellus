@@ -21,6 +21,8 @@ final class MainMapViewModel {
     private let exchangeRateService: ExchangeRateServiceProtocol
     private let recentEventsService: RecentEventsServiceProtocol
     private let disasterAlertService: DisasterAlertServiceProtocol
+    private let internetOutageService: InternetOutageServiceProtocol
+    private let outbreakService: OutbreakServiceProtocol
     private var timerSubscription: AnyCancellable?
     private var flightData: FlightData?
 
@@ -33,7 +35,9 @@ final class MainMapViewModel {
         weatherService: WeatherServiceProtocol,
         exchangeRateService: ExchangeRateServiceProtocol,
         recentEventsService: RecentEventsServiceProtocol,
-        disasterAlertService: DisasterAlertServiceProtocol
+        disasterAlertService: DisasterAlertServiceProtocol,
+        internetOutageService: InternetOutageServiceProtocol,
+        outbreakService: OutbreakServiceProtocol
     ) {
         self.countriesService = countriesService
         self.admissoryService = admissoryService
@@ -44,6 +48,8 @@ final class MainMapViewModel {
         self.exchangeRateService = exchangeRateService
         self.recentEventsService = recentEventsService
         self.disasterAlertService = disasterAlertService
+        self.internetOutageService = internetOutageService
+        self.outbreakService = outbreakService
     }
 
     /// Weather at the selected country's capital.
@@ -91,6 +97,37 @@ final class MainMapViewModel {
         let alerts = (try? await disasterAlertService.getAlerts(countryCode: code)) ?? []
         guard current?.cca2 == country.cca2 else { return }
         disasterAlerts = alerts
+    }
+
+    /// Internet outages in the selected country over the last week, seen by
+    /// at least two independent signals.
+    var internetOutages: [InternetOutage] = []
+    /// WHO outbreak reports about the selected country, newest per disease.
+    var outbreakReports: [OutbreakReport] = []
+    /// Reports per country, built once from WHO's list.
+    @ObservationIgnored private var outbreakIndex: [String: [OutbreakReport]]?
+
+    @MainActor
+    func updateInternetOutages() async {
+        guard let country = current, let code = country.cca2 else { return }
+        internetOutages = []
+        let outages = (try? await internetOutageService.getOutages(countryCode: code)) ?? []
+        guard current?.cca2 == country.cca2 else { return }
+        internetOutages = outages
+    }
+
+    @MainActor
+    func updateOutbreakReports() async {
+        guard let country = current, let code = country.cca2 else { return }
+        outbreakReports = []
+        if outbreakIndex == nil, let reports = try? await outbreakService.getReports() {
+            let countries = countries
+            outbreakIndex = await Task.detached(priority: .userInitiated) {
+                OutbreakCountryMatcher.index(reports, countries: countries)
+            }.value
+        }
+        guard current?.cca2 == country.cca2 else { return }
+        outbreakReports = outbreakIndex?[code] ?? []
     }
 
     @MainActor

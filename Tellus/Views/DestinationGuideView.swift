@@ -19,6 +19,8 @@ struct DestinationGuideView: View {
     let weather: DestinationWeather?
     let exchangeRates: [ExchangeRate]
     let alerts: [DisasterAlert]
+    let outages: [InternetOutage]
+    let outbreaks: [OutbreakReport]
     let recentEvents: RecentEvents?
     let neighbours: [Country]
     let selectCountry: (Country) -> Void
@@ -32,6 +34,11 @@ struct DestinationGuideView: View {
                 switch topic {
                 case .overview:
                     overview
+                case .health:
+                    if !outbreaks.isEmpty {
+                        outbreaksSection
+                    }
+                    advice(for: topic)
                 default:
                     advice(for: topic)
                 }
@@ -71,6 +78,9 @@ struct DestinationGuideView: View {
     private var overview: some View {
         if !alerts.isEmpty {
             alertsSection
+        }
+        if !outages.isEmpty {
+            outagesSection
         }
         if let weather {
             weatherSection(weather)
@@ -207,6 +217,63 @@ struct DestinationGuideView: View {
             Label("Exchange rate", systemImage: "banknote")
         } footer: {
             Text("From \(exchangeRates[0].home), the currency of your passport or region. Daily rates from currency-api, updated \(exchangeRates[0].date).")
+        }
+    }
+
+    private var outagesSection: some View {
+        Section {
+            ForEach(outages) { outage in
+                VStack(alignment: .leading, spacing: 6) {
+                    Label {
+                        Text(outage.isOngoing ? "Internet disruption detected" : "Recent internet disruption")
+                            .font(.body.weight(.semibold))
+                    } icon: {
+                        Image(systemName: "wifi.exclamationmark")
+                            .foregroundStyle(outage.isOngoing ? .purple : .secondary)
+                    }
+                    Text(outage.isOngoing
+                         ? "Since \(outage.start.formatted(date: .abbreviated, time: .shortened))"
+                         : "\(outage.start.formatted(date: .abbreviated, time: .shortened)) – \(outage.end.formatted(date: .omitted, time: .shortened))")
+                        .font(.subheadline)
+                    Text("Seen in: \(outage.signals.joined(separator: ", "))")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 2)
+                .accessibilityElement(children: .combine)
+            }
+        } header: {
+            Label("Connectivity", systemImage: "network")
+        } footer: {
+            Text("Outages in the last 7 days seen by at least two independent signals, from IODA (Georgia Tech). A drop can mean a shutdown, a power cut or a cable fault.")
+        }
+    }
+
+    private var outbreaksSection: some View {
+        Section {
+            ForEach(outbreaks.prefix(5)) { report in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(report.published, format: .dateTime.day().month(.abbreviated).year())
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(report.disease)
+                        .font(.body.weight(.semibold))
+                    if !report.summary.isEmpty {
+                        Text(report.summary)
+                            .font(.subheadline)
+                    }
+                    if let url = report.url {
+                        Link("Read the WHO report", destination: url)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.blue)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        } header: {
+            Label("Outbreak news", systemImage: "cross.case.fill")
+        } footer: {
+            Text("WHO Disease Outbreak News reports naming this country, the latest per disease.")
         }
     }
 
