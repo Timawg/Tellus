@@ -179,7 +179,10 @@ final class MainMapViewModel {
 
     func retrieveCountries() async {
         do {
-            self.countries = try await countriesService.getAllCountries()
+            // Alphabetical, so the pickers are easy to scan.
+            self.countries = try await countriesService.getAllCountries().sorted {
+                ($0.name?.common ?? "").localizedStandardCompare($1.name?.common ?? "") == .orderedAscending
+            }
             self.loadingError = nil
             self.selectRandomCountry()
         } catch {

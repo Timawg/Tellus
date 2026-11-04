@@ -12,6 +12,8 @@ struct MainMapView: View {
     
     @Bindable var viewModel: MainMapViewModel
     @State private var showingLocalLaws = false
+    @State private var showingNationalityPicker = false
+    @State private var isPickingCountry = false
 
     var body: some View {
         MapRepresentable(
@@ -27,6 +29,9 @@ struct MainMapView: View {
         .edgesIgnoringSafeArea([.top,.bottom])
         .overlay(alignment: .top) {
             statusViews
+        }
+        .overlay {
+            countryListScrim
         }
         .overlay(alignment: .bottom) {
             bottomStack
@@ -116,16 +121,8 @@ struct MainMapView: View {
             .foregroundStyle(.white)
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .environment(\.colorScheme, .dark)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .strokeBorder(.white.opacity(0.15), lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
+            .floatingGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .environment(\.colorScheme, .dark)
             .padding(.horizontal)
             .padding(.top, 8)
         }
@@ -133,51 +130,96 @@ struct MainMapView: View {
     
     @ViewBuilder
     var bottomStack: some View {
-        VStack {
-            HStack(spacing: 15) {
-                LinearGradient(colors: [.tellusDark, .tellusLight], startPoint: .top, endPoint: .bottom)
-                    .frame(width: 50, height: 50, alignment: .center)
-                    .clipShape(.rect(cornerSize: .init(width: 50, height: 50)))
-                    .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
-                    .overlay {
-                        Image(systemName: "globe.americas.fill")
-                            .renderingMode(.template)
-                            .foregroundColor(.white)
-                            .symbolEffect(.variableColor, options: .nonRepeating, value: viewModel.current)
-                    }.onTapGesture {
-                        viewModel.selectRandomCountry()
+        FloatingGlassGroup {
+            VStack(spacing: 0) {
+                HStack(spacing: 15) {
+                    randomCountryButton
+                        // Slide off-screen while the country list is open,
+                        // leaving the list as the only thing to interact with.
+                        .offset(x: isPickingCountry ? -120 : 0)
+                        .opacity(isPickingCountry ? 0 : 1)
+                    Spacer()
+                    if !isPickingCountry {
+                        flightsNotice
                     }
-                Spacer()
-                flightsNotice
-                Spacer()
-                LinearGradient(colors: [.tellusDark, .tellusLight], startPoint: .top, endPoint: .bottom)
-                    .frame(width: 50, height: 50, alignment: .center)
-                    .clipShape(.rect(cornerSize: .init(width: 50, height: 50)))
-                    .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
-                    .overlay {
-                        AsyncFlagView(flag: viewModel.nationality?.flagURL)
-                        Image("passport-icon")
-                            .resizable()
-                            .frame(maxWidth: 25, maxHeight: 30, alignment: .center)
-                        Picker("Select Country", selection: $viewModel.nationality) {
-                            Text(viewModel.nationality?.name?.common ?? "").hidden().tag(viewModel.nationality)
-                            ForEach(viewModel.countries, id: \.self) { country in
-                                HStack(alignment: .center, spacing: 8) {
-                                    if let name = country.name?.common {
-                                        Text(name)
-                                    }
-                                }.tag(Optional(country))
-                            }
-                        }
-                    }.onTapGesture {
-                        viewModel.updateRegion()
-                    }
+                    Spacer()
+                    passportButton
+                        .offset(x: isPickingCountry ? 120 : 0)
+                        .opacity(isPickingCountry ? 0 : 1)
+                }
+                .animation(.easeInOut, value: viewModel.flightsPausedUntil == nil)
+                .animation(.easeInOut, value: viewModel.isShowingSubsetOfFlights)
+                .padding(.horizontal)
+                .padding(.top)
+                selectionButton
             }
-            .animation(.easeInOut, value: viewModel.flightsPausedUntil == nil)
-            .animation(.easeInOut, value: viewModel.isShowingSubsetOfFlights)
-            .padding()
-            selectionButton
         }
+        // The container renders the glass, so it needs the dark appearance too.
+        .environment(\.colorScheme, .dark)
+        .sheet(isPresented: $showingNationalityPicker) {
+            NationalityPickerView(countries: viewModel.countries, selection: $viewModel.nationality)
+        }
+    }
+
+    /// Dims the map while the country list is open; tapping it closes the list.
+    @ViewBuilder
+    var countryListScrim: some View {
+        if isPickingCountry {
+            Color.black.opacity(0.35)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation(.spring(duration: 0.4)) {
+                        isPickingCountry = false
+                    }
+                }
+                .transition(.opacity)
+                .accessibilityLabel("Close country list")
+                .accessibilityAddTraits(.isButton)
+        }
+    }
+
+    var randomCountryButton: some View {
+        Button {
+            viewModel.selectRandomCountry()
+        } label: {
+            Image(systemName: "globe.americas.fill")
+                .font(.title3)
+                .foregroundStyle(.white)
+                .symbolEffect(.variableColor, options: .nonRepeating, value: viewModel.current)
+                .frame(width: 50, height: 50)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .floatingGlass(in: Circle(), interactive: true)
+        .environment(\.colorScheme, .dark)
+        .accessibilityLabel("Random country")
+    }
+
+    /// Opens the passport picker. Shows the chosen passport's flag as a badge.
+    var passportButton: some View {
+        Button {
+            showingNationalityPicker = true
+        } label: {
+            Image("passport-icon")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 24, height: 28)
+                .frame(width: 50, height: 50)
+                .overlay(alignment: .bottomTrailing) {
+                    if let flag = viewModel.nationality?.flagURL {
+                        AsyncFlagView(flag: flag)
+                            .frame(width: 18, height: 12)
+                            .clipShape(RoundedRectangle(cornerRadius: 2))
+                            .offset(x: -6, y: -8)
+                    }
+                }
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .floatingGlass(in: Circle(), interactive: true)
+        .environment(\.colorScheme, .dark)
+        .accessibilityLabel("Your passport")
+        .accessibilityValue(viewModel.nationality?.name?.common ?? "Not set")
     }
 
     /// Explains why some or all aircraft are missing from the map: OpenSky is
@@ -206,23 +248,19 @@ struct MainMapView: View {
         .multilineTextAlignment(.center)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(
-            Capsule()
-                .fill(.ultraThinMaterial)
-                .environment(\.colorScheme, .dark)
-        )
-        .overlay(
-            Capsule()
-                .strokeBorder(.white.opacity(0.15), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
+        .floatingGlass(in: Capsule())
+        .environment(\.colorScheme, .dark)
         .transition(.opacity)
         .accessibilityElement(children: .combine)
     }
     
     @ViewBuilder
     var selectionButton: some View {
-        ExpandableSelectionButton(selectables: viewModel.countries, selected: $viewModel.current) { country in
+        ExpandableSelectionButton(
+            selectables: viewModel.countries,
+            selected: $viewModel.current,
+            isExpanded: $isPickingCountry
+        ) { country in
             if let flag = country.flagURL, let name = country.name?.common {
                 AsyncFlagView(flag: flag)
                     .frame(minWidth: 40, minHeight: 25)
@@ -563,5 +601,68 @@ struct LocalLawsView: View {
         }
         .font(.subheadline)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// Searchable list for choosing the passport you travel on, which decides the
+/// visa requirement shown for each destination.
+struct NationalityPickerView: View {
+
+    let countries: [Country]
+    @Binding var selection: Country?
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var query = ""
+
+    private var matches: [Country] {
+        let query = query.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return countries }
+        return countries.filter { $0.name?.common?.localizedStandardContains(query) == true }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(matches) { country in
+                        Button {
+                            selection = country
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 12) {
+                                AsyncFlagView(flag: country.flagURL)
+                                    .frame(width: 36, height: 24)
+                                Text(country.name?.common ?? "")
+                                Spacer()
+                                if country == selection {
+                                    Image(systemName: "checkmark")
+                                        .font(.body.weight(.semibold))
+                                        .foregroundStyle(.blue)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        // Rows read as a list of names, not as links.
+                        .tint(.primary)
+                        .accessibilityAddTraits(country == selection ? .isSelected : [])
+                    }
+                } header: {
+                    Text("Choose the passport you travel on to see visa requirements for each country.")
+                        .textCase(nil)
+                }
+            }
+            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search countries")
+            .navigationTitle("Your passport")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(Color(uiColor: .systemGroupedBackground))
+        .preferredColorScheme(.dark)
     }
 }
