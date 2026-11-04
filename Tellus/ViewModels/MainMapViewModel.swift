@@ -19,6 +19,8 @@ final class MainMapViewModel {
     private let flightDetailsService: FlightDetailsServiceProtocol
     private let weatherService: WeatherServiceProtocol
     private let exchangeRateService: ExchangeRateServiceProtocol
+    private let recentEventsService: RecentEventsServiceProtocol
+    private let disasterAlertService: DisasterAlertServiceProtocol
     private var timerSubscription: AnyCancellable?
     private var flightData: FlightData?
 
@@ -29,7 +31,9 @@ final class MainMapViewModel {
         openSkyService: OpenSkyServiceProtocol,
         flightDetailsService: FlightDetailsServiceProtocol,
         weatherService: WeatherServiceProtocol,
-        exchangeRateService: ExchangeRateServiceProtocol
+        exchangeRateService: ExchangeRateServiceProtocol,
+        recentEventsService: RecentEventsServiceProtocol,
+        disasterAlertService: DisasterAlertServiceProtocol
     ) {
         self.countriesService = countriesService
         self.admissoryService = admissoryService
@@ -38,6 +42,8 @@ final class MainMapViewModel {
         self.flightDetailsService = flightDetailsService
         self.weatherService = weatherService
         self.exchangeRateService = exchangeRateService
+        self.recentEventsService = recentEventsService
+        self.disasterAlertService = disasterAlertService
     }
 
     /// Weather at the selected country's capital.
@@ -62,6 +68,29 @@ final class MainMapViewModel {
         // Another country may have been chosen while loading.
         guard current?.cca2 == country.cca2 else { return }
         destinationWeather = weather
+    }
+
+    /// Dated events from Wikipedia's "<year> in <country>" article.
+    var recentEvents: RecentEvents?
+    /// Current GDACS orange and red alerts for the selected country.
+    var disasterAlerts: [DisasterAlert] = []
+
+    @MainActor
+    func updateRecentEvents() async {
+        guard let country = current else { return }
+        recentEvents = nil
+        let events = try? await recentEventsService.getRecentEvents(for: country)
+        guard current?.cca2 == country.cca2 else { return }
+        recentEvents = events
+    }
+
+    @MainActor
+    func updateDisasterAlerts() async {
+        guard let country = current, let code = country.cca2 else { return }
+        disasterAlerts = []
+        let alerts = (try? await disasterAlertService.getAlerts(countryCode: code)) ?? []
+        guard current?.cca2 == country.cca2 else { return }
+        disasterAlerts = alerts
     }
 
     @MainActor

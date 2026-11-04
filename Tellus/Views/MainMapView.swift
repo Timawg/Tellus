@@ -51,6 +51,12 @@ struct MainMapView: View {
             Task {
                 await viewModel.updateExchangeRates()
             }
+            Task {
+                await viewModel.updateRecentEvents()
+            }
+            Task {
+                await viewModel.updateDisasterAlerts()
+            }
         }.onChange(of: viewModel.selectedFlight?.id) {
             Task {
                 await viewModel.loadFlightDetails()
@@ -93,6 +99,7 @@ struct MainMapView: View {
                         .font(.headline)
                 }
                 liveInfoStrip
+                alertBanner
                 if let status = viewModel.advisoryStatus {
                     HStack {
                         CircularStatusView(colors: status.colors)
@@ -130,6 +137,8 @@ struct MainMapView: View {
                         isLoading: viewModel.isLoadingDestinationGuide,
                         weather: viewModel.destinationWeather,
                         exchangeRates: viewModel.exchangeRates,
+                        alerts: viewModel.disasterAlerts,
+                        recentEvents: viewModel.recentEvents,
                         neighbours: viewModel.neighbours(of: country)
                     ) { neighbour in
                         viewModel.current = neighbour
@@ -146,6 +155,28 @@ struct MainMapView: View {
         }
     }
     
+    /// The most serious active disaster alert (cyclone, earthquake, flood…),
+    /// tinted by its level. Tapping it opens the guide, which lists them all.
+    @ViewBuilder
+    var alertBanner: some View {
+        if let alert = viewModel.disasterAlerts.first(where: \.isUrgent) {
+            Button {
+                showingDestinationGuide = true
+            } label: {
+                Label(alert.name, systemImage: alert.kind.symbolName)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill((alert.level == .red ? Color.red : Color.orange).opacity(0.85)))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(alert.level.rawValue) alert: \(alert.name)")
+            .accessibilityHint("Opens the destination guide")
+            .transition(.opacity)
+        }
+    }
+
     /// Weather and local time at the capital, and the exchange rate from the
     /// home currency, in one line under the country name.
     @ViewBuilder

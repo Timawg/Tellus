@@ -18,6 +18,8 @@ struct DestinationGuideView: View {
     let isLoading: Bool
     let weather: DestinationWeather?
     let exchangeRates: [ExchangeRate]
+    let alerts: [DisasterAlert]
+    let recentEvents: RecentEvents?
     let neighbours: [Country]
     let selectCountry: (Country) -> Void
 
@@ -67,11 +69,17 @@ struct DestinationGuideView: View {
 
     @ViewBuilder
     private var overview: some View {
+        if !alerts.isEmpty {
+            alertsSection
+        }
         if let weather {
             weatherSection(weather)
         }
         if !exchangeRates.isEmpty {
             moneySection
+        }
+        if let recentEvents, !recentEvents.events.isEmpty {
+            eventsSection(recentEvents)
         }
 
         Section("At a glance") {
@@ -200,6 +208,85 @@ struct DestinationGuideView: View {
         } footer: {
             Text("From \(exchangeRates[0].home), the currency of your passport or region. Daily rates from currency-api, updated \(exchangeRates[0].date).")
         }
+    }
+
+    private var alertsSection: some View {
+        Section {
+            ForEach(alerts) { alert in
+                VStack(alignment: .leading, spacing: 6) {
+                    Label {
+                        Text(alert.name)
+                            .font(.body.weight(.semibold))
+                    } icon: {
+                        Image(systemName: alert.kind.symbolName)
+                            .foregroundStyle(alert.level == .red ? .red : .orange)
+                    }
+                    if let severity = alert.severity {
+                        Text(severity)
+                            .font(.subheadline)
+                    }
+                    HStack {
+                        Text("\(alert.level.rawValue) alert")
+                            .foregroundStyle(alert.level == .red ? .red : .orange)
+                        if let start = alert.start {
+                            Text("since \(start.formatted(date: .abbreviated, time: .omitted))")
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if let url = alert.reportURL {
+                            Link("Report", destination: url)
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                    .font(.footnote)
+                }
+                .padding(.vertical, 2)
+            }
+        } header: {
+            Label("Active alerts", systemImage: "exclamationmark.triangle.fill")
+        } footer: {
+            Text("Disaster alerts from GDACS, the Global Disaster Alert and Coordination System.")
+        }
+    }
+
+    /// The latest events, newest first; older ones behind "More events".
+    private func eventsSection(_ recentEvents: RecentEvents) -> some View {
+        let shown = 5
+        let events = recentEvents.events
+        return Section {
+            ForEach(events.prefix(shown)) { event in
+                eventRow(event)
+            }
+            if events.count > shown {
+                DisclosureGroup("More events") {
+                    ForEach(events.dropFirst(shown).prefix(25)) { event in
+                        eventRow(event)
+                    }
+                }
+            }
+        } header: {
+            Label("Recent events", systemImage: "newspaper")
+        } footer: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("From the Wikipedia article “\(recentEvents.articleTitle)”, written by volunteers (CC BY-SA 4.0).")
+                if let url = recentEvents.articleURL {
+                    Link("Read on Wikipedia", destination: url)
+                        .foregroundStyle(.blue)
+                }
+            }
+        }
+    }
+
+    private func eventRow(_ event: RecentEvent) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(event.date, format: .dateTime.day().month(.abbreviated).year())
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(event.text)
+                .font(.subheadline)
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
     }
 
     /// "Today", then weekday names ("Thursday"), in the destination's time zone.
