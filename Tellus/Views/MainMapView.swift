@@ -378,7 +378,12 @@ struct MainMapView: View {
     var flightsNotice: some View {
         if let pausedUntil = viewModel.flightsPausedUntil {
             noticeCapsule {
-                Text("Live flights paused until \(pausedUntil, style: .time)")
+                // OpenSky's daily quota can pause us until the next day.
+                if Calendar.current.isDateInToday(pausedUntil) {
+                    Text("Live flights paused until \(pausedUntil, style: .time)")
+                } else {
+                    Text("Live flights paused until \(pausedUntil, format: .dateTime.weekday(.wide).hour().minute())")
+                }
             }
         } else if viewModel.isShowingSubsetOfFlights {
             noticeCapsule {
@@ -388,17 +393,22 @@ struct MainMapView: View {
     }
 
     func noticeCapsule(@ViewBuilder text: () -> some View) -> some View {
-        Label {
-            text()
-        } icon: {
+        HStack(alignment: .center, spacing: 8) {
             Image(systemName: "airplane")
+            text()
+                // Wrap onto more lines rather than truncating or spilling out.
+                .fixedSize(horizontal: false, vertical: true)
         }
         .font(.footnote)
         .foregroundStyle(.white)
         .multilineTextAlignment(.center)
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 14)
         .padding(.vertical, 8)
-        .floatingGlass(in: Capsule())
+        // A capsule's ends are as round as it is tall, so wrapped text would
+        // poke out of a tall one. This matches a capsule on one line and
+        // still fits several.
+        .floatingGlass(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .layoutPriority(1)
         .environment(\.colorScheme, .dark)
         .transition(.opacity)
         .accessibilityElement(children: .combine)
@@ -409,7 +419,12 @@ struct MainMapView: View {
         ExpandableSelectionButton(
             selectables: viewModel.countries,
             selected: $viewModel.current,
-            isExpanded: $isPickingCountry
+            isExpanded: $isPickingCountry,
+            searchPrompt: "Search countries",
+            matches: { country, query in
+                [country.name?.common, country.name?.official]
+                    .contains { $0?.localizedStandardContains(query) == true }
+            }
         ) { country in
             if let flag = country.flagURL, let name = country.name?.common {
                 AsyncFlagView(flag: flag)
@@ -504,13 +519,17 @@ struct FlightDetailsView: View {
         Section("Route") {
             if let route = viewModel.selectedRoute {
                 VStack(spacing: 14) {
-                    HStack(alignment: .top) {
+                    HStack(alignment: .center) {
                         airport(route.origin, alignment: .leading)
                         Spacer()
-                        Image(systemName: "airplane")
-                            .font(.title2)
-                            .foregroundStyle(.tint)
-                            .padding(.top, 8)
+                        // The map marker, turned to fly from origin to destination.
+                        Image("aircraft")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 32, height: 32)
+                            .rotationEffect(.degrees(90))
+                            .shadow(color: .black.opacity(0.5), radius: 3, y: 1)
+                            .accessibilityHidden(true)
                         Spacer()
                         airport(route.destination, alignment: .trailing)
                     }
