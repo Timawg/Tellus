@@ -19,7 +19,11 @@ struct MainMapView: View {
         MapRepresentable(
             region: $viewModel.region,
             selectedAnnotation: $viewModel.selectedFlight,
-            annotations: viewModel.flightAnnotations
+            annotations: viewModel.flightAnnotations,
+            cables: viewModel.cables,
+            landingPoints: viewModel.landingPoints,
+            selectedCableID: viewModel.selectedCableID,
+            selectCable: { viewModel.selectedCableID = $0 }
         ) {
             viewModel.stopUpdatingFlightData()
         } regionDidChange: { rect in
@@ -35,6 +39,8 @@ struct MainMapView: View {
         }
         .overlay(alignment: .bottom) {
             bottomStack
+        }.task {
+            await viewModel.loadCablesIfNeeded()
         }.task {
             await viewModel.retrieveCountries()
             viewModel.updateRegion()
@@ -75,6 +81,14 @@ struct MainMapView: View {
             Task {
                 // The home currency follows the passport.
                 await viewModel.updateExchangeRates()
+            }
+        }
+        .sheet(isPresented: .init(
+            get: { viewModel.selectedCableID != nil },
+            set: { if !$0 { viewModel.selectedCableID = nil } }
+        )) {
+            if let cable = viewModel.selectedCable {
+                CableDetailsView(cable: cable, details: viewModel.selectedCableDetails)
             }
         }
         .sheet(item: $viewModel.selectedFlight) {
@@ -243,7 +257,7 @@ struct MainMapView: View {
     var bottomStack: some View {
         FloatingGlassGroup {
             VStack(spacing: 0) {
-                HStack(spacing: 15) {
+                HStack(alignment: .bottom, spacing: 15) {
                     randomCountryButton
                         // Slide off-screen while the country list is open,
                         // leaving the list as the only thing to interact with.
@@ -254,9 +268,12 @@ struct MainMapView: View {
                         flightsNotice
                     }
                     Spacer()
-                    passportButton
-                        .offset(x: isPickingCountry ? 120 : 0)
-                        .opacity(isPickingCountry ? 0 : 1)
+                    VStack(spacing: 12) {
+                        layersButton
+                        passportButton
+                    }
+                    .offset(x: isPickingCountry ? 120 : 0)
+                    .opacity(isPickingCountry ? 0 : 1)
                 }
                 .animation(.easeInOut, value: viewModel.flightsPausedUntil == nil)
                 .animation(.easeInOut, value: viewModel.isShowingSubsetOfFlights)
@@ -307,6 +324,28 @@ struct MainMapView: View {
     }
 
     /// Opens the passport picker. Shows the chosen passport's flag as a badge.
+    /// Switches map layers on and off.
+    var layersButton: some View {
+        Menu {
+            Toggle(isOn: $viewModel.showsFlights) {
+                Label("Live flights", systemImage: "airplane")
+            }
+            Toggle(isOn: $viewModel.showsCables) {
+                Label("Undersea cables", systemImage: "cable.connector")
+            }
+        } label: {
+            Image(systemName: "square.3.layers.3d")
+                .font(.title3)
+                .foregroundStyle(.white)
+                .frame(width: 50, height: 50)
+                .contentShape(Circle())
+        }
+        .menuOrder(.fixed)
+        .floatingGlass(in: Circle(), interactive: true)
+        .environment(\.colorScheme, .dark)
+        .accessibilityLabel("Map layers")
+    }
+
     var passportButton: some View {
         Button {
             showingNationalityPicker = true

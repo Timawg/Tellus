@@ -23,6 +23,7 @@ final class MainMapViewModel {
     private let disasterAlertService: DisasterAlertServiceProtocol
     private let internetOutageService: InternetOutageServiceProtocol
     private let outbreakService: OutbreakServiceProtocol
+    private let cableService: CableServiceProtocol
     private var timerSubscription: AnyCancellable?
     private var flightData: FlightData?
 
@@ -37,7 +38,8 @@ final class MainMapViewModel {
         recentEventsService: RecentEventsServiceProtocol,
         disasterAlertService: DisasterAlertServiceProtocol,
         internetOutageService: InternetOutageServiceProtocol,
-        outbreakService: OutbreakServiceProtocol
+        outbreakService: OutbreakServiceProtocol,
+        cableService: CableServiceProtocol
     ) {
         self.countriesService = countriesService
         self.admissoryService = admissoryService
@@ -50,6 +52,7 @@ final class MainMapViewModel {
         self.disasterAlertService = disasterAlertService
         self.internetOutageService = internetOutageService
         self.outbreakService = outbreakService
+        self.cableService = cableService
     }
 
     /// Weather at the selected country's capital.
@@ -275,6 +278,7 @@ final class MainMapViewModel {
     
     @MainActor
     func startUpdatingFlightData() {
+        guard showsFlights else { return }
         Task {
             await updateFlightData()
             timerSubscription = timerPublisher
@@ -289,6 +293,86 @@ final class MainMapViewModel {
     
     func stopUpdatingFlightData() {
         timerSubscription?.cancel()
+    }
+
+    // MARK: Map layers
+
+    /// Live aircraft. Off also stops polling OpenSky.
+    var showsFlights: Bool = UserDefaults.standard.object(forKey: "showsFlights") as? Bool ?? true {
+        didSet {
+            UserDefaults.standard.set(showsFlights, forKey: "showsFlights")
+            if showsFlights {
+                Task { @MainActor in self.startUpdatingFlightData() }
+            } else {
+                stopUpdatingFlightData()
+                selectedFlight = nil
+                flightAnnotations = []
+                totalFlightCount = 0
+                flightsPausedUntil = nil
+            }
+        }
+    }
+
+    /// Undersea cables and their landing points.
+    var showsCables: Bool = UserDefaults.standard.bool(forKey: "showsCables") {
+        didSet {
+            UserDefaults.standard.set(showsCables, forKey: "showsCables")
+            if !showsCables { selectedCableID = nil }
+            Task { await loadCablesIfNeeded() }
+        }
+    }
+
+    @ObservationIgnored private var allCables: [SubmarineCable] = []
+    @ObservationIgnored private var allLandingPoints: [CableLandingPoint] = []
+    /// The cables and landing points to draw: empty while the layer is off.
+    var cables: [SubmarineCable] = []
+    var landingPoints: [CableLandingPoint] = []
+    var cableLoadingError: String?
+
+    @MainActor
+    func loadCablesIfNeeded() async {
+        guard showsCables else {
+            cables = []
+            landingPoints = []
+            return
+        }
+        if allCables.isEmpty {
+            do {
+                let data = try await cableService.getCables()
+                allCables = data.cables
+                allLandingPoints = data.landingPoints
+                cableLoadingError = nil
+            } catch {
+                cableLoadingError = "Couldn't load undersea cables."
+                return
+            }
+        }
+        guard showsCables else { return }
+        cables = allCables
+        landingPoints = allLandingPoints
+    }
+
+    /// The cable tapped on the map; its details sheet is open while set.
+    var selectedCableID: String? {
+        didSet {
+            guard selectedCableID != oldValue else { return }
+            selectedCableDetails = nil
+            if let id = selectedCableID {
+                Task { await loadCableDetails(id: id) }
+            }
+        }
+    }
+    var selectedCableDetails: CableDetails?
+
+    var selectedCable: SubmarineCable? {
+        selectedCableID.flatMap { id in cables.first { $0.id == id } }
+    }
+
+    @MainActor
+    private func loadCableDetails(id: String) async {
+        let details = try? await cableService.getDetails(cableID: id)
+        guard selectedCableID == id else { return }
+        selectedCableDetails = details
     }
     
     func updateRegion() {
@@ -390,6 +474,8 @@ final class MainMapViewModel {
     private func updateFlightData() async {
         do {
             let data = try await self.retrieveFlightData()
+            // Flights may have been switched off while this poll was running.
+            guard showsFlights else { return }
             self.flightData = data
             let annotations = self.getFlightAnnotations(from: data)
             self.totalFlightCount = annotations.count

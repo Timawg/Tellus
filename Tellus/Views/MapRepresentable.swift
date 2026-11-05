@@ -13,14 +13,97 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
     @Binding var region: MKCoordinateRegion
     @Binding var selectedAnnotation: T?
     var annotations: [MKAnnotation]
+    /// Undersea cables to draw; empty when the layer is off.
+    var cables: [SubmarineCable] = []
+    var landingPoints: [CableLandingPoint] = []
+    /// Drawn thicker and brighter than the others.
+    var selectedCableID: String?
+    /// Called with the cable nearest a tap, or nil for a tap away from cables.
+    var selectCable: (String?) -> Void = { _ in }
     let regionWillChange: () -> Void
     let regionDidChange: (MKMapRect) -> Void
 
-    class Coordinator: NSObject, MKMapViewDelegate {
+    class Coordinator: NSObject, MKMapViewDelegate, UIGestureRecognizerDelegate {
         var parent: MapRepresentable
+        var cableOverlays: [String: CableOverlay] = [:]
+        var landingPointAnnotations: [String: LandingPointAnnotation] = [:]
+        var highlightedCableID: String?
 
         init(parent: MapRepresentable) {
             self.parent = parent
+        }
+
+        // MARK: Cables
+
+        func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+            guard let cable = overlay as? CableOverlay else {
+                return MKOverlayRenderer(overlay: overlay)
+            }
+            let renderer = MKMultiPolylineRenderer(multiPolyline: cable)
+            style(renderer, for: cable)
+            return renderer
+        }
+
+        func style(_ renderer: MKMultiPolylineRenderer, for cable: CableOverlay) {
+            let isSelected = cable.cableID == highlightedCableID
+            renderer.strokeColor = cable.color.withAlphaComponent(isSelected ? 1 : 0.75)
+            renderer.lineWidth = isSelected ? 4 : 1.5
+            renderer.lineCap = .round
+        }
+
+        /// MapKit doesn't report taps on overlays, so find the nearest cable
+        /// within about 22 points of the tap.
+        @objc func handleTap(_ recognizer: UITapGestureRecognizer) {
+            guard recognizer.state == .ended, let mapView = recognizer.view as? MKMapView else { return }
+            let location = recognizer.location(in: mapView)
+            // Taps on aircraft and landing points are handled by MapKit.
+            if mapView.hitTest(location, with: nil)?.isAnnotationView == true { return }
+            guard !cableOverlays.isEmpty, mapView.bounds.width > 0 else { return }
+
+            let point = MKMapPoint(mapView.convert(location, toCoordinateFrom: mapView))
+            let tolerance = 22 * mapView.visibleMapRect.width / Double(mapView.bounds.width)
+            let nearest = cableOverlays.values
+                .filter { $0.boundingMapRect.insetBy(dx: -tolerance, dy: -tolerance).contains(point) }
+                .map { (id: $0.cableID, distance: $0.distance(to: point)) }
+                .filter { $0.distance <= tolerance }
+                .min { $0.distance < $1.distance }
+            parent.selectCable(nearest?.id)
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+            true
+        }
+
+        func updateCables(on mapView: MKMapView, cables: [SubmarineCable], landingPoints: [CableLandingPoint], selectedID: String?) {
+            let wanted = Set(cables.map(\.id))
+            if wanted != Set(cableOverlays.keys) {
+                let removed = cableOverlays.filter { !wanted.contains($0.key) }
+                mapView.removeOverlays(Array(removed.values))
+                removed.keys.forEach { cableOverlays[$0] = nil }
+                let added = cables.filter { cableOverlays[$0.id] == nil }.map(CableOverlay.init(cable:))
+                added.forEach { cableOverlays[$0.cableID] = $0 }
+                mapView.addOverlays(added, level: .aboveRoads)
+            }
+
+            let wantedPoints = Set(landingPoints.map(\.id))
+            if wantedPoints != Set(landingPointAnnotations.keys) {
+                let removed = landingPointAnnotations.filter { !wantedPoints.contains($0.key) }
+                mapView.removeAnnotations(Array(removed.values))
+                removed.keys.forEach { landingPointAnnotations[$0] = nil }
+                let added = landingPoints.filter { landingPointAnnotations[$0.id] == nil }.map(LandingPointAnnotation.init(point:))
+                added.forEach { landingPointAnnotations[$0.id] = $0 }
+                mapView.addAnnotations(added)
+            }
+
+            guard selectedID != highlightedCableID else { return }
+            let previous = highlightedCableID
+            highlightedCableID = selectedID
+            for id in [previous, selectedID].compactMap({ $0 }) {
+                guard let overlay = cableOverlays[id],
+                      let renderer = mapView.renderer(for: overlay) as? MKMultiPolylineRenderer else { continue }
+                style(renderer, for: overlay)
+                renderer.setNeedsDisplay()
+            }
         }
         
         func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
@@ -45,6 +128,9 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         }
         
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            if annotation is LandingPointAnnotation {
+                return mapView.dequeueReusableAnnotationView(withIdentifier: LandingPointAnnotationView.reuseIdentifier, for: annotation)
+            }
             let identifier = "flight"
             let annotationView: FlightMarkerAnnotationView = {
                 if let view = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) as? FlightMarkerAnnotationView {
@@ -68,6 +154,10 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         let mapView = MKMapView()
         mapView.delegate = context.coordinator
         mapView.register(FlightMarkerAnnotationView.self, forAnnotationViewWithReuseIdentifier: "flight")
+        mapView.register(LandingPointAnnotationView.self, forAnnotationViewWithReuseIdentifier: LandingPointAnnotationView.reuseIdentifier)
+        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
+        tap.delegate = context.coordinator
+        mapView.addGestureRecognizer(tap)
         mapView.addAnnotations(annotations)
         mapView.showsCompass = true
         mapView.showsScale = true
@@ -122,13 +212,28 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
             }
         }
 
-        if selectedAnnotation == nil, let previousSelected = uiView.selectedAnnotations.first {
+        // Only flights are deselected from here; a landing point's callout
+        // stays open until the user dismisses it.
+        if selectedAnnotation == nil, let previousSelected = uiView.selectedAnnotations.first(where: { $0 is FlightAnnotation }) {
             uiView.deselectAnnotation(previousSelected, animated: false)
         }
+
+        context.coordinator.parent = self
+        context.coordinator.updateCables(on: uiView, cables: cables, landingPoints: landingPoints, selectedID: selectedCableID)
 
         uiView.setRegion(region, animated: false)
     }
 
 }
 
-
+private extension UIView {
+    /// This view or one of its ancestors is an annotation view.
+    var isAnnotationView: Bool {
+        var view: UIView? = self
+        while let current = view {
+            if current is MKAnnotationView { return true }
+            view = current.superview
+        }
+        return false
+    }
+}

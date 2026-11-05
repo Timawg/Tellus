@@ -24,6 +24,7 @@ struct TellusApp: App {
         let disasterAlertService: DisasterAlertServiceProtocol
         let internetOutageService: InternetOutageServiceProtocol
         let outbreakService: OutbreakServiceProtocol
+        let cableService: CableServiceProtocol
 
         init() {
             self.advisoryService = AdvisoryService(networkService: networkService)
@@ -37,6 +38,7 @@ struct TellusApp: App {
             self.disasterAlertService = DisasterAlertService(networkService: networkService)
             self.internetOutageService = InternetOutageService(networkService: networkService)
             self.outbreakService = OutbreakService(networkService: networkService)
+            self.cableService = CableService(networkService: networkService)
         }
     }
 
@@ -54,7 +56,8 @@ struct TellusApp: App {
             recentEventsService: serviceContainer.recentEventsService,
             disasterAlertService: serviceContainer.disasterAlertService,
             internetOutageService: serviceContainer.internetOutageService,
-            outbreakService: serviceContainer.outbreakService
+            outbreakService: serviceContainer.outbreakService,
+            cableService: serviceContainer.cableService
         )
         WindowGroup {
             MainMapView(viewModel: mainMapViewModel)
