@@ -16,6 +16,7 @@
 		F54422BF2C53C2E000CF1A1C /* FlightAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F54422BE2C53C2E000CF1A1C /* FlightAnnotation.swift */; };
 		A7E1F0C82EB9000100C0FFEE /* CableOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0C72EB9000100C0FFEE /* CableOverlay.swift */; };
 		A7E1F0DE2EB9000100C0FFEE /* CountryOutlineOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0DD2EB9000100C0FFEE /* CountryOutlineOverlay.swift */; };
+		A7E1F0E42EB9000100C0FFEE /* NightOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0E32EB9000100C0FFEE /* NightOverlay.swift */; };
 		A7E1F0D02EB9000100C0FFEE /* HazardAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0CF2EB9000100C0FFEE /* HazardAnnotation.swift */; };
 		F54422C22C59774800CF1A1C /* FlightAnnotationAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F54422C12C59774800CF1A1C /* FlightAnnotationAnimator.swift */; };
 		F54422C42C599F7300CF1A1C /* CGAffineTransform.swift in Sources */ = {isa = PBXBuildFile; fileRef = F54422C32C599F7300CF1A1C /* CGAffineTransform.swift */; };
@@ -49,6 +50,7 @@
 		A7E1F0BA2EB9000100C0FFEE /* DisasterAlertService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0B92EB9000100C0FFEE /* DisasterAlertService.swift */; };
 		A7E1F0B82EB9000100C0FFEE /* RecentEventsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0B72EB9000100C0FFEE /* RecentEventsService.swift */; };
 		A7E1F0B22EB9000100C0FFEE /* ExchangeRateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0B12EB9000100C0FFEE /* ExchangeRateService.swift */; };
+		A7E1F0E62EB9000100C0FFEE /* CountryProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */; };
 		A7E1F0B02EB9000100C0FFEE /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0AF2EB9000100C0FFEE /* WeatherService.swift */; };
 		F5FCC85C2C50534E00569DC5 /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FCC8562C50534E00569DC5 /* NetworkService.swift */; };
 		F5FCC85D2C50534E00569DC5 /* Endpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FCC8572C50534E00569DC5 /* Endpoint.swift */; };
@@ -98,6 +100,7 @@
 		F54422BE2C53C2E000CF1A1C /* FlightAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightAnnotation.swift; sourceTree = "<group>"; };
 		A7E1F0C72EB9000100C0FFEE /* CableOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CableOverlay.swift; sourceTree = "<group>"; };
 		A7E1F0DD2EB9000100C0FFEE /* CountryOutlineOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryOutlineOverlay.swift; sourceTree = "<group>"; };
+		A7E1F0E32EB9000100C0FFEE /* NightOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightOverlay.swift; sourceTree = "<group>"; };
 		A7E1F0CF2EB9000100C0FFEE /* HazardAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HazardAnnotation.swift; sourceTree = "<group>"; };
 		F54422C12C59774800CF1A1C /* FlightAnnotationAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightAnnotationAnimator.swift; sourceTree = "<group>"; };
 		F54422C32C599F7300CF1A1C /* CGAffineTransform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGAffineTransform.swift; sourceTree = "<group>"; };
@@ -134,6 +137,7 @@
 		A7E1F0B92EB9000100C0FFEE /* DisasterAlertService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisasterAlertService.swift; sourceTree = "<group>"; };
 		A7E1F0B72EB9000100C0FFEE /* RecentEventsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentEventsService.swift; sourceTree = "<group>"; };
 		A7E1F0B12EB9000100C0FFEE /* ExchangeRateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateService.swift; sourceTree = "<group>"; };
+		A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryProfileService.swift; sourceTree = "<group>"; };
 		A7E1F0AF2EB9000100C0FFEE /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
 		F5FCC8562C50534E00569DC5 /* NetworkService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = "<group>"; };
 		F5FCC8572C50534E00569DC5 /* Endpoint.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Endpoint.swift; sourceTree = "<group>"; };
@@ -187,6 +191,7 @@
 				F54422BE2C53C2E000CF1A1C /* FlightAnnotation.swift */,
 				A7E1F0C72EB9000100C0FFEE /* CableOverlay.swift */,
 				A7E1F0DD2EB9000100C0FFEE /* CountryOutlineOverlay.swift */,
+				A7E1F0E32EB9000100C0FFEE /* NightOverlay.swift */,
 				A7E1F0CF2EB9000100C0FFEE /* HazardAnnotation.swift */,
 			);
 			path = Annotations;
@@ -355,6 +360,7 @@
 				A7E1F0B92EB9000100C0FFEE /* DisasterAlertService.swift */,
 				A7E1F0B72EB9000100C0FFEE /* RecentEventsService.swift */,
 				A7E1F0B12EB9000100C0FFEE /* ExchangeRateService.swift */,
+				A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */,
 				A7E1F0AF2EB9000100C0FFEE /* WeatherService.swift */,
 				A7E1F0A32EB9000100C0FFEE /* FlightDetailsService.swift */,
 				F5FCC85E2C505F9D00569DC5 /* AdmissoryService.swift */,
@@ -516,6 +522,7 @@
 				A7E1F0BA2EB9000100C0FFEE /* DisasterAlertService.swift in Sources */,
 				A7E1F0B82EB9000100C0FFEE /* RecentEventsService.swift in Sources */,
 				A7E1F0B22EB9000100C0FFEE /* ExchangeRateService.swift in Sources */,
+				A7E1F0E62EB9000100C0FFEE /* CountryProfileService.swift in Sources */,
 				A7E1F0B02EB9000100C0FFEE /* WeatherService.swift in Sources */,
 				F54422B82C526D2800CF1A1C /* FlightMarkerAnnotationView.swift in Sources */,
 				A7E1F0CA2EB9000100C0FFEE /* CableDetailsView.swift in Sources */,
@@ -548,6 +555,7 @@
 				F54422BF2C53C2E000CF1A1C /* FlightAnnotation.swift in Sources */,
 				A7E1F0C82EB9000100C0FFEE /* CableOverlay.swift in Sources */,
 				A7E1F0DE2EB9000100C0FFEE /* CountryOutlineOverlay.swift in Sources */,
+				A7E1F0E42EB9000100C0FFEE /* NightOverlay.swift in Sources */,
 				A7E1F0D02EB9000100C0FFEE /* HazardAnnotation.swift in Sources */,
 				F5FCC8622C50610F00569DC5 /* CountriesService.swift in Sources */,
 				F5EC34262AB96F1F004A2F57 /* AdmissoryStatus.swift in Sources */,

@@ -21,6 +21,7 @@ struct TellusApp: App {
         let weatherService: WeatherServiceProtocol
         let exchangeRateService: ExchangeRateServiceProtocol
         let recentEventsService: RecentEventsServiceProtocol
+        let countryProfileService: CountryProfileServiceProtocol
         let disasterAlertService: DisasterAlertServiceProtocol
         let internetOutageService: InternetOutageServiceProtocol
         let outbreakService: OutbreakServiceProtocol
@@ -36,6 +37,7 @@ struct TellusApp: App {
             self.weatherService = WeatherService(networkService: networkService)
             self.exchangeRateService = ExchangeRateService(networkService: networkService)
             self.recentEventsService = RecentEventsService(networkService: networkService)
+            self.countryProfileService = CountryProfileService(networkService: networkService)
             self.disasterAlertService = DisasterAlertService(networkService: networkService)
             self.internetOutageService = InternetOutageService(networkService: networkService)
             self.outbreakService = OutbreakService(networkService: networkService)
@@ -56,6 +58,7 @@ struct TellusApp: App {
             weatherService: serviceContainer.weatherService,
             exchangeRateService: serviceContainer.exchangeRateService,
             recentEventsService: serviceContainer.recentEventsService,
+            countryProfileService: serviceContainer.countryProfileService,
             disasterAlertService: serviceContainer.disasterAlertService,
             internetOutageService: serviceContainer.internetOutageService,
             outbreakService: serviceContainer.outbreakService,

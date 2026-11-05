@@ -21,6 +21,7 @@ final class MainMapViewModel {
     private let weatherService: WeatherServiceProtocol
     private let exchangeRateService: ExchangeRateServiceProtocol
     private let recentEventsService: RecentEventsServiceProtocol
+    private let countryProfileService: CountryProfileServiceProtocol
     private let disasterAlertService: DisasterAlertServiceProtocol
     private let internetOutageService: InternetOutageServiceProtocol
     private let outbreakService: OutbreakServiceProtocol
@@ -42,6 +43,7 @@ final class MainMapViewModel {
         weatherService: WeatherServiceProtocol,
         exchangeRateService: ExchangeRateServiceProtocol,
         recentEventsService: RecentEventsServiceProtocol,
+        countryProfileService: CountryProfileServiceProtocol,
         disasterAlertService: DisasterAlertServiceProtocol,
         internetOutageService: InternetOutageServiceProtocol,
         outbreakService: OutbreakServiceProtocol,
@@ -56,6 +58,7 @@ final class MainMapViewModel {
         self.weatherService = weatherService
         self.exchangeRateService = exchangeRateService
         self.recentEventsService = recentEventsService
+        self.countryProfileService = countryProfileService
         self.disasterAlertService = disasterAlertService
         self.internetOutageService = internetOutageService
         self.outbreakService = outbreakService
@@ -91,6 +94,10 @@ final class MainMapViewModel {
     var recentEvents: RecentEvents?
     /// Current GDACS orange and red alerts for the selected country.
     var disasterAlerts: [DisasterAlert] = []
+
+    func loadCountryProfile(countryCode: String) async throws -> [CountryIndicatorObservation] {
+        try await countryProfileService.getProfile(countryCode: countryCode)
+    }
 
     @MainActor
     func updateRecentEvents() async {

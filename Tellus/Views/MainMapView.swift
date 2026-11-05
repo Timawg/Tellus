@@ -11,6 +11,8 @@ import MapKit
 struct MainMapView: View {
     
     @Bindable var viewModel: MainMapViewModel
+    @AppStorage("showsEarthAtNight") private var showsEarthAtNight =
+        UserDefaults.standard.bool(forKey: "showsDayNight") || UserDefaults.standard.bool(forKey: "showsNightLights")
     /// The tab the country guide is open on; nil while it's closed. The
     /// banner opens the tab it's about.
     @State private var guideTopic: DestinationGuide.Topic?
@@ -22,6 +24,7 @@ struct MainMapView: View {
             region: $viewModel.region,
             selectedAnnotation: $viewModel.selectedFlight,
             annotations: viewModel.flightAnnotations,
+            showsEarthAtNight: showsEarthAtNight,
             cables: viewModel.cables,
             landingPoints: viewModel.landingPoints,
             selectedCableID: viewModel.selectedCableID,
@@ -162,6 +165,7 @@ struct MainMapView: View {
                         outages: viewModel.internetOutages,
                         outbreaks: viewModel.outbreakReports,
                         recentEvents: viewModel.recentEvents,
+                        loadCountryProfile: viewModel.loadCountryProfile(countryCode:),
                         initialTopic: topic,
                         advisoryStatus: viewModel.advisoryStatus,
                         admissoryStatus: viewModel.admissoryStatus,
@@ -329,7 +333,18 @@ struct MainMapView: View {
                         .opacity(isPickingCountry ? 0 : 1)
                     Spacer()
                     if !isPickingCountry {
-                        flightsNotice
+                        VStack(spacing: 6) {
+                            flightsNotice
+                            if showsEarthAtNight {
+                                Text("NASA GIBS · Black Marble 2016")
+                                    .font(.caption2)
+                                    .foregroundStyle(.white)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(.black.opacity(0.65), in: Capsule())
+                            }
+                        }
                     }
                     Spacer()
                     VStack(spacing: 12) {
@@ -399,6 +414,9 @@ struct MainMapView: View {
             }
             Toggle(isOn: $viewModel.showsCables) {
                 Label("Undersea cables", systemImage: "cable.connector")
+            }
+            Toggle(isOn: $showsEarthAtNight) {
+                Label("Earth at night", systemImage: "circle.lefthalf.filled")
             }
         } label: {
             Image(systemName: "square.3.layers.3d")

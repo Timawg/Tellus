@@ -13,6 +13,7 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
     @Binding var region: MKCoordinateRegion
     @Binding var selectedAnnotation: T?
     var annotations: [MKAnnotation]
+    var showsEarthAtNight = false
     /// Undersea cables to draw; empty when the layer is off.
     var cables: [SubmarineCable] = []
     var landingPoints: [CableLandingPoint] = []
@@ -42,14 +43,21 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         var trackOverlays: [CycloneTrackOverlay] = []
         var drawnTracks: [CycloneTrack] = []
         var outlineOverlay: CountryOutlineOverlay?
+        private var nightOverlay: NightOverlay?
+        private var nightLightsOverlay: MKTileOverlay?
+        private var nightTimer: Timer?
 
         init(parent: MapRepresentable) {
             self.parent = parent
         }
 
-        // MARK: Cables
-
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+            if let tiles = overlay as? MKTileOverlay {
+                return MKTileOverlayRenderer(tileOverlay: tiles)
+            }
+            if let night = overlay as? NightOverlay {
+                return NightOverlayRenderer(night: night)
+            }
             if let track = overlay as? CycloneTrackOverlay {
                 return track.makeRenderer()
             }
@@ -63,6 +71,62 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
             style(renderer, for: cable)
             return renderer
         }
+
+        // MARK: Night layers
+
+        @MainActor
+        func updateEarthAtNight(on mapView: MKMapView, enabled: Bool) {
+            guard enabled else {
+                stopEarthAtNight(on: mapView)
+                return
+            }
+            guard nightTimer == nil else { return }
+
+            refreshNight(on: mapView)
+
+            // The 2016 Black Marble lights-only composite uses transparent
+            // Web Mercator tiles, with the row before the column in the URL.
+            let endpoint = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best"
+            let tiles = MKTileOverlay(urlTemplate: endpoint
+                + "/VIIRS_Night_Lights/default/2016-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png")
+            tiles.maximumZ = 8
+            tiles.canReplaceMapContent = false
+            nightLightsOverlay = tiles
+            mapView.insertOverlay(tiles, at: 1, level: .aboveRoads)
+
+            let timer = Timer(timeInterval: 60, repeats: true) { [weak self, weak mapView] _ in
+                MainActor.assumeIsolated {
+                    guard let mapView else { return }
+                    self?.refreshNight(on: mapView)
+                }
+            }
+            nightTimer = timer
+            RunLoop.main.add(timer, forMode: .common)
+        }
+
+        @MainActor
+        func stopEarthAtNight(on mapView: MKMapView) {
+            nightTimer?.invalidate()
+            nightTimer = nil
+            if let nightLightsOverlay {
+                mapView.removeOverlay(nightLightsOverlay)
+                self.nightLightsOverlay = nil
+            }
+            if let nightOverlay {
+                mapView.removeOverlay(nightOverlay)
+                self.nightOverlay = nil
+            }
+        }
+
+        @MainActor
+        private func refreshNight(on mapView: MKMapView) {
+            let next = NightOverlay(date: Date())
+            if let nightOverlay { mapView.removeOverlay(nightOverlay) }
+            nightOverlay = next
+            mapView.insertOverlay(next, at: 0, level: .aboveRoads)
+        }
+
+        // MARK: Cables
 
         func style(_ renderer: MKMultiPolylineRenderer, for cable: CableOverlay) {
             let isSelected = cable.cableID == highlightedCableID
@@ -147,8 +211,12 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
             }
             outlineOverlay = border.map(CountryOutlineOverlay.init(border:))
             if let outlineOverlay {
-                // Index 0 keeps it under cables and cyclone tracks.
-                mapView.insertOverlay(outlineOverlay, at: 0, level: .aboveRoads)
+                // Keep it above the night layers and under cables and tracks.
+                if let nightLightsOverlay {
+                    mapView.insertOverlay(outlineOverlay, above: nightLightsOverlay)
+                } else {
+                    mapView.insertOverlay(outlineOverlay, at: 0, level: .aboveRoads)
+                }
             }
         }
 
@@ -312,6 +380,7 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         }
 
         context.coordinator.parent = self
+        context.coordinator.updateEarthAtNight(on: uiView, enabled: showsEarthAtNight)
         context.coordinator.updateCables(on: uiView, cables: cables, landingPoints: landingPoints, selectedID: selectedCableID)
         context.coordinator.updateHazards(on: uiView, hazards: hazards, tracks: cycloneTracks)
         context.coordinator.updateOutline(on: uiView, border: outline)
@@ -319,6 +388,9 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         uiView.setRegion(region, animated: false)
     }
 
+    static func dismantleUIView(_ uiView: MKMapView, coordinator: Coordinator) {
+        coordinator.stopEarthAtNight(on: uiView)
+    }
 }
 
 private extension UIView {
