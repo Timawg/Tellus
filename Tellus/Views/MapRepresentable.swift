@@ -20,6 +20,11 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
     var selectedCableID: String?
     /// Called with the cable nearest a tap, or nil for a tap away from cables.
     var selectCable: (String?) -> Void = { _ in }
+    /// Called with the coordinate of a tap that hit no aircraft, pin or
+    /// cable, to select the country there.
+    var tapCountry: (CLLocationCoordinate2D) -> Void = { _ in }
+    /// The selected country, outlined.
+    var outline: CountryBorder?
     /// Natural hazards and cyclone tracks to draw; empty when the layer is off.
     var hazards: [NaturalHazard] = []
     var cycloneTracks: [CycloneTrack] = []
@@ -36,6 +41,7 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         var hazardAnnotations: [String: HazardAnnotation] = [:]
         var trackOverlays: [CycloneTrackOverlay] = []
         var drawnTracks: [CycloneTrack] = []
+        var outlineOverlay: CountryOutlineOverlay?
 
         init(parent: MapRepresentable) {
             self.parent = parent
@@ -46,6 +52,9 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
             if let track = overlay as? CycloneTrackOverlay {
                 return track.makeRenderer()
+            }
+            if let outline = overlay as? CountryOutlineOverlay {
+                return outline.makeRenderer()
             }
             guard let cable = overlay as? CableOverlay else {
                 return MKOverlayRenderer(overlay: overlay)
@@ -63,26 +72,38 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         }
 
         /// MapKit doesn't report taps on overlays, so find the nearest cable
-        /// within about 22 points of the tap.
+        /// within about 22 points of the tap; away from cables, the tap
+        /// selects the country under it.
         @objc func handleTap(_ recognizer: UITapGestureRecognizer) {
-            guard recognizer.state == .ended, let mapView = recognizer.view as? MKMapView else { return }
+            guard recognizer.state == .ended, let mapView = recognizer.view as? MKMapView,
+                  mapView.bounds.width > 0 else { return }
             let location = recognizer.location(in: mapView)
             // Taps on aircraft, hazards and landing points are handled by MapKit.
             if mapView.hitTest(location, with: nil)?.isAnnotationView == true { return }
-            guard !cableOverlays.isEmpty, mapView.bounds.width > 0 else { return }
 
-            let point = MKMapPoint(mapView.convert(location, toCoordinateFrom: mapView))
+            let coordinate = mapView.convert(location, toCoordinateFrom: mapView)
+            let point = MKMapPoint(coordinate)
             let tolerance = 22 * mapView.visibleMapRect.width / Double(mapView.bounds.width)
             let nearest = cableOverlays.values
                 .filter { $0.boundingMapRect.insetBy(dx: -tolerance, dy: -tolerance).contains(point) }
                 .map { (id: $0.cableID, distance: $0.distance(to: point)) }
                 .filter { $0.distance <= tolerance }
                 .min { $0.distance < $1.distance }
-            parent.selectCable(nearest?.id)
+            if let nearest {
+                parent.selectCable(nearest.id)
+            } else {
+                parent.tapCountry(coordinate)
+            }
         }
 
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
             true
+        }
+
+        /// Waits for MapKit's double tap to fail, so double-tapping to zoom
+        /// doesn't also select the country under the finger.
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRequireFailureOf other: UIGestureRecognizer) -> Bool {
+            (other as? UITapGestureRecognizer)?.numberOfTapsRequired == 2
         }
 
         func updateCables(on mapView: MKMapView, cables: [SubmarineCable], landingPoints: [CableLandingPoint], selectedID: String?) {
@@ -117,6 +138,20 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
             }
         }
         
+        // MARK: Country outline
+
+        func updateOutline(on mapView: MKMapView, border: CountryBorder?) {
+            guard outlineOverlay?.cca3 != border?.cca3 else { return }
+            if let outlineOverlay {
+                mapView.removeOverlay(outlineOverlay)
+            }
+            outlineOverlay = border.map(CountryOutlineOverlay.init(border:))
+            if let outlineOverlay {
+                // Index 0 keeps it under cables and cyclone tracks.
+                mapView.insertOverlay(outlineOverlay, at: 0, level: .aboveRoads)
+            }
+        }
+
         // MARK: Hazards
 
         func updateHazards(on mapView: MKMapView, hazards: [NaturalHazard], tracks: [CycloneTrack]) {
@@ -279,6 +314,7 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         context.coordinator.parent = self
         context.coordinator.updateCables(on: uiView, cables: cables, landingPoints: landingPoints, selectedID: selectedCableID)
         context.coordinator.updateHazards(on: uiView, hazards: hazards, tracks: cycloneTracks)
+        context.coordinator.updateOutline(on: uiView, border: outline)
 
         uiView.setRegion(region, animated: false)
     }

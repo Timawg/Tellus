@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 import MapKit
 import Combine
 
@@ -426,10 +427,59 @@ final class MainMapViewModel {
         cycloneTracks = tracks
     }
     
+    /// The selected country's outline; nil when it isn't in the bundled
+    /// borders (a few tiny territories).
+    var selectedBorder: CountryBorder?
+    @ObservationIgnored private var borders: [String: CountryBorder]?
+    @ObservationIgnored private var bordersTask: Task<[String: CountryBorder], Never>?
+
+    /// Selects the country under a tap on the map. Taps on the sea, or on
+    /// the selected country, do nothing.
+    @MainActor
+    func selectCountry(at coordinate: CLLocationCoordinate2D) async {
+        let borders = await loadBorders()
+        guard let code = CountryBorders.country(at: coordinate, in: borders),
+              code != current?.cca3,
+              let country = countries.first(where: { $0.cca3 == code }) else { return }
+        UISelectionFeedbackGenerator().selectionChanged()
+        current = country
+    }
+
+    /// Decodes the bundled borders once, off the main thread.
+    private func loadBorders() async -> [String: CountryBorder] {
+        if let borders { return borders }
+        let task = bordersTask ?? Task.detached(priority: .userInitiated) {
+            (try? CountryBorders.load()) ?? [:]
+        }
+        bordersTask = task
+        let loaded = await task.value
+        borders = loaded
+        return loaded
+    }
+
+    /// Outlines the selected country and zooms to fit it between the
+    /// country card and the bottom buttons. Countries without an outline fall
+    /// back to a zoom based on their area.
+    @MainActor
     func updateRegion() {
         guard let current else {
             return
         }
+        Task { @MainActor in
+            let border = await loadBorders()[current.cca3 ?? ""]
+            // Another country may have been chosen while loading.
+            guard self.current?.cca3 == current.cca3 else { return }
+            selectedBorder = border
+            if let border {
+                let aspectRatio = visibleRect.height > 0 ? visibleRect.width / visibleRect.height : 402.0 / 874.0
+                region = MKCoordinateRegion(fitting: border.focusRect, aspectRatio: aspectRatio)
+            } else {
+                updateRegionFromArea(of: current)
+            }
+        }
+    }
+
+    private func updateRegionFromArea(of current: Country) {
         if let area = current.area {
             let centerLatitude: CLLocationDegrees = current.latlng[0]
             let centerLongitude: CLLocationDegrees = current.latlng[1]

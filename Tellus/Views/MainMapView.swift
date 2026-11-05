@@ -11,7 +11,9 @@ import MapKit
 struct MainMapView: View {
     
     @Bindable var viewModel: MainMapViewModel
-    @State private var showingDestinationGuide = false
+    /// The tab the country guide is open on; nil while it's closed. The
+    /// banner opens the tab it's about.
+    @State private var guideTopic: DestinationGuide.Topic?
     @State private var showingNationalityPicker = false
     @State private var isPickingCountry = false
 
@@ -24,6 +26,10 @@ struct MainMapView: View {
             landingPoints: viewModel.landingPoints,
             selectedCableID: viewModel.selectedCableID,
             selectCable: { viewModel.selectedCableID = $0 },
+            tapCountry: { coordinate in
+                Task { await viewModel.selectCountry(at: coordinate) }
+            },
+            outline: viewModel.selectedBorder,
             hazards: viewModel.hazards,
             cycloneTracks: viewModel.cycloneTracks,
             selectHazard: { viewModel.selectHazard(id: $0) }
@@ -125,43 +131,26 @@ struct MainMapView: View {
     var statusViews: some View {
         if let name = viewModel.current?.name?.common, let flag = viewModel.current?.flagURL {
             VStack(spacing: 10) {
-                HStack(alignment: .center, spacing: 8) {
-                    AsyncFlagView(flag: flag)
-                    Text(name)
-                        .font(.headline)
+                VStack(spacing: 2) {
+                    HStack(alignment: .center, spacing: 8) {
+                        AsyncFlagView(flag: flag)
+                        Text(name)
+                            .font(.headline)
+                    }
+                    // City-states such as Singapore would repeat their name.
+                    if let capital = viewModel.current?.capital?.first, capital != name {
+                        Text(capital)
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.7))
+                            .multilineTextAlignment(.center)
+                            .accessibilityLabel("Capital: \(capital)")
+                    }
                 }
                 liveInfoStrip
                 alertBanner
-                if let status = viewModel.advisoryStatus {
-                    HStack {
-                        CircularStatusView(colors: status.colors)
-                            .frame(width: 20, height: 20, alignment: .center)
-                        Text(status.data.eng.advisoryText)
-                            .animation(.some(.easeIn), value: status)
-                            .multilineTextAlignment(.center)
-                    }
-                }
-                if let status = viewModel.admissoryStatus {
-                    HStack {
-                        CircularStatusView(colors: status.colors)
-                            .frame(width: 20, height: 20, alignment: .center)
-                        Text(status.category.capitalized)
-                            .animation(.some(.easeIn), value: status)
-                            .multilineTextAlignment(.center)
-                    }
-                }
-                Button {
-                    showingDestinationGuide = true
-                } label: {
-                    Label("Destination guide", systemImage: "book.closed")
-                        .font(.subheadline.weight(.semibold))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 7)
-                        .background(Capsule().fill(.white.opacity(0.15)))
-                }
-                .buttonStyle(.plain)
+                countryGuideButton
             }
-            .sheet(isPresented: $showingDestinationGuide) {
+            .sheet(item: $guideTopic) { topic in
                 if let country = viewModel.current {
                     DestinationGuideView(
                         country: country,
@@ -173,6 +162,10 @@ struct MainMapView: View {
                         outages: viewModel.internetOutages,
                         outbreaks: viewModel.outbreakReports,
                         recentEvents: viewModel.recentEvents,
+                        initialTopic: topic,
+                        advisoryStatus: viewModel.advisoryStatus,
+                        admissoryStatus: viewModel.admissoryStatus,
+                        passport: viewModel.nationality,
                         neighbours: viewModel.neighbours(of: country)
                     ) { neighbour in
                         viewModel.current = neighbour
@@ -189,20 +182,79 @@ struct MainMapView: View {
         }
     }
     
+    /// Opens the country guide. Small dots above it show the travel advisory,
+    /// visa, disease outbreak and natural disaster statuses, which the
+    /// guide explains.
+    private var countryGuideButton: some View {
+        Button {
+            guideTopic = .overview
+        } label: {
+            Label("Country guide", systemImage: "book.closed")
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(Capsule().fill(.white.opacity(0.15)))
+                .overlay(alignment: .topTrailing) {
+                    statusDots
+                        .offset(x: 6, y: -6)
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityValue(statusSummary)
+        .animation(.easeInOut, value: travelStatuses.map(\.value))
+    }
+
+    /// Advisory, visa, health and disaster statuses for the selected country,
+    /// in the order the dots show them.
+    private var travelStatuses: [TravelStatus] {
+        [
+            TravelStatus.advisory(viewModel.advisoryStatus),
+            TravelStatus.visa(viewModel.admissoryStatus, passport: viewModel.nationality),
+            TravelStatus.health(viewModel.outbreakReports),
+            TravelStatus.disasters(viewModel.disasterAlerts),
+        ].compactMap { $0 }
+    }
+
+    /// The statuses' colours as small dots in a dark pill.
+    @ViewBuilder
+    private var statusDots: some View {
+        let statuses = travelStatuses
+        if !statuses.isEmpty {
+            HStack(spacing: 3) {
+                ForEach(statuses) { status in
+                    CircularStatusView(colors: status.colors)
+                        .frame(width: 10, height: 10)
+                }
+            }
+            .padding(3)
+            .background(Capsule().fill(.black.opacity(0.55)))
+            .transition(.scale.combined(with: .opacity))
+            .accessibilityHidden(true)
+        }
+    }
+
+    /// "Travel advisory: Exercise normal security precautions. Visa: …" for
+    /// VoiceOver.
+    private var statusSummary: String {
+        travelStatuses
+            .map { "\($0.title): \($0.value)" }
+            .joined(separator: ". ")
+    }
+
     /// One banner for the most pressing thing happening in the country: an
     /// active disaster, an ongoing internet disruption, or a WHO outbreak
     /// report from the last 30 days. Tapping it opens the guide, which lists
     /// them all.
-    private var cardAlert: (title: String, symbol: String, color: Color, accessibility: String)? {
+    private var cardAlert: (title: String, symbol: String, color: Color, accessibility: String, topic: DestinationGuide.Topic)? {
         if let alert = viewModel.disasterAlerts.first(where: \.isUrgent) {
-            return (alert.name, alert.kind.symbolName, alert.level == .red ? .red : .orange, "\(alert.level.rawValue) alert: \(alert.name)")
+            return (alert.name, alert.kind.symbolName, alert.level == .red ? .red : .orange, "\(alert.level.rawValue) alert: \(alert.name)", .climate)
         }
         if viewModel.internetOutages.contains(where: \.isOngoing) {
-            return ("Internet disruption detected", "wifi.exclamationmark", .purple, "Internet disruption detected")
+            return ("Internet disruption detected", "wifi.exclamationmark", .purple, "Internet disruption detected", .overview)
         }
         if let report = viewModel.outbreakReports.first,
            report.published > Date().addingTimeInterval(-30 * 24 * 60 * 60) {
-            return ("Outbreak: \(report.disease)", "cross.case.fill", .orange, "Recent outbreak report: \(report.disease)")
+            return ("Outbreak: \(report.disease)", "cross.case.fill", .orange, "Recent outbreak report: \(report.disease)", .health)
         }
         return nil
     }
@@ -211,7 +263,7 @@ struct MainMapView: View {
     var alertBanner: some View {
         if let alert = cardAlert {
             Button {
-                showingDestinationGuide = true
+                guideTopic = alert.topic
             } label: {
                 Label(alert.title, systemImage: alert.symbol)
                     .font(.subheadline.weight(.semibold))
@@ -222,7 +274,7 @@ struct MainMapView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(alert.accessibility)
-            .accessibilityHint("Opens the destination guide")
+            .accessibilityHint("Opens the country guide")
             .transition(.opacity)
         }
     }
@@ -372,8 +424,7 @@ struct MainMapView: View {
                 .frame(width: 50, height: 50)
                 .overlay(alignment: .bottomTrailing) {
                     if let flag = viewModel.nationality?.flagURL {
-                        AsyncFlagView(flag: flag)
-                            .frame(width: 18, height: 12)
+                        AsyncFlagView(flag: flag, size: CGSize(width: 18, height: 12))
                             .clipShape(RoundedRectangle(cornerRadius: 2))
                             .offset(x: -6, y: -8)
                     }
@@ -446,7 +497,6 @@ struct MainMapView: View {
         ) { country in
             if let flag = country.flagURL, let name = country.name?.common {
                 AsyncFlagView(flag: flag)
-                    .frame(minWidth: 40, minHeight: 25)
                 Spacer()
                 Text(name)
                     .tint(.white)
@@ -751,8 +801,7 @@ struct NationalityPickerView: View {
                             dismiss()
                         } label: {
                             HStack(spacing: 12) {
-                                AsyncFlagView(flag: country.flagURL)
-                                    .frame(width: 36, height: 24)
+                                AsyncFlagView(flag: country.flagURL, size: CGSize(width: 36, height: 24))
                                 Text(country.name?.common ?? "")
                                 Spacer()
                                 if country.cca2 == selection?.cca2 {

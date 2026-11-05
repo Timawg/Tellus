@@ -22,11 +22,29 @@ struct DestinationGuideView: View {
     let outages: [InternetOutage]
     let outbreaks: [OutbreakReport]
     let recentEvents: RecentEvents?
+    /// The tab shown when the guide opens.
+    var initialTopic: DestinationGuide.Topic = .overview
+    let advisoryStatus: AdvisoryStatus?
+    let admissoryStatus: AdmissoryStatus?
+    /// The passport the visa status is for.
+    let passport: Country?
     let neighbours: [Country]
     let selectCountry: (Country) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var topic: DestinationGuide.Topic = .overview
+    /// Nil until a tab is picked, so the guide opens on `initialTopic`.
+    @State private var selectedTopic: DestinationGuide.Topic?
+
+    private var topic: DestinationGuide.Topic { selectedTopic ?? initialTopic }
+
+    private var statuses: [TravelStatus] {
+        [
+            TravelStatus.advisory(advisoryStatus),
+            TravelStatus.visa(admissoryStatus, passport: passport),
+            TravelStatus.health(outbreaks),
+            TravelStatus.disasters(alerts),
+        ].compactMap { $0 }
+    }
 
     var body: some View {
         NavigationStack {
@@ -34,12 +52,22 @@ struct DestinationGuideView: View {
                 switch topic {
                 case .overview:
                     overview
+                case .entry:
+                    statusSection(for: [.advisory, .visa])
+                    advice(for: topic)
                 case .health:
+                    statusSection(for: [.health])
                     if !outbreaks.isEmpty {
                         outbreaksSection
                     }
                     advice(for: topic)
-                default:
+                case .climate:
+                    statusSection(for: [.disasters])
+                    if !alerts.isEmpty {
+                        alertsSection
+                    }
+                    advice(for: topic)
+                case .laws:
                     advice(for: topic)
                 }
                 if guide != nil {
@@ -47,7 +75,7 @@ struct DestinationGuideView: View {
                 }
             }
             .safeAreaInset(edge: .top, spacing: 0) {
-                Picker("Topic", selection: $topic) {
+                Picker("Topic", selection: Binding(get: { topic }, set: { selectedTopic = $0 })) {
                     ForEach(DestinationGuide.Topic.allCases) { topic in
                         Text(topic.title).tag(topic)
                     }
@@ -76,9 +104,7 @@ struct DestinationGuideView: View {
 
     @ViewBuilder
     private var overview: some View {
-        if !alerts.isEmpty {
-            alertsSection
-        }
+        statusOverviewSection
         if !outages.isEmpty {
             outagesSection
         }
@@ -131,8 +157,7 @@ struct DestinationGuideView: View {
                                 dismiss()
                             } label: {
                                 HStack(spacing: 8) {
-                                    AsyncFlagView(flag: neighbour.flagURL)
-                                        .frame(width: 28, height: 18)
+                                    AsyncFlagView(flag: neighbour.flagURL, size: CGSize(width: 28, height: 18))
                                     Text(neighbour.name?.common ?? "")
                                         .lineLimit(1)
                                 }
@@ -386,6 +411,53 @@ struct DestinationGuideView: View {
         }
     }
 
+    // MARK: Statuses
+
+    /// Every status, each opening the tab that explains it. These are the
+    /// dots on the map card's guide button.
+    @ViewBuilder
+    private var statusOverviewSection: some View {
+        if !statuses.isEmpty {
+            Section("Status") {
+                ForEach(statuses) { status in
+                    Button {
+                        withAnimation { selectedTopic = status.kind.topic }
+                    } label: {
+                        HStack {
+                            TravelStatusRow(status: status)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .tint(.primary)
+                    .accessibilityHint("Shows \(status.kind.topic.title)")
+                }
+            }
+        }
+    }
+
+    /// The statuses a tab is about, at the top of that tab.
+    @ViewBuilder
+    private func statusSection(for kinds: [TravelStatus.Kind]) -> some View {
+        let shown = statuses.filter { kinds.contains($0.kind) }
+        if !shown.isEmpty || kinds.contains(.visa) {
+            Section {
+                ForEach(shown) { status in
+                    TravelStatusRow(status: status)
+                }
+            } header: {
+                Text("Status")
+            } footer: {
+                if kinds.contains(.visa), admissoryStatus == nil {
+                    Text("Choose your passport on the map to see visa rules.")
+                }
+            }
+        }
+    }
+
     // MARK: Advice topics
 
     @ViewBuilder
@@ -410,13 +482,6 @@ struct DestinationGuideView: View {
                             Text(section.title ?? "")
                                 .font(.body.weight(.semibold))
                         }
-                    }
-                }
-                if topic == .entry {
-                    Section {
-                        Label("Visa rules for your passport are shown on the map card.", systemImage: "info.circle")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
                     }
                 }
             }
