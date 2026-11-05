@@ -23,7 +23,10 @@ struct MainMapView: View {
             cables: viewModel.cables,
             landingPoints: viewModel.landingPoints,
             selectedCableID: viewModel.selectedCableID,
-            selectCable: { viewModel.selectedCableID = $0 }
+            selectCable: { viewModel.selectedCableID = $0 },
+            hazards: viewModel.hazards,
+            cycloneTracks: viewModel.cycloneTracks,
+            selectHazard: { viewModel.selectHazard(id: $0) }
         ) {
             viewModel.stopUpdatingFlightData()
         } regionDidChange: { rect in
@@ -41,6 +44,12 @@ struct MainMapView: View {
             bottomStack
         }.task {
             await viewModel.loadCablesIfNeeded()
+        }.task {
+            // Hazards change slowly; refresh every 15 minutes while open.
+            while !Task.isCancelled {
+                await viewModel.updateHazards()
+                try? await Task.sleep(for: .seconds(15 * 60))
+            }
         }.task {
             await viewModel.retrieveCountries()
             viewModel.updateRegion()
@@ -90,6 +99,9 @@ struct MainMapView: View {
             if let cable = viewModel.selectedCable {
                 CableDetailsView(cable: cable, details: viewModel.selectedCableDetails)
             }
+        }
+        .sheet(item: $viewModel.selectedHazard) { hazard in
+            HazardDetailsView(hazard: hazard)
         }
         .sheet(item: $viewModel.selectedFlight) {
             viewModel.selectedFlight = nil
@@ -330,6 +342,9 @@ struct MainMapView: View {
             Toggle(isOn: $viewModel.showsFlights) {
                 Label("Live flights", systemImage: "airplane")
             }
+            Toggle(isOn: $viewModel.showsHazards) {
+                Label("Natural hazards", systemImage: "exclamationmark.triangle")
+            }
             Toggle(isOn: $viewModel.showsCables) {
                 Label("Undersea cables", systemImage: "cable.connector")
             }
@@ -424,6 +439,9 @@ struct MainMapView: View {
             matches: { country, query in
                 [country.name?.common, country.name?.official]
                     .contains { $0?.localizedStandardContains(query) == true }
+            },
+            isExactMatch: { country, query in
+                country.name?.common?.compare(query, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
             }
         ) { country in
             if let flag = country.flagURL, let name = country.name?.common {

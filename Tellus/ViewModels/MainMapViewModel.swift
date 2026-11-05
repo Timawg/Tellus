@@ -24,6 +24,7 @@ final class MainMapViewModel {
     private let internetOutageService: InternetOutageServiceProtocol
     private let outbreakService: OutbreakServiceProtocol
     private let cableService: CableServiceProtocol
+    private let hazardService: HazardServiceProtocol
     private var timerSubscription: AnyCancellable?
     private var flightData: FlightData?
 
@@ -39,7 +40,8 @@ final class MainMapViewModel {
         disasterAlertService: DisasterAlertServiceProtocol,
         internetOutageService: InternetOutageServiceProtocol,
         outbreakService: OutbreakServiceProtocol,
-        cableService: CableServiceProtocol
+        cableService: CableServiceProtocol,
+        hazardService: HazardServiceProtocol
     ) {
         self.countriesService = countriesService
         self.admissoryService = admissoryService
@@ -53,6 +55,7 @@ final class MainMapViewModel {
         self.internetOutageService = internetOutageService
         self.outbreakService = outbreakService
         self.cableService = cableService
+        self.hazardService = hazardService
     }
 
     /// Weather at the selected country's capital.
@@ -373,6 +376,49 @@ final class MainMapViewModel {
         let details = try? await cableService.getDetails(cableID: id)
         guard selectedCableID == id else { return }
         selectedCableDetails = details
+    }
+
+    /// Earthquakes, cyclones, floods, wildfires and erupting volcanoes.
+    var showsHazards: Bool = UserDefaults.standard.object(forKey: "showsHazards") as? Bool ?? true {
+        didSet {
+            UserDefaults.standard.set(showsHazards, forKey: "showsHazards")
+            if !showsHazards { selectedHazard = nil }
+            Task { await updateHazards() }
+        }
+    }
+
+    /// The hazards to draw: empty while the layer is off.
+    var hazards: [NaturalHazard] = []
+    var cycloneTracks: [CycloneTrack] = []
+    /// The hazard tapped on the map; its details sheet is open while set.
+    /// Kept as is, so a refresh doesn't change the sheet under the user.
+    var selectedHazard: NaturalHazard?
+
+    func selectHazard(id: String) {
+        selectedHazard = hazards.first { $0.id == id }
+    }
+
+    /// Loads hazards, or clears them while the layer is off. The service
+    /// keeps them for 15 minutes, so this is cheap to call again.
+    @MainActor
+    func updateHazards() async {
+        guard showsHazards else {
+            hazards = []
+            cycloneTracks = []
+            return
+        }
+        guard let loaded = try? await hazardService.getHazards(), showsHazards else { return }
+        if loaded != hazards {
+            hazards = loaded
+        }
+        var tracks: [CycloneTrack] = []
+        for cyclone in loaded where cyclone.kind == .cyclone {
+            if let track = try? await hazardService.getTrack(for: cyclone) {
+                tracks.append(track)
+            }
+        }
+        guard showsHazards, tracks != cycloneTracks else { return }
+        cycloneTracks = tracks
     }
     
     func updateRegion() {

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreLocation
 
 /// An orange or red alert from GDACS, the UN and EU's Global Disaster Alert
 /// and Coordination System.
@@ -69,11 +70,30 @@ struct GDACSEventList: Decodable {
 
     struct Feature: Decodable {
         let properties: Properties
+        let geometry: Geometry?
+    }
+
+    /// Events in the list are points: their centre.
+    struct Geometry: Decodable {
+        let point: CLLocationCoordinate2D?
+
+        enum CodingKeys: String, CodingKey { case coordinates }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let pair = try? container.decode([Double].self, forKey: .coordinates)
+            if let pair, pair.count >= 2, (-90...90).contains(pair[1]), (-180...180).contains(pair[0]) {
+                point = CLLocationCoordinate2D(latitude: pair[1], longitude: pair[0])
+            } else {
+                point = nil
+            }
+        }
     }
 
     struct Properties: Decodable {
         struct Country: Decodable {
             let iso2: String?
+            let countryname: String?
         }
         struct Severity: Decodable {
             let severitytext: String?
@@ -84,7 +104,9 @@ struct GDACSEventList: Decodable {
 
         let eventtype: String
         let eventid: Int
+        let episodeid: Int?
         let name: String?
+        let country: String?
         let alertlevel: String
         let iscurrent: FlexibleBool?
         let fromdate: String?

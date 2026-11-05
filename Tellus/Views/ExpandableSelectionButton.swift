@@ -20,6 +20,9 @@ struct ExpandableSelectionButton<Content: View, Selectable: Identifiable>: View 
     let searchPrompt: String
     /// Whether an item matches the search text. Nil hides the search field.
     let matches: ((Selectable, String) -> Bool)?
+    /// Whether an item is exactly what was typed, so Return can pick it
+    /// among several matches ("India" over "British Indian Ocean Territory").
+    let isExactMatch: ((Selectable, String) -> Bool)?
     @ViewBuilder let content: (Selectable) -> Content
 
     @State private var query = ""
@@ -33,6 +36,7 @@ struct ExpandableSelectionButton<Content: View, Selectable: Identifiable>: View 
         isExpanded: Binding<Bool>,
         searchPrompt: String = "Search",
         matches: ((Selectable, String) -> Bool)? = nil,
+        isExactMatch: ((Selectable, String) -> Bool)? = nil,
         @ViewBuilder content: @escaping (Selectable) -> Content
     ) {
         self.selectables = selectables
@@ -40,6 +44,7 @@ struct ExpandableSelectionButton<Content: View, Selectable: Identifiable>: View 
         self._isExpanded = isExpanded
         self.searchPrompt = searchPrompt
         self.matches = matches
+        self.isExactMatch = isExactMatch
         self.content = content
     }
 
@@ -50,6 +55,15 @@ struct ExpandableSelectionButton<Content: View, Selectable: Identifiable>: View 
     private var visibleSelectables: [Selectable] {
         guard let matches, !trimmedQuery.isEmpty else { return selectables }
         return selectables.filter { matches($0, trimmedQuery) }
+    }
+
+    /// What Return picks: an exact match, or the only match.
+    private var submittedSelectable: Selectable? {
+        let visible = visibleSelectables
+        if visible.count == 1 { return visible[0] }
+        guard let isExactMatch else { return nil }
+        let exact = visible.filter { isExactMatch($0, trimmedQuery) }
+        return exact.count == 1 ? exact[0] : nil
     }
 
     var body: some View {
@@ -116,9 +130,8 @@ struct ExpandableSelectionButton<Content: View, Selectable: Identifiable>: View 
                 .autocorrectionDisabled()
                 .submitLabel(.search)
                 .onSubmit {
-                    // Return picks the only match, if there is just one.
-                    if visibleSelectables.count == 1 {
-                        select(visibleSelectables[0])
+                    if let selectable = submittedSelectable {
+                        select(selectable)
                     }
                 }
             if !query.isEmpty {

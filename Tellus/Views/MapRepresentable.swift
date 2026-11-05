@@ -20,6 +20,11 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
     var selectedCableID: String?
     /// Called with the cable nearest a tap, or nil for a tap away from cables.
     var selectCable: (String?) -> Void = { _ in }
+    /// Natural hazards and cyclone tracks to draw; empty when the layer is off.
+    var hazards: [NaturalHazard] = []
+    var cycloneTracks: [CycloneTrack] = []
+    /// Called with the id of a tapped hazard.
+    var selectHazard: (String) -> Void = { _ in }
     let regionWillChange: () -> Void
     let regionDidChange: (MKMapRect) -> Void
 
@@ -28,6 +33,9 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         var cableOverlays: [String: CableOverlay] = [:]
         var landingPointAnnotations: [String: LandingPointAnnotation] = [:]
         var highlightedCableID: String?
+        var hazardAnnotations: [String: HazardAnnotation] = [:]
+        var trackOverlays: [CycloneTrackOverlay] = []
+        var drawnTracks: [CycloneTrack] = []
 
         init(parent: MapRepresentable) {
             self.parent = parent
@@ -36,6 +44,9 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         // MARK: Cables
 
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+            if let track = overlay as? CycloneTrackOverlay {
+                return track.makeRenderer()
+            }
             guard let cable = overlay as? CableOverlay else {
                 return MKOverlayRenderer(overlay: overlay)
             }
@@ -56,7 +67,7 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         @objc func handleTap(_ recognizer: UITapGestureRecognizer) {
             guard recognizer.state == .ended, let mapView = recognizer.view as? MKMapView else { return }
             let location = recognizer.location(in: mapView)
-            // Taps on aircraft and landing points are handled by MapKit.
+            // Taps on aircraft, hazards and landing points are handled by MapKit.
             if mapView.hitTest(location, with: nil)?.isAnnotationView == true { return }
             guard !cableOverlays.isEmpty, mapView.bounds.width > 0 else { return }
 
@@ -106,6 +117,34 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
             }
         }
         
+        // MARK: Hazards
+
+        func updateHazards(on mapView: MKMapView, hazards: [NaturalHazard], tracks: [CycloneTrack]) {
+            let wanted = Dictionary(hazards.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            // Gone, or changed (a cyclone moves, an alert level rises).
+            let stale = hazardAnnotations.filter { id, annotation in wanted[id] != annotation.hazard }
+            if !stale.isEmpty {
+                mapView.removeAnnotations(Array(stale.values))
+                stale.keys.forEach { hazardAnnotations[$0] = nil }
+            }
+            let added = wanted.values.filter { hazardAnnotations[$0.id] == nil }.map(HazardAnnotation.init(hazard:))
+            if !added.isEmpty {
+                added.forEach { hazardAnnotations[$0.hazard.id] = $0 }
+                mapView.addAnnotations(added)
+            }
+
+            guard tracks != drawnTracks else { return }
+            mapView.removeOverlays(trackOverlays)
+            trackOverlays = tracks.flatMap { track in
+                [
+                    track.observed.isEmpty ? nil : CycloneTrackOverlay(track: track, forecast: false),
+                    track.forecast.isEmpty ? nil : CycloneTrackOverlay(track: track, forecast: true),
+                ].compactMap { $0 }
+            }
+            drawnTracks = tracks
+            mapView.addOverlays(trackOverlays, level: .aboveRoads)
+        }
+
         func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
             parent.regionWillChange()
         }
@@ -116,6 +155,12 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         }
 
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+            if let annotation = view.annotation as? HazardAnnotation {
+                // Shown in a sheet; deselect so the same pin can be tapped again.
+                mapView.deselectAnnotation(annotation, animated: false)
+                parent.selectHazard(annotation.hazard.id)
+                return
+            }
             if let annotation = view.annotation as? T {
                 parent.selectedAnnotation = annotation
                 FlightAnnotationAnimator.animateSelect(view: view as? FlightMarkerAnnotationView)
@@ -123,6 +168,7 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         }
         
         func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
+            guard view.annotation is T else { return }
             parent.selectedAnnotation = nil
             FlightAnnotationAnimator.animateDeselect(view: view as? FlightMarkerAnnotationView)
         }
@@ -130,6 +176,9 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
             if annotation is LandingPointAnnotation {
                 return mapView.dequeueReusableAnnotationView(withIdentifier: LandingPointAnnotationView.reuseIdentifier, for: annotation)
+            }
+            if annotation is HazardAnnotation {
+                return mapView.dequeueReusableAnnotationView(withIdentifier: HazardAnnotationView.reuseIdentifier, for: annotation)
             }
             let identifier = "flight"
             let annotationView: FlightMarkerAnnotationView = {
@@ -155,6 +204,7 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         mapView.delegate = context.coordinator
         mapView.register(FlightMarkerAnnotationView.self, forAnnotationViewWithReuseIdentifier: "flight")
         mapView.register(LandingPointAnnotationView.self, forAnnotationViewWithReuseIdentifier: LandingPointAnnotationView.reuseIdentifier)
+        mapView.register(HazardAnnotationView.self, forAnnotationViewWithReuseIdentifier: HazardAnnotationView.reuseIdentifier)
         let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
         tap.delegate = context.coordinator
         mapView.addGestureRecognizer(tap)
@@ -220,6 +270,7 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
 
         context.coordinator.parent = self
         context.coordinator.updateCables(on: uiView, cables: cables, landingPoints: landingPoints, selectedID: selectedCableID)
+        context.coordinator.updateHazards(on: uiView, hazards: hazards, tracks: cycloneTracks)
 
         uiView.setRegion(region, animated: false)
     }
