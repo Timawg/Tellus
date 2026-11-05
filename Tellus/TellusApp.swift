@@ -19,6 +19,7 @@ struct TellusApp: App {
         let flightService: FlightServiceProtocol
         let flightDetailsService: FlightDetailsServiceProtocol
         let weatherService: WeatherServiceProtocol
+        let viirsImageryService: VIIRSImageryServiceProtocol
         let exchangeRateService: ExchangeRateServiceProtocol
         let recentEventsService: RecentEventsServiceProtocol
         let countryProfileService: CountryProfileServiceProtocol
@@ -35,6 +36,7 @@ struct TellusApp: App {
             self.flightService = FlightService(networkService: networkService)
             self.flightDetailsService = FlightDetailsService(networkService: networkService)
             self.weatherService = WeatherService(networkService: networkService)
+            self.viirsImageryService = VIIRSImageryService(networkService: networkService)
             self.exchangeRateService = ExchangeRateService(networkService: networkService)
             self.recentEventsService = RecentEventsService(networkService: networkService)
             self.countryProfileService = CountryProfileService(networkService: networkService)
@@ -56,6 +58,7 @@ struct TellusApp: App {
             flightService: serviceContainer.flightService,
             flightDetailsService: serviceContainer.flightDetailsService,
             weatherService: serviceContainer.weatherService,
+            viirsImageryService: serviceContainer.viirsImageryService,
             exchangeRateService: serviceContainer.exchangeRateService,
             recentEventsService: serviceContainer.recentEventsService,
             countryProfileService: serviceContainer.countryProfileService,

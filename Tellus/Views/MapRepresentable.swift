@@ -14,6 +14,8 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
     @Binding var selectedAnnotation: T?
     var annotations: [MKAnnotation]
     var showsEarthAtNight = false
+    var nightLightsDate: String?
+    var viirsImageryDate: String?
     /// Undersea cables to draw; empty when the layer is off.
     var cables: [SubmarineCable] = []
     var landingPoints: [CableLandingPoint] = []
@@ -43,8 +45,11 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         var trackOverlays: [CycloneTrackOverlay] = []
         var drawnTracks: [CycloneTrack] = []
         var outlineOverlay: CountryOutlineOverlay?
+        private var viirsOverlay: MKTileOverlay?
+        private var viirsDate: String?
         private var nightOverlay: NightOverlay?
         private var nightLightsOverlay: MKTileOverlay?
+        private var nightLightsDate: String?
         private var nightTimer: Timer?
 
         init(parent: MapRepresentable) {
@@ -53,7 +58,11 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
 
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
             if let tiles = overlay as? MKTileOverlay {
-                return MKTileOverlayRenderer(tileOverlay: tiles)
+                let renderer = MKTileOverlayRenderer(tileOverlay: tiles)
+                if tiles === viirsOverlay {
+                    renderer.alpha = 0.85
+                }
+                return renderer
             }
             if let night = overlay as? NightOverlay {
                 return NightOverlayRenderer(night: night)
@@ -72,46 +81,61 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
             return renderer
         }
 
-        // MARK: Night layers
+        // MARK: Satellite and night layers
+
+        func updateVIIRSImagery(on mapView: MKMapView, date: String?) {
+            guard date != viirsDate else { return }
+            if let viirsOverlay { mapView.removeOverlay(viirsOverlay) }
+            viirsOverlay = nil
+            viirsDate = date
+            guard let date else { return }
+
+            let tiles = MKTileOverlay(urlTemplate: VIIRSImageryService.tileTemplate(for: .trueColour, date: date))
+            tiles.maximumZ = VIIRSImageryService.Product.trueColour.maximumZoom
+            tiles.canReplaceMapContent = false
+            viirsOverlay = tiles
+            mapView.insertOverlay(tiles, at: 0, level: .aboveRoads)
+        }
 
         @MainActor
-        func updateEarthAtNight(on mapView: MKMapView, enabled: Bool) {
+        func updateEarthAtNight(on mapView: MKMapView, enabled: Bool, lightsDate: String?) {
             guard enabled else {
                 stopEarthAtNight(on: mapView)
                 return
             }
-            guard nightTimer == nil else { return }
+            if nightTimer == nil {
+                refreshNight(on: mapView)
+                let timer = Timer(timeInterval: 60, repeats: true) { [weak self, weak mapView] _ in
+                    MainActor.assumeIsolated {
+                        guard let mapView else { return }
+                        self?.refreshNight(on: mapView)
+                    }
+                }
+                nightTimer = timer
+                RunLoop.main.add(timer, forMode: .common)
+            }
+            updateNightLights(on: mapView, date: lightsDate)
+        }
 
-            refreshNight(on: mapView)
+        private func updateNightLights(on mapView: MKMapView, date: String?) {
+            guard date != nightLightsDate else { return }
+            if let nightLightsOverlay { mapView.removeOverlay(nightLightsOverlay) }
+            nightLightsOverlay = nil
+            nightLightsDate = date
+            guard let date, let nightOverlay else { return }
 
-            // The 2016 Black Marble lights-only composite uses transparent
-            // Web Mercator tiles, with the row before the column in the URL.
-            let endpoint = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best"
-            let tiles = MKTileOverlay(urlTemplate: endpoint
-                + "/VIIRS_Night_Lights/default/2016-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png")
-            tiles.maximumZ = 8
+            let tiles = NightLightsTileOverlay(urlTemplate: VIIRSImageryService.tileTemplate(for: .nightLights, date: date))
+            tiles.maximumZ = VIIRSImageryService.Product.nightLights.maximumZoom
             tiles.canReplaceMapContent = false
             nightLightsOverlay = tiles
-            mapView.insertOverlay(tiles, at: 1, level: .aboveRoads)
-
-            let timer = Timer(timeInterval: 60, repeats: true) { [weak self, weak mapView] _ in
-                MainActor.assumeIsolated {
-                    guard let mapView else { return }
-                    self?.refreshNight(on: mapView)
-                }
-            }
-            nightTimer = timer
-            RunLoop.main.add(timer, forMode: .common)
+            mapView.insertOverlay(tiles, above: nightOverlay)
         }
 
         @MainActor
         func stopEarthAtNight(on mapView: MKMapView) {
             nightTimer?.invalidate()
             nightTimer = nil
-            if let nightLightsOverlay {
-                mapView.removeOverlay(nightLightsOverlay)
-                self.nightLightsOverlay = nil
-            }
+            updateNightLights(on: mapView, date: nil)
             if let nightOverlay {
                 mapView.removeOverlay(nightOverlay)
                 self.nightOverlay = nil
@@ -123,7 +147,7 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
             let next = NightOverlay(date: Date())
             if let nightOverlay { mapView.removeOverlay(nightOverlay) }
             nightOverlay = next
-            mapView.insertOverlay(next, at: 0, level: .aboveRoads)
+            mapView.insertOverlay(next, at: viirsOverlay == nil ? 0 : 1, level: .aboveRoads)
         }
 
         // MARK: Cables
@@ -211,9 +235,9 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
             }
             outlineOverlay = border.map(CountryOutlineOverlay.init(border:))
             if let outlineOverlay {
-                // Keep it above the night layers and under cables and tracks.
-                if let nightLightsOverlay {
-                    mapView.insertOverlay(outlineOverlay, above: nightLightsOverlay)
+                // Keep it above the imagery and under cables and tracks.
+                if let imagery = (nightLightsOverlay as MKOverlay?) ?? (nightOverlay as MKOverlay?) ?? viirsOverlay {
+                    mapView.insertOverlay(outlineOverlay, above: imagery)
                 } else {
                     mapView.insertOverlay(outlineOverlay, at: 0, level: .aboveRoads)
                 }
@@ -380,7 +404,8 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         }
 
         context.coordinator.parent = self
-        context.coordinator.updateEarthAtNight(on: uiView, enabled: showsEarthAtNight)
+        context.coordinator.updateVIIRSImagery(on: uiView, date: viirsImageryDate)
+        context.coordinator.updateEarthAtNight(on: uiView, enabled: showsEarthAtNight, lightsDate: nightLightsDate)
         context.coordinator.updateCables(on: uiView, cables: cables, landingPoints: landingPoints, selectedID: selectedCableID)
         context.coordinator.updateHazards(on: uiView, hazards: hazards, tracks: cycloneTracks)
         context.coordinator.updateOutline(on: uiView, border: outline)

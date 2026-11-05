@@ -13,11 +13,23 @@ struct MainMapView: View {
     @Bindable var viewModel: MainMapViewModel
     @AppStorage("showsEarthAtNight") private var showsEarthAtNight =
         UserDefaults.standard.bool(forKey: "showsDayNight") || UserDefaults.standard.bool(forKey: "showsNightLights")
+    @AppStorage("showsVIIRSImagery") private var showsVIIRSImagery = false
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var viirsDates: [String] = []
+    @State private var selectedVIIRSDate: String?
+    @State private var viirsLoadFailed = false
+    @State private var nightLightsDate: String?
+    @State private var nightLightsLoadFailed = false
     /// The tab the country guide is open on; nil while it's closed. The
     /// banner opens the tab it's about.
     @State private var guideTopic: DestinationGuide.Topic?
     @State private var showingNationalityPicker = false
     @State private var isPickingCountry = false
+
+    private var viirsImageryDate: String? {
+        guard showsVIIRSImagery else { return nil }
+        return selectedVIIRSDate ?? viirsDates.first
+    }
 
     var body: some View {
         MapRepresentable(
@@ -25,6 +37,8 @@ struct MainMapView: View {
             selectedAnnotation: $viewModel.selectedFlight,
             annotations: viewModel.flightAnnotations,
             showsEarthAtNight: showsEarthAtNight,
+            nightLightsDate: nightLightsDate,
+            viirsImageryDate: viirsImageryDate,
             cables: viewModel.cables,
             landingPoints: viewModel.landingPoints,
             selectedCableID: viewModel.selectedCableID,
@@ -51,6 +65,12 @@ struct MainMapView: View {
         }
         .overlay(alignment: .bottom) {
             bottomStack
+        }.task(id: showsVIIRSImagery && scenePhase == .active) {
+            guard showsVIIRSImagery, scenePhase == .active else { return }
+            await updateVIIRSImageryDates()
+        }.task(id: showsEarthAtNight && scenePhase == .active) {
+            guard showsEarthAtNight, scenePhase == .active else { return }
+            await updateNightLightsDate()
         }.task {
             await viewModel.loadCablesIfNeeded()
         }.task {
@@ -336,13 +356,18 @@ struct MainMapView: View {
                         VStack(spacing: 6) {
                             flightsNotice
                             if showsEarthAtNight {
-                                Text("NASA GIBS · Black Marble 2016")
-                                    .font(.caption2)
-                                    .foregroundStyle(.white)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(.black.opacity(0.65), in: Capsule())
+                                if let nightLightsDate {
+                                    mapCredit("NASA GIBS · Black Marble\n\(nightLightsDate) UTC")
+                                } else {
+                                    mapCredit(nightLightsLoadFailed ? "Night lights unavailable" : "Loading night lights…")
+                                }
+                            }
+                            if showsVIIRSImagery {
+                                if let date = viirsImageryDate {
+                                    mapCredit("NASA GIBS · VIIRS\n\(date) UTC")
+                                } else {
+                                    mapCredit(viirsLoadFailed ? "VIIRS imagery unavailable" : "Loading VIIRS dates…")
+                                }
                             }
                         }
                     }
@@ -365,6 +390,40 @@ struct MainMapView: View {
         .environment(\.colorScheme, .dark)
         .sheet(isPresented: $showingNationalityPicker) {
             NationalityPickerView(countries: viewModel.countries, selection: $viewModel.nationality)
+        }
+    }
+
+    private func mapCredit(_ credit: String) -> some View {
+        Text(credit)
+            .font(.caption2)
+            .foregroundStyle(.white)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(.black.opacity(0.65), in: Capsule())
+    }
+
+    private func updateVIIRSImageryDates() async {
+        viirsLoadFailed = false
+        do {
+            let dates = try await viewModel.loadVIIRSImageryDates(for: .trueColour)
+            guard !Task.isCancelled else { return }
+            viirsDates = dates
+            if let selectedVIIRSDate, !dates.contains(selectedVIIRSDate) {
+                self.selectedVIIRSDate = nil
+            }
+        } catch {
+            if !Task.isCancelled { viirsLoadFailed = true }
+        }
+    }
+
+    private func updateNightLightsDate() async {
+        nightLightsLoadFailed = false
+        do {
+            let dates = try await viewModel.loadVIIRSImageryDates(for: .nightLights)
+            if !Task.isCancelled { nightLightsDate = dates.first }
+        } catch {
+            if !Task.isCancelled { nightLightsLoadFailed = true }
         }
     }
 
@@ -417,6 +476,18 @@ struct MainMapView: View {
             }
             Toggle(isOn: $showsEarthAtNight) {
                 Label("Earth at night", systemImage: "circle.lefthalf.filled")
+            }
+            Toggle(isOn: $showsVIIRSImagery) {
+                Label("VIIRS true colour", systemImage: "camera")
+            }
+            if showsVIIRSImagery, !viirsDates.isEmpty {
+                Picker("VIIRS imagery date (UTC)", selection: $selectedVIIRSDate) {
+                    Text("Latest available").tag(nil as String?)
+                    ForEach(viirsDates, id: \.self) { date in
+                        Text(date).tag(Optional(date))
+                    }
+                }
+                .pickerStyle(.menu)
             }
         } label: {
             Image(systemName: "square.3.layers.3d")

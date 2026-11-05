@@ -52,6 +52,7 @@
 		A7E1F0B22EB9000100C0FFEE /* ExchangeRateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0B12EB9000100C0FFEE /* ExchangeRateService.swift */; };
 		A7E1F0E62EB9000100C0FFEE /* CountryProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */; };
 		A7E1F0B02EB9000100C0FFEE /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0AF2EB9000100C0FFEE /* WeatherService.swift */; };
+		69BAEDF55B884DD8B0CC5090 /* VIIRSImageryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CBDDC1A4F484CE1B64BF918 /* VIIRSImageryService.swift */; };
 		F5FCC85C2C50534E00569DC5 /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FCC8562C50534E00569DC5 /* NetworkService.swift */; };
 		F5FCC85D2C50534E00569DC5 /* Endpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FCC8572C50534E00569DC5 /* Endpoint.swift */; };
 		F5FCC85F2C505F9D00569DC5 /* AdmissoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FCC85E2C505F9D00569DC5 /* AdmissoryService.swift */; };
@@ -139,6 +140,7 @@
 		A7E1F0B12EB9000100C0FFEE /* ExchangeRateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateService.swift; sourceTree = "<group>"; };
 		A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryProfileService.swift; sourceTree = "<group>"; };
 		A7E1F0AF2EB9000100C0FFEE /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
+		2CBDDC1A4F484CE1B64BF918 /* VIIRSImageryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VIIRSImageryService.swift; sourceTree = "<group>"; };
 		F5FCC8562C50534E00569DC5 /* NetworkService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = "<group>"; };
 		F5FCC8572C50534E00569DC5 /* Endpoint.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Endpoint.swift; sourceTree = "<group>"; };
 		F5FCC85E2C505F9D00569DC5 /* AdmissoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdmissoryService.swift; sourceTree = "<group>"; };
@@ -362,6 +364,7 @@
 				A7E1F0B12EB9000100C0FFEE /* ExchangeRateService.swift */,
 				A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */,
 				A7E1F0AF2EB9000100C0FFEE /* WeatherService.swift */,
+				2CBDDC1A4F484CE1B64BF918 /* VIIRSImageryService.swift */,
 				A7E1F0A32EB9000100C0FFEE /* FlightDetailsService.swift */,
 				F5FCC85E2C505F9D00569DC5 /* AdmissoryService.swift */,
 				F5FCC8612C50610F00569DC5 /* CountriesService.swift */,
@@ -524,6 +527,7 @@
 				A7E1F0B22EB9000100C0FFEE /* ExchangeRateService.swift in Sources */,
 				A7E1F0E62EB9000100C0FFEE /* CountryProfileService.swift in Sources */,
 				A7E1F0B02EB9000100C0FFEE /* WeatherService.swift in Sources */,
+				69BAEDF55B884DD8B0CC5090 /* VIIRSImageryService.swift in Sources */,
 				F54422B82C526D2800CF1A1C /* FlightMarkerAnnotationView.swift in Sources */,
 				A7E1F0CA2EB9000100C0FFEE /* CableDetailsView.swift in Sources */,
 				A7E1F0D22EB9000100C0FFEE /* HazardDetailsView.swift in Sources */,

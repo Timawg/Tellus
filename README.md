@@ -27,7 +27,8 @@ Open **Map layers** to enable or disable each layer. Tellus remembers the settin
 | **Live flights** | Aircraft in the visible map area, including military traffic. Tap an aircraft for available flight telemetry, registration, aircraft photo, and route details. | On |
 | **Natural hazards** | Earthquakes, tropical cyclones and their tracks, floods, wildfires, droughts, and volcanic eruptions. Tap a marker for details. | On |
 | **Undersea cables** | Submarine cable routes and landing points. Tap a cable to see its details and source link. | Off |
-| **Earth at night** | A moving shade over the night hemisphere and a transparent overlay of city lights from NASA's Black Marble 2016 satellite composite. | Off |
+| **Earth at night** | A moving shade over the night hemisphere and a transparent overlay from the latest available daily NOAA-20 Black Marble nighttime imagery. | Off |
+| **VIIRS true colour** | Recent NOAA-21 satellite imagery. Starts on the latest date NASA GIBS lists, with a choice of available dates from the past seven UTC days. | Off |
 
 The flight layer polls about every 15 seconds while the map is settled and backs off when OpenSky rate-limits requests. At wide zoom levels, Tellus draws up to 500 aircraft. The natural hazards layer refreshes every 15 minutes while the map is open.
 
@@ -35,7 +36,9 @@ The flight layer polls about every 15 seconds while the map is settled and backs
 
 Tellus calculates the day–night boundary on the device from the current time and updates the shade once a minute. That calculation works offline. The city lights come from a 2016 composite, so they show where lights were observed during that period.
 
-When the layer is enabled, MapKit fetches visible PNG tiles directly over HTTPS from NASA GIBS. It uses the `VIIRS_Night_Lights` Web Mercator WMTS layer at native zoom levels 0–8. An internet connection is needed to fetch uncached tiles. [NASA Black Marble imagery](https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps/) · [GIBS tile documentation](https://nasa-gibs.github.io/gibs-api-docs/access-basics/)
+When the layer is enabled, Tellus checks NASA GIBS for the latest available date of its corrected daily NOAA-20 Black Marble imagery and shows that date in UTC. MapKit fetches the visible PNG tiles over HTTPS at native zoom levels 0–8. Tellus renders the grayscale light measurements as a transparent overlay. Some pixels can use older observations to fill gaps. An internet connection is needed to fetch uncached tiles. [NASA Black Marble daily product](https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/VJ146A2) · [GIBS tile documentation](https://nasa-gibs.github.io/gibs-api-docs/access-basics/)
+
+**VIIRS true colour** uses the separate `VIIRS_NOAA21_CorrectedReflectance_TrueColor` layer at native zoom levels 0–9. It shows the observation date in UTC. The newest date may have gaps while satellite passes are still being processed. [NOAA-21 VIIRS layer metadata](https://gibs.earthdata.nasa.gov/layer-metadata/v1.0/VIIRS_NOAA21_CorrectedReflectance_TrueColor.json)
 
 ## Run locally
 

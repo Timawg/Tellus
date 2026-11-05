@@ -1,5 +1,7 @@
+import ImageIO
 import MapKit
 import UIKit
+import UniformTypeIdentifiers
 
 /// The hemisphere where the centre of the Sun is below the horizon.
 final class NightOverlay: NSObject, MKOverlay {
@@ -75,5 +77,52 @@ final class NightOverlayRenderer: MKOverlayPathRenderer {
             shade.closeSubpath()
         }
         path = shade
+    }
+}
+
+/// Render the grayscale radiance as white lights with a transparent background.
+final class NightLightsTileOverlay: MKTileOverlay {
+    override func loadTile(at path: MKTileOverlayPath, result: @escaping (Data?, Error?) -> Void) {
+        super.loadTile(at: path) { data, error in
+            guard let data else {
+                result(nil, error)
+                return
+            }
+            guard let png = Self.transparentLights(from: data) else {
+                result(nil, URLError(.cannotDecodeContentData))
+                return
+            }
+            result(png, nil)
+        }
+    }
+
+    static func transparentLights(from data: Data) -> Data? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let image = CGImageSourceCreateImageAtIndex(source, 0, nil),
+              let context = CGContext(
+                  data: nil, width: image.width, height: image.height, bitsPerComponent: 8,
+                  bytesPerRow: image.width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
+              ),
+              let pixels = context.data?.assumingMemoryBound(to: UInt8.self) else { return nil }
+
+        context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        for offset in stride(from: 0, to: context.bytesPerRow * image.height, by: 4) {
+            // The valid source pixels are grayscale. Their premultiplied
+            // intensity already includes the source alpha, so missing
+            // observations stay transparent even if their palette is blue.
+            let intensity = pixels[offset]
+            pixels[offset + 1] = intensity
+            pixels[offset + 2] = intensity
+            pixels[offset + 3] = intensity
+        }
+
+        let png = NSMutableData()
+        guard let lights = context.makeImage(),
+              let destination = CGImageDestinationCreateWithData(png, UTType.png.identifier as CFString, 1, nil) else {
+            return nil
+        }
+        CGImageDestinationAddImage(destination, lights, nil)
+        return CGImageDestinationFinalize(destination) ? png as Data : nil
     }
 }

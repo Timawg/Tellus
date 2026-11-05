@@ -19,6 +19,7 @@ final class MainMapViewModel {
     private let flightService: FlightServiceProtocol
     private let flightDetailsService: FlightDetailsServiceProtocol
     private let weatherService: WeatherServiceProtocol
+    private let viirsImageryService: VIIRSImageryServiceProtocol
     private let exchangeRateService: ExchangeRateServiceProtocol
     private let recentEventsService: RecentEventsServiceProtocol
     private let countryProfileService: CountryProfileServiceProtocol
@@ -41,6 +42,7 @@ final class MainMapViewModel {
         flightService: FlightServiceProtocol,
         flightDetailsService: FlightDetailsServiceProtocol,
         weatherService: WeatherServiceProtocol,
+        viirsImageryService: VIIRSImageryServiceProtocol,
         exchangeRateService: ExchangeRateServiceProtocol,
         recentEventsService: RecentEventsServiceProtocol,
         countryProfileService: CountryProfileServiceProtocol,
@@ -56,6 +58,7 @@ final class MainMapViewModel {
         self.flightService = flightService
         self.flightDetailsService = flightDetailsService
         self.weatherService = weatherService
+        self.viirsImageryService = viirsImageryService
         self.exchangeRateService = exchangeRateService
         self.recentEventsService = recentEventsService
         self.countryProfileService = countryProfileService
@@ -68,6 +71,10 @@ final class MainMapViewModel {
 
     /// Weather at the selected country's capital.
     var destinationWeather: DestinationWeather?
+
+    func loadVIIRSImageryDates(for product: VIIRSImageryService.Product) async throws -> [String] {
+        try await viirsImageryService.getAvailableDates(for: product)
+    }
     /// What one unit of the home currency buys in each of the selected
     /// country's currencies. Empty when they share a currency.
     var exchangeRates: [ExchangeRate] = []
