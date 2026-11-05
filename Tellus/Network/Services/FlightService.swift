@@ -1,5 +1,5 @@
 //
-//  OpenSkyService.swift
+//  FlightService.swift
 //  Tellus
 //
 //  Created by Tim Gunnarsson on 2024-07-24.
@@ -10,6 +10,10 @@ import Foundation
 struct CoordinateSpan {
     let minimum: Double
     let maximum: Double
+
+    func contains(_ value: Double) -> Bool {
+        (minimum...maximum).contains(value)
+    }
 }
 
 /// Tracks when a rate-limited API may be called again.
@@ -40,20 +44,31 @@ struct RateLimitBackoff {
     }
 }
 
-protocol OpenSkyServiceProtocol: Service {
-    func getAllFlights(latitudeSpan: CoordinateSpan?, longitudeSpan: CoordinateSpan?) async throws -> FlightData
+protocol FlightServiceProtocol: Service {
+    /// Aircraft OpenSky sees in the area.
+    func getFlights(latitudeSpan: CoordinateSpan?, longitudeSpan: CoordinateSpan?) async throws -> [LiveFlight]
+    /// Aircraft adsb.lol flags as military, worldwide.
+    func getMilitaryFlights() async throws -> [LiveFlight]
 }
 
+/// Live aircraft positions from two free feeds: OpenSky for everything in
+/// the visible area, and adsb.lol for the aircraft its database flags as
+/// military (a few hundred worldwide, about 170 KB, so it's asked at most
+/// every 30 seconds).
+///
 /// OpenSky limits anonymous use with a daily quota and answers 429 with the
-/// number of seconds until it resets. While that window is open this service
-/// throws `HTTPError.rateLimited` without touching the network, so the 15 second
-/// flight polling doesn't keep hitting the API. `actor` isolation keeps the
-/// back-off state safe from overlapping polls.
-actor OpenSkyService: OpenSkyServiceProtocol {
+/// number of seconds until it resets. While that window is open OpenSky
+/// requests throw `HTTPError.rateLimited` without touching the network, so the
+/// 15 second flight polling doesn't keep hitting the API; adsb.lol is
+/// unaffected. `actor` isolation keeps the back-off and cache safe from
+/// overlapping polls.
+actor FlightService: FlightServiceProtocol {
 
     let networkService: NetworkServiceProtocol
     let requestFactory: URLRequestFactory
     private var backoff = RateLimitBackoff()
+    private var militaryCache: (fetched: Date, flights: [LiveFlight])?
+    private static let militaryInterval: TimeInterval = 30
 
     init(networkService: NetworkServiceProtocol, requestFactory: URLRequestFactory = .default) {
         self.networkService = networkService
@@ -61,14 +76,19 @@ actor OpenSkyService: OpenSkyServiceProtocol {
     }
 
     nonisolated let rootURL: String = "https://opensky-network.org/api"
+    nonisolated let militaryRootURL: String = "https://api.adsb.lol"
 
-    enum OpenSkyEndpoint: Endpoint {
+    enum FlightEndpoint: Endpoint {
         case all(latitude: CoordinateSpan?, longitude: CoordinateSpan?)
+        /// adsb.lol, at `militaryRootURL`.
+        case military
         
         var path: String {
             switch self {
             case .all:
                 "/states/all"
+            case .military:
+                "/v2/mil"
             }
         }
         
@@ -91,20 +111,29 @@ actor OpenSkyService: OpenSkyServiceProtocol {
                     return items
                 }()
                 return items
+            case .military:
+                return nil
+            }
+        }
+
+        var cachePolicy: URLRequest.CachePolicy {
+            switch self {
+            case .all: .useProtocolCachePolicy
+            case .military: .reloadIgnoringLocalCacheData
             }
         }
     }
     
-    func getAllFlights(latitudeSpan: CoordinateSpan? = nil, longitudeSpan: CoordinateSpan? = nil) async throws -> FlightData {
+    func getFlights(latitudeSpan: CoordinateSpan? = nil, longitudeSpan: CoordinateSpan? = nil) async throws -> [LiveFlight] {
         if let remaining = backoff.remainingDelay(at: Date()) {
             throw HTTPError.rateLimited(retryAfter: remaining)
         }
-        let endpoint: OpenSkyEndpoint = .all(latitude: latitudeSpan, longitude: longitudeSpan)
+        let endpoint: FlightEndpoint = .all(latitude: latitudeSpan, longitude: longitudeSpan)
         let request = try requestFactory.createURLRequest(root: rootURL, endpoint: endpoint)
         do {
             let flightData: FlightData = try await networkService.send(request: request)
             backoff.reset()
-            return flightData
+            return flightData.states.compactMap(LiveFlight.init(state:))
         } catch HTTPError.rateLimited(let retryAfter) {
             // Report the wait actually applied, which includes the fallback
             // delay when the server didn't give one.
@@ -113,7 +142,15 @@ actor OpenSkyService: OpenSkyServiceProtocol {
             throw HTTPError.rateLimited(retryAfter: backoff.remainingDelay(at: limitedAt))
         }
     }
+
+    func getMilitaryFlights() async throws -> [LiveFlight] {
+        if let militaryCache, Date().timeIntervalSince(militaryCache.fetched) < Self.militaryInterval {
+            return militaryCache.flights
+        }
+        let request = try requestFactory.createURLRequest(root: militaryRootURL, endpoint: FlightEndpoint.military)
+        let list: ADSBLolAircraftList = try await networkService.send(request: request)
+        let flights = list.flights()
+        militaryCache = (Date(), flights)
+        return flights
+    }
 }
-
-
-

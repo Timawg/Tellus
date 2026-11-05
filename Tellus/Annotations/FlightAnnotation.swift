@@ -11,11 +11,21 @@ final class FlightAnnotation: NSObject, MKAnnotation, Identifiable {
     let id: String
     @objc dynamic var coordinate: CLLocationCoordinate2D
     var track: Float?
-    
-    init(id: String, coordinate: CLLocationCoordinate2D, track: Float?) {
+    /// Which feed the latest position came from; military aircraft are
+    /// drawn in a different colour.
+    var source: LiveFlight.Source
+
+    var isMilitary: Bool { source == .adsbLolMilitary }
+
+    init(id: String, coordinate: CLLocationCoordinate2D, track: Float?, source: LiveFlight.Source = .openSky) {
         self.id = id
         self.coordinate = coordinate
         self.track = track
+        self.source = source
+    }
+
+    convenience init(flight: LiveFlight) {
+        self.init(id: flight.id, coordinate: flight.coordinate, track: flight.track.map(Float.init), source: flight.source)
     }
 }
 

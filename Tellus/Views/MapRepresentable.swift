@@ -240,7 +240,8 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
                 return false
             }
             return existingAnnotation.coordinate.latitude != annotation.coordinate.latitude ||
-            existingAnnotation.coordinate.longitude != annotation.coordinate.longitude
+            existingAnnotation.coordinate.longitude != annotation.coordinate.longitude ||
+            existingAnnotation.source != annotation.source
         }
 
         uiView.removeAnnotations(annotationsToRemove)
@@ -254,9 +255,16 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
                         return
                     }
                     existingAnnotation.coordinate = newAnnotation.coordinate
+                    let view = uiView.view(for: existingAnnotation)
 
-                    if let view = uiView.view(for: existingAnnotation), let degrees = newAnnotation.track {
+                    if let view, let degrees = newAnnotation.track {
                         view.transform = .init(rotationDegrees: CGFloat(degrees))
+                    }
+                    // adsb.lol's military list can take over an aircraft
+                    // OpenSky reported, which recolours its marker.
+                    if existingAnnotation.source != newAnnotation.source {
+                        existingAnnotation.source = newAnnotation.source
+                        (view as? FlightMarkerAnnotationView)?.applySource()
                     }
                 }
             }

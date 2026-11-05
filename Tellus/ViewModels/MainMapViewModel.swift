@@ -15,7 +15,7 @@ final class MainMapViewModel {
     private let countriesService: CountriesServiceProtocol
     private let admissoryService: AdmissoryServiceProtocol
     private let advisoryService: AdvisoryServiceProtocol
-    private let openSkyService: OpenSkyServiceProtocol
+    private let flightService: FlightServiceProtocol
     private let flightDetailsService: FlightDetailsServiceProtocol
     private let weatherService: WeatherServiceProtocol
     private let exchangeRateService: ExchangeRateServiceProtocol
@@ -26,13 +26,17 @@ final class MainMapViewModel {
     private let cableService: CableServiceProtocol
     private let hazardService: HazardServiceProtocol
     private var timerSubscription: AnyCancellable?
-    private var flightData: FlightData?
+    /// The latest flights from both feeds, by ICAO address.
+    private var liveFlights: [String: LiveFlight] = [:]
+    /// OpenSky's last answer, kept while it rate limits us so military
+    /// updates don't wipe the civil traffic.
+    private var lastOpenSkyFlights: [LiveFlight] = []
 
     init(
         countriesService: CountriesServiceProtocol,
         admissoryService: AdmissoryServiceProtocol,
         advisoryService: AdvisoryServiceProtocol,
-        openSkyService: OpenSkyServiceProtocol,
+        flightService: FlightServiceProtocol,
         flightDetailsService: FlightDetailsServiceProtocol,
         weatherService: WeatherServiceProtocol,
         exchangeRateService: ExchangeRateServiceProtocol,
@@ -46,7 +50,7 @@ final class MainMapViewModel {
         self.countriesService = countriesService
         self.admissoryService = admissoryService
         self.advisoryService = advisoryService
-        self.openSkyService = openSkyService
+        self.flightService = flightService
         self.flightDetailsService = flightDetailsService
         self.weatherService = weatherService
         self.exchangeRateService = exchangeRateService
@@ -181,13 +185,13 @@ final class MainMapViewModel {
         flightAnnotations.count < totalFlightCount
     }
 
-    var selectedState: StateVector? {
-        selectedFlight.flatMap { state(for: $0.id) }
+    var selectedLiveFlight: LiveFlight? {
+        selectedFlight.flatMap { flight(for: $0.id) }
     }
 
     /// Latest live values for a flight, if it's in the current data.
-    func state(for icao24: String) -> StateVector? {
-        flightData?.states.first { $0.icao24 == icao24 }
+    func flight(for icao24: String) -> LiveFlight? {
+        liveFlights[icao24.lowercased()]
     }
 
     /// Registration details for the selected flight, once loaded.
@@ -204,7 +208,7 @@ final class MainMapViewModel {
         guard let flightID = selectedFlight?.id else { return }
         selectedAircraft = nil
         selectedRoute = nil
-        let callsign = selectedState?.callsign?.trimmingCharacters(in: .whitespaces) ?? ""
+        let callsign = selectedLiveFlight?.callsign ?? ""
 
         isLoadingFlightDetails = true
         async let aircraft = try? flightDetailsService.getAircraft(icao24: flightID)
@@ -215,9 +219,8 @@ final class MainMapViewModel {
         guard selectedFlight?.id == flightID else { return }
         isLoadingFlightDetails = false
         selectedAircraft = loadedAircraft
-        if let loadedRoute,
-           let latitude = selectedState?.latitude, let longitude = selectedState?.longitude,
-           loadedRoute.isPlausible(forAircraftAt: CLLocation(latitude: CLLocationDegrees(latitude), longitude: CLLocationDegrees(longitude))) {
+        if let loadedRoute, let coordinate = selectedLiveFlight?.coordinate,
+           loadedRoute.isPlausible(forAircraftAt: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)) {
             selectedRoute = loadedRoute
         }
     }
@@ -310,6 +313,8 @@ final class MainMapViewModel {
                 stopUpdatingFlightData()
                 selectedFlight = nil
                 flightAnnotations = []
+                liveFlights = [:]
+                lastOpenSkyFlights = []
                 totalFlightCount = 0
                 flightsPausedUntil = nil
             }
@@ -511,41 +516,48 @@ final class MainMapViewModel {
         return status
     }
     
-    private func retrieveFlightData() async throws -> FlightData {
-        let visibleRegion = calculateVisibleRegion(visibleMapRect: visibleRect)
-        return try await openSkyService.getAllFlights(latitudeSpan: visibleRegion.latitude, longitudeSpan: visibleRegion.longitude)
+    private func openSkyFlights(in region: (latitude: CoordinateSpan, longitude: CoordinateSpan)) async -> Result<[LiveFlight], Error> {
+        do {
+            return .success(try await flightService.getFlights(latitudeSpan: region.latitude, longitudeSpan: region.longitude))
+        } catch {
+            return .failure(error)
+        }
     }
 
+    /// Polls OpenSky for the visible area and adsb.lol for military
+    /// aircraft at the same time, and draws both as one set of flights.
     @MainActor
     private func updateFlightData() async {
-        do {
-            let data = try await self.retrieveFlightData()
-            // Flights may have been switched off while this poll was running.
-            guard showsFlights else { return }
-            self.flightData = data
-            let annotations = self.getFlightAnnotations(from: data)
-            self.totalFlightCount = annotations.count
-            self.flightAnnotations = annotations.nearest(
-                to: visibleRect,
-                limit: Self.maxVisibleFlights,
-                keeping: selectedFlight?.id
-            )
-            self.flightsPausedUntil = nil
-        } catch HTTPError.rateLimited(let retryAfter) {
-            self.flightsPausedUntil = retryAfter.map { Date().addingTimeInterval($0) }
-        } catch {
+        let visibleRegion = calculateVisibleRegion(visibleMapRect: visibleRect)
+        async let openSky = openSkyFlights(in: visibleRegion)
+        async let military = try? flightService.getMilitaryFlights()
+        let (openSkyResult, militaryFlights) = await (openSky, military)
+
+        // Flights may have been switched off while this poll was running.
+        guard showsFlights else { return }
+        switch openSkyResult {
+        case .success(let flights):
+            lastOpenSkyFlights = flights
+            flightsPausedUntil = nil
+        case .failure(HTTPError.rateLimited(let retryAfter)):
+            flightsPausedUntil = retryAfter.map { Date().addingTimeInterval($0) }
+        case .failure(let error):
             print(error)
         }
-        
-    }
-    
-    private func getFlightAnnotations(from data: FlightData) -> [FlightAnnotation] {
-        let flightAnnotations: [FlightAnnotation] = data.states.compactMap { state -> FlightAnnotation? in
-            guard let latitude = state.latitude, let longitude = state.longitude else {
-                return nil
-            }
-            return .init(id: state.icao24, coordinate: .init(latitude: CLLocationDegrees(latitude), longitude: CLLocationDegrees(longitude)), track: state.trueTrack)
+
+        // The military list covers the whole world; keep the ones in view.
+        let militaryInView = (militaryFlights ?? []).filter {
+            visibleRegion.latitude.contains($0.coordinate.latitude)
+                && visibleRegion.longitude.contains($0.coordinate.longitude)
         }
-        return flightAnnotations
+        let flights = lastOpenSkyFlights.merging(military: militaryInView)
+        liveFlights = Dictionary(flights.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let annotations = flights.map(FlightAnnotation.init(flight:))
+        totalFlightCount = annotations.count
+        flightAnnotations = annotations.nearest(
+            to: visibleRect,
+            limit: Self.maxVisibleFlights,
+            keeping: selectedFlight?.id
+        )
     }
 }
