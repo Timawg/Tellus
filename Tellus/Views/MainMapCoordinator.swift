@@ -26,7 +26,8 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
             viirsDate: parent.viirsImageryDate,
             showsEarthAtNight: parent.showsEarthAtNight,
             nightLightsDate: parent.nightLightsDate,
-            showsPowerGrid: parent.showsPowerGrid
+            showsPowerGrid: parent.showsPowerGrid,
+            gpsJam: parent.gpsJamOverlay
         )
         updateCables(on: mapView, cables: parent.cables, landingPoints: parent.landingPoints, selectedID: parent.selectedCableID)
         updateHazards(on: mapView, hazards: parent.hazards, tracks: parent.cycloneTracks)
@@ -125,8 +126,8 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
         renderer.lineCap = .round
     }
 
-    /// MapKit handles annotation taps. Other taps check for cables and power
-    /// assets before selecting a country.
+    /// MapKit handles annotation taps. Other taps check the overlays
+    /// before selecting a country.
     @objc func handleTap(_ recognizer: UITapGestureRecognizer) {
         guard recognizer.state == .ended, let mapView = recognizer.view as? MKMapView,
               mapView.bounds.width > 0 else { return }
@@ -147,6 +148,8 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
             parent.selectCable(nearest.id)
         } else if let asset = backdrop.powerAsset(at: point, mapPointsPerScreenPoint: mapPointsPerScreenPoint) {
             parent.selectPowerAsset(asset)
+        } else if let cell = parent.gpsJamOverlay?.cell(at: coordinate) {
+            parent.selectGPSJAMCell(cell)
         } else {
             parent.tapCountry(coordinate)
         }

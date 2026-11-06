@@ -8,23 +8,29 @@ final class MapBackdropLayers {
     private var nightLightsOverlay: MKTileOverlay?
     private var nightLightsDate: String?
     private var nightTimer: Timer?
+    private var gpsJamOverlay: GPSJAMOverlay?
     private var powerGridOverlay: PowerGridOverlay?
 
     var topOverlay: MKOverlay? {
-        (powerGridOverlay as MKOverlay?) ?? imageryOverlay
+        (powerGridOverlay as MKOverlay?) ?? (gpsJamOverlay as MKOverlay?) ?? imageryOverlay
     }
 
     private var imageryOverlay: MKOverlay? {
         (nightLightsOverlay as MKOverlay?) ?? (nightOverlay as MKOverlay?) ?? viirsOverlay
     }
 
-    func update(on mapView: MKMapView, viirsDate: String?, showsEarthAtNight: Bool, nightLightsDate: String?, showsPowerGrid: Bool) {
+    func update(
+        on mapView: MKMapView, viirsDate: String?, showsEarthAtNight: Bool,
+        nightLightsDate: String?, showsPowerGrid: Bool, gpsJam: GPSJAMOverlay?
+    ) {
         updateVIIRSImagery(on: mapView, date: viirsDate)
         updateEarthAtNight(on: mapView, enabled: showsEarthAtNight, lightsDate: nightLightsDate)
+        updateGPSJAM(on: mapView, overlay: gpsJam)
         updatePowerGrid(on: mapView, enabled: showsPowerGrid)
     }
 
     func renderer(for overlay: MKOverlay) -> MKOverlayRenderer? {
+        if overlay is GPSJAMOverlay { return GPSJAMOverlayRenderer(overlay: overlay) }
         if let tiles = overlay as? MKTileOverlay {
             let renderer = MKTileOverlayRenderer(tileOverlay: tiles)
             if tiles === viirsOverlay {
@@ -56,13 +62,27 @@ final class MapBackdropLayers {
         mapView.insertOverlay(tiles, at: 0, level: .aboveRoads)
     }
 
+    private func updateGPSJAM(on mapView: MKMapView, overlay: GPSJAMOverlay?) {
+        guard gpsJamOverlay !== overlay else { return }
+        if let gpsJamOverlay { mapView.removeOverlay(gpsJamOverlay) }
+        gpsJamOverlay = overlay
+        guard let overlay else { return }
+        if let powerGridOverlay {
+            mapView.insertOverlay(overlay, below: powerGridOverlay)
+        } else if let imagery = imageryOverlay {
+            mapView.insertOverlay(overlay, above: imagery)
+        } else {
+            mapView.insertOverlay(overlay, at: 0, level: .aboveRoads)
+        }
+    }
+
     private func updatePowerGrid(on mapView: MKMapView, enabled: Bool) {
         if enabled {
             guard powerGridOverlay == nil else { return }
             let grid = PowerGridOverlay()
             powerGridOverlay = grid
-            if let imagery = imageryOverlay {
-                mapView.insertOverlay(grid, above: imagery)
+            if let backdrop = (gpsJamOverlay as MKOverlay?) ?? imageryOverlay {
+                mapView.insertOverlay(grid, above: backdrop)
             } else {
                 mapView.insertOverlay(grid, at: 0, level: .aboveRoads)
             }

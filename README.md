@@ -8,7 +8,7 @@ Tellus starts on a random country. Tap a country on the map, search for it in th
 
 The country card shows weather and local time at the capital, exchange rates, and relevant alerts. The **Country guide** has five tabs.
 
-- **Overview** shows population, economy, geography, and infrastructure figures alongside recent events. Each figure includes its observation year and a link to its source. The tab also covers the forecast, exchange rates, connectivity disruptions, emergency numbers, and neighbouring countries.
+- **Overview** shows population, economy, geography, and infrastructure figures alongside recent events. Each figure includes its observation year and a link to its source. Open **Electricity profile** under **Energy** to see domestic generation by source and net electricity trade for the latest available year. The tab also covers the forecast, exchange rates, connectivity disruptions, emergency numbers, and neighbouring countries.
 - **Entry** covers entry advice and visa requirements for the passport selected in Tellus.
 - **Health** covers health advice and WHO outbreak reports.
 - **Laws** covers local laws and culture.
@@ -26,10 +26,15 @@ Open **Map layers** to enable or disable each layer. Tellus remembers the settin
 | **Natural hazards** | Earthquakes, tropical cyclones and their tracks, floods, wildfires, droughts, and volcanic eruptions. Tap a marker for details. | On |
 | **Undersea cables** | Submarine cable routes and landing points. Tap a cable to see its details and source link. | Off |
 | **Power grid** | Mapped power lines, substations, and power plants. Zoom in and tap a feature to see available details and open its OpenStreetMap record. | Off |
+| **GPS interference** | Daily GPSJAM cells with elevated or high reports of low aircraft navigation accuracy. Choose a recent UTC day and tap a shaded cell for counts and the source. | Off |
 | **Earth at night** | A moving shade over the night hemisphere and a transparent overlay from the latest available daily NOAA-20 Black Marble nighttime imagery. | Off |
 | **VIIRS true colour** | Recent NOAA-21 satellite imagery. Starts on the latest date NASA GIBS lists, with a choice of available dates from the past seven UTC days. | Off |
 
 The flight layer polls about every 15 seconds while the map is settled and backs off when OpenSky rate-limits requests. At wide zoom levels, Tellus draws up to 500 aircraft. The natural hazards layer refreshes every 15 minutes while the map is open.
+
+### GPS interference
+
+Tellus fetches GPSJAM’s daily CSV directly when the layer is enabled. It opens on the latest available completed UTC day and lets you select from the previous seven days. Amber and red use GPSJAM’s adjusted thresholds of 2–10% and over 10%, with a minimum of five sampled aircraft per cell. Shading represents reports of degraded aircraft navigation accuracy. Unshaded areas can include sparse or absent ADS-B coverage. [GPSJAM methodology](https://gpsjam.org/faq)
 
 ### Earth at night
 
@@ -43,7 +48,8 @@ When the layer is enabled, Tellus checks NASA GIBS for the latest available date
 
 - Use **Xcode 26 or later** with the iOS SDK installed. The app targets **iOS and iPadOS 17.5 or later**. Controls use Liquid Glass on iOS and iPadOS 26 or later.
 - Open `Tellus.xcodeproj`, select the **Tellus** scheme and an iPhone or iPad simulator, then choose **Product → Run**. To run on a physical device, select your development team under **Signing & Capabilities**.
-- The app calls its data providers directly. Running it requires no API keys, dependency installation, or Tellus backend. Country data loads over the network at startup. The country boundary geometry ships with the app.
+- The app calls its data providers directly. Running it requires no API keys or Tellus backend. Country data loads over the network at startup. The country boundary geometry ships with the app.
+- Xcode resolves the SwiftyH3 package for the GPS interference layer. [SwiftyH3, Apache 2.0](https://github.com/pawelmajcher/SwiftyH3/tree/0.6.0)
 
 To compile from the repository root without signing:
 
@@ -76,6 +82,7 @@ python3 scripts/build_country_borders.py ne_50m_admin_0_countries.geojson countr
 | Basemap | Apple MapKit |
 | Country metadata, boundaries, and flags | [mledoze/countries](https://github.com/mledoze/countries), [Natural Earth](https://www.naturalearthdata.com/), and [Flagcdn](https://flagcdn.com/) |
 | Country profile figures | [World Bank World Development Indicators](https://datatopics.worldbank.org/world-development-indicators/) |
+| Electricity generation mix and net trade | [Ember Yearly Electricity Data](https://ember-energy.org/data/yearly-electricity-data/), CC BY 4.0. Tellus downloads the public CSV when a profile is opened and caches the latest country observations for seven days. |
 | Travel advisories and destination guidance | [Government of Canada Travel Advice and Advisories](https://travel.gc.ca/travelling/advisories) |
 | Passport-based visa requirements | [Passport Index dataset](https://github.com/ilyankou/passport-index-dataset), served through jsDelivr |
 | Capital weather and geocoding | [Open-Meteo](https://open-meteo.com/) |
@@ -87,6 +94,7 @@ python3 scripts/build_country_borders.py ne_50m_admin_0_countries.geojson countr
 | Aircraft registration, routes, and photos | [adsbdb](https://www.adsbdb.com/) and [Airport-Data.com](https://www.airport-data.com/) |
 | Submarine cables and landing points | [TeleGeography Submarine Cable Map](https://www.submarinecablemap.com/) |
 | Power lines, substations, and plants | [Open Infrastructure Map vector tiles](https://openinframap.org/about). Data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL. |
+| Aircraft navigation accuracy by area | [GPSJAM](https://gpsjam.org/about), based on reports from airplanes.live and ADS-B Exchange |
 | Day–night boundary | [U.S. Naval Observatory solar position calculation](https://aa.usno.navy.mil/faq/sun_approx) |
 | Black Marble night lights | [NASA Global Imagery Browse Services (GIBS)](https://nasa-gibs.github.io/gibs-api-docs/), part of NASA's Earth Science Data and Information System (ESDIS) |
 

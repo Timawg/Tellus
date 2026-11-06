@@ -18,6 +18,8 @@ struct MapRepresentable: UIViewRepresentable {
     var viirsImageryDate: String?
     var showsPowerGrid = false
     var selectPowerAsset: (PowerGridAsset) -> Void = { _ in }
+    var gpsJamOverlay: GPSJAMOverlay?
+    var selectGPSJAMCell: (GPSJAMCell) -> Void = { _ in }
     /// Undersea cables to draw; empty when the layer is off.
     var cables: [SubmarineCable] = []
     var landingPoints: [CableLandingPoint] = []

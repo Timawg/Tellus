@@ -23,6 +23,7 @@ struct DestinationGuideView: View {
     let outbreaks: [OutbreakReport]
     let recentEvents: RecentEvents?
     let loadCountryProfile: (String) async throws -> [CountryIndicatorObservation]
+    let loadElectricityProfile: (String) async throws -> CountryElectricityProfile?
     /// The tab shown when the guide opens.
     var initialTopic: DestinationGuide.Topic = .overview
     let advisoryStatus: AdvisoryStatus?
@@ -108,6 +109,19 @@ struct DestinationGuideView: View {
         statusOverviewSection
         CountryProfileSections(countryCode: country.cca2, loadProfile: loadCountryProfile)
             .id(country.cca2)
+        if let code = country.cca3 {
+            Section("Energy") {
+                NavigationLink {
+                    CountryElectricityView(
+                        countryCode: code,
+                        countryName: country.name?.common ?? code,
+                        loadProfile: loadElectricityProfile
+                    )
+                } label: {
+                    Label("Electricity profile", systemImage: "bolt")
+                }
+            }
+        }
         if let recentEvents, !recentEvents.events.isEmpty {
             eventsSection(recentEvents)
         }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MainMapControls: View {
     @Bindable var viewModel: MainMapViewModel
+    @Bindable var gpsJam: GPSJAMLayerState
     @Binding var isPickingCountry: Bool
     @Binding var selectedVIIRSDate: String?
     let viirsDates: [String]
@@ -22,6 +23,9 @@ struct MainMapControls: View {
                         VStack(spacing: 6) {
                             flightsNotice
 
+                            if viewModel.showsGPSJAM {
+                                GPSJAMLegend(state: gpsJam)
+                            }
                             if viewModel.showsPowerGrid {
                                 powerGridCredit
                             }
@@ -97,6 +101,18 @@ struct MainMapControls: View {
             }
             Toggle(isOn: $viewModel.showsPowerGrid) {
                 Label("Power grid", systemImage: "bolt")
+            }
+            Toggle(isOn: $viewModel.showsGPSJAM) {
+                Label("GPS interference", systemImage: "location.slash")
+            }
+            if viewModel.showsGPSJAM {
+                Picker("GPSJAM date (UTC)", selection: $gpsJam.selectedDay) {
+                    Text("Latest available").tag(nil as Date?)
+                    ForEach(gpsJam.selectableDays, id: \.self) { day in
+                        Text(GPSJAMService.dayLabel(day)).tag(Optional(day))
+                    }
+                }
+                .pickerStyle(.menu)
             }
             Toggle(isOn: $viewModel.showsEarthAtNight) {
                 Label("Earth at night", systemImage: "circle.lefthalf.filled")

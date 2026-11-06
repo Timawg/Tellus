@@ -9,11 +9,13 @@ struct MainMapServices {
     let viirsImageryService: VIIRSImageryServiceProtocol
     let exchangeRateService: ExchangeRateServiceProtocol
     let recentEventsService: RecentEventsServiceProtocol
+    let emberElectricityService: EmberElectricityServiceProtocol
     let countryProfileService: CountryProfileServiceProtocol
     let disasterAlertService: DisasterAlertServiceProtocol
     let internetOutageService: InternetOutageServiceProtocol
     let outbreakService: OutbreakServiceProtocol
     let cableService: CableServiceProtocol
+    let gpsJamService: GPSJAMServiceProtocol
     let hazardService: HazardServiceProtocol
 }
 
@@ -29,11 +31,13 @@ extension MainMapServices {
             viirsImageryService: VIIRSImageryService(networkService: networkService),
             exchangeRateService: ExchangeRateService(networkService: networkService),
             recentEventsService: RecentEventsService(networkService: networkService),
+            emberElectricityService: EmberElectricityService(networkService: networkService),
             countryProfileService: CountryProfileService(networkService: networkService),
             disasterAlertService: DisasterAlertService(networkService: networkService),
             internetOutageService: InternetOutageService(networkService: networkService),
             outbreakService: OutbreakService(networkService: networkService),
             cableService: CableService(networkService: networkService),
+            gpsJamService: GPSJAMService(networkService: networkService),
             hazardService: HazardService(networkService: networkService)
         )
     }

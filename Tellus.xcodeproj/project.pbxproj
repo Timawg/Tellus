@@ -12,12 +12,14 @@
 		A7E1F0CA2EB9000100C0FFEE /* CableDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0C92EB9000100C0FFEE /* CableDetailsView.swift */; };
 		A7E1F0D22EB9000100C0FFEE /* HazardDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0D12EB9000100C0FFEE /* HazardDetailsView.swift */; };
 		A7E1F0AA2EB9000100C0FFEE /* DestinationGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0A92EB9000100C0FFEE /* DestinationGuideView.swift */; };
+		B5C241863D121C9C9D640870 /* CountryElectricityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5BEF787C2452DB3CCB8E5E /* CountryElectricityView.swift */; };
 		F54422BA2C526D8F00CF1A1C /* MapRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = F54422B92C526D8E00CF1A1C /* MapRepresentable.swift */; };
 		F54422BF2C53C2E000CF1A1C /* FlightAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F54422BE2C53C2E000CF1A1C /* FlightAnnotation.swift */; };
 		A7E1F0C82EB9000100C0FFEE /* CableOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0C72EB9000100C0FFEE /* CableOverlay.swift */; };
 		A7E1F0DE2EB9000100C0FFEE /* CountryOutlineOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0DD2EB9000100C0FFEE /* CountryOutlineOverlay.swift */; };
 		A7E1F0E42EB9000100C0FFEE /* NightOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0E32EB9000100C0FFEE /* NightOverlay.swift */; };
 		C5243EDA2F9E4E65A688192B /* PowerGridOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C21F409D3FB4975A7CA5FCC /* PowerGridOverlay.swift */; };
+		C163B2D824A919764624265F /* GPSJAMOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BBE7C5D835D9FB185D2C08 /* GPSJAMOverlay.swift */; };
 		FCA3CD367AEB4A3FBC0806CE /* PowerGridTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2999EEBC0C7D4835BC99731F /* PowerGridTile.swift */; };
 		A7E1F0D02EB9000100C0FFEE /* HazardAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0CF2EB9000100C0FFEE /* HazardAnnotation.swift */; };
 		F54422C22C59774800CF1A1C /* FlightAnnotationAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F54422C12C59774800CF1A1C /* FlightAnnotationAnimator.swift */; };
@@ -54,6 +56,8 @@
 		A7E1F0B82EB9000100C0FFEE /* RecentEventsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0B72EB9000100C0FFEE /* RecentEventsService.swift */; };
 		A7E1F0B22EB9000100C0FFEE /* ExchangeRateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0B12EB9000100C0FFEE /* ExchangeRateService.swift */; };
 		A7E1F0E62EB9000100C0FFEE /* CountryProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */; };
+		36025743EF2C792A7B5DFD25 /* EmberElectricityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 201886237B14648E52E05586 /* EmberElectricityService.swift */; };
+		63A724F8F13B286393591869 /* GPSJAMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED72D67BC46F05B7A3AB508 /* GPSJAMService.swift */; };
 		A7E1F0B02EB9000100C0FFEE /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0AF2EB9000100C0FFEE /* WeatherService.swift */; };
 		69BAEDF55B884DD8B0CC5090 /* VIIRSImageryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CBDDC1A4F484CE1B64BF918 /* VIIRSImageryService.swift */; };
 		F5FCC85C2C50534E00569DC5 /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FCC8562C50534E00569DC5 /* NetworkService.swift */; };
@@ -76,8 +80,11 @@
 		A7E1F0A22EB9000100C0FFEE /* FlightDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0A12EB9000100C0FFEE /* FlightDetails.swift */; };
 		A7E1F0A42EB9000100C0FFEE /* FlightDetailsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0A32EB9000100C0FFEE /* FlightDetailsService.swift */; };
 		0BDD4EE90DA1E7972966A6A6 /* MainMapViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 810E2ADA3671E6CBAEDCACB6 /* MainMapViewModelTests.swift */; };
+		C2A9EB89E28CAE0C6D2AFC77 /* EmberElectricityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F68695A2CBBA596F4FC1E7 /* EmberElectricityTests.swift */; };
+		8392162ABCE6EF7AA2952CCC /* GPSJAMTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4929D018F22D436E173CDCF /* GPSJAMTests.swift */; };
 		C1D1B7947C34D6C55E901E3D /* CountrySummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C2CE51F435BA7A627606311 /* CountrySummaryView.swift */; };
 		12C52387703565F52A11BBEF /* MainMapControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2985B005ABE01B7AC39AF206 /* MainMapControls.swift */; };
+		07A0DA0940DDF64FA2C88AAB /* GPSJAMLayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1BEB3EA3B0BE54B9E24F1D7 /* GPSJAMLayerView.swift */; };
 		C47A0659FE12897BC7C036B5 /* FlightDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 218BAA0A1D86C88205F502AD /* FlightDetailsView.swift */; };
 		03A02844DE8F5EB55E3FB28A /* NationalityPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3789458953881C171E8D2B6B /* NationalityPickerView.swift */; };
 		FB4B54076F8BCC52DB5428DE /* PowerAssetDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E548B4245B41AC99E9E66D7 /* PowerAssetDetailsView.swift */; };
@@ -86,6 +93,7 @@
 		5F0AF0D646347FCE61DA2B8B /* MainMapServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB49FFFCE3D3F0DAB895FED4 /* MainMapServices.swift */; };
 		C803B24D0C536419D85950B2 /* MapPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5457701098F1EB11B430B96E /* MapPreferencesStore.swift */; };
 		92E272C2BCC6B645B56EFDE4 /* MapRegionCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D332016BC4365D63F4080C70 /* MapRegionCalculator.swift */; };
+		3CA84D7E029748238E0BC095 /* SwiftyH3 in Frameworks */ = {isa = PBXBuildFile; productRef = 3CA84D7E029748238E0BC096 /* SwiftyH3 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -111,12 +119,14 @@
 		A7E1F0C92EB9000100C0FFEE /* CableDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CableDetailsView.swift; sourceTree = "<group>"; };
 		A7E1F0D12EB9000100C0FFEE /* HazardDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HazardDetailsView.swift; sourceTree = "<group>"; };
 		A7E1F0A92EB9000100C0FFEE /* DestinationGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationGuideView.swift; sourceTree = "<group>"; };
+		1D5BEF787C2452DB3CCB8E5E /* CountryElectricityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryElectricityView.swift; sourceTree = "<group>"; };
 		F54422B92C526D8E00CF1A1C /* MapRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapRepresentable.swift; sourceTree = "<group>"; };
 		F54422BE2C53C2E000CF1A1C /* FlightAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightAnnotation.swift; sourceTree = "<group>"; };
 		A7E1F0C72EB9000100C0FFEE /* CableOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CableOverlay.swift; sourceTree = "<group>"; };
 		A7E1F0DD2EB9000100C0FFEE /* CountryOutlineOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryOutlineOverlay.swift; sourceTree = "<group>"; };
 		A7E1F0E32EB9000100C0FFEE /* NightOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightOverlay.swift; sourceTree = "<group>"; };
 		1C21F409D3FB4975A7CA5FCC /* PowerGridOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerGridOverlay.swift; sourceTree = "<group>"; };
+		E5BBE7C5D835D9FB185D2C08 /* GPSJAMOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPSJAMOverlay.swift; sourceTree = "<group>"; };
 		2999EEBC0C7D4835BC99731F /* PowerGridTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerGridTile.swift; sourceTree = "<group>"; };
 		A7E1F0CF2EB9000100C0FFEE /* HazardAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HazardAnnotation.swift; sourceTree = "<group>"; };
 		F54422C12C59774800CF1A1C /* FlightAnnotationAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightAnnotationAnimator.swift; sourceTree = "<group>"; };
@@ -156,6 +166,8 @@
 		A7E1F0B72EB9000100C0FFEE /* RecentEventsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentEventsService.swift; sourceTree = "<group>"; };
 		A7E1F0B12EB9000100C0FFEE /* ExchangeRateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateService.swift; sourceTree = "<group>"; };
 		A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryProfileService.swift; sourceTree = "<group>"; };
+		201886237B14648E52E05586 /* EmberElectricityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmberElectricityService.swift; sourceTree = "<group>"; };
+		7ED72D67BC46F05B7A3AB508 /* GPSJAMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPSJAMService.swift; sourceTree = "<group>"; };
 		A7E1F0AF2EB9000100C0FFEE /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
 		2CBDDC1A4F484CE1B64BF918 /* VIIRSImageryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VIIRSImageryService.swift; sourceTree = "<group>"; };
 		F5FCC8562C50534E00569DC5 /* NetworkService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = "<group>"; };
@@ -178,8 +190,11 @@
 		A7E1F0A12EB9000100C0FFEE /* FlightDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightDetails.swift; sourceTree = "<group>"; };
 		A7E1F0A32EB9000100C0FFEE /* FlightDetailsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightDetailsService.swift; sourceTree = "<group>"; };
 		810E2ADA3671E6CBAEDCACB6 /* MainMapViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMapViewModelTests.swift; sourceTree = "<group>"; };
+		52F68695A2CBBA596F4FC1E7 /* EmberElectricityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmberElectricityTests.swift; sourceTree = "<group>"; };
+		A4929D018F22D436E173CDCF /* GPSJAMTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPSJAMTests.swift; sourceTree = "<group>"; };
 		8C2CE51F435BA7A627606311 /* CountrySummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountrySummaryView.swift; sourceTree = "<group>"; };
 		2985B005ABE01B7AC39AF206 /* MainMapControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMapControls.swift; sourceTree = "<group>"; };
+		F1BEB3EA3B0BE54B9E24F1D7 /* GPSJAMLayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPSJAMLayerView.swift; sourceTree = "<group>"; };
 		218BAA0A1D86C88205F502AD /* FlightDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightDetailsView.swift; sourceTree = "<group>"; };
 		3789458953881C171E8D2B6B /* NationalityPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NationalityPickerView.swift; sourceTree = "<group>"; };
 		3E548B4245B41AC99E9E66D7 /* PowerAssetDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerAssetDetailsView.swift; sourceTree = "<group>"; };
@@ -195,6 +210,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3CA84D7E029748238E0BC095 /* SwiftyH3 in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -223,6 +239,7 @@
 				A7E1F0DD2EB9000100C0FFEE /* CountryOutlineOverlay.swift */,
 				A7E1F0E32EB9000100C0FFEE /* NightOverlay.swift */,
 				1C21F409D3FB4975A7CA5FCC /* PowerGridOverlay.swift */,
+				E5BBE7C5D835D9FB185D2C08 /* GPSJAMOverlay.swift */,
 				2999EEBC0C7D4835BC99731F /* PowerGridTile.swift */,
 				A7E1F0CF2EB9000100C0FFEE /* HazardAnnotation.swift */,
 			);
@@ -290,6 +307,8 @@
 			children = (
 				F5EC34062AB274E5004A2F57 /* TellusTests.swift */,
 				810E2ADA3671E6CBAEDCACB6 /* MainMapViewModelTests.swift */,
+				52F68695A2CBBA596F4FC1E7 /* EmberElectricityTests.swift */,
+				A4929D018F22D436E173CDCF /* GPSJAMTests.swift */,
 			);
 			path = TellusTests;
 			sourceTree = "<group>";
@@ -323,9 +342,11 @@
 				A7E1F0C92EB9000100C0FFEE /* CableDetailsView.swift */,
 				A7E1F0D12EB9000100C0FFEE /* HazardDetailsView.swift */,
 				A7E1F0A92EB9000100C0FFEE /* DestinationGuideView.swift */,
+				1D5BEF787C2452DB3CCB8E5E /* CountryElectricityView.swift */,
 				F54422B92C526D8E00CF1A1C /* MapRepresentable.swift */,
 				8C2CE51F435BA7A627606311 /* CountrySummaryView.swift */,
 				2985B005ABE01B7AC39AF206 /* MainMapControls.swift */,
+				F1BEB3EA3B0BE54B9E24F1D7 /* GPSJAMLayerView.swift */,
 				218BAA0A1D86C88205F502AD /* FlightDetailsView.swift */,
 				3789458953881C171E8D2B6B /* NationalityPickerView.swift */,
 				3E548B4245B41AC99E9E66D7 /* PowerAssetDetailsView.swift */,
@@ -405,6 +426,8 @@
 				A7E1F0B72EB9000100C0FFEE /* RecentEventsService.swift */,
 				A7E1F0B12EB9000100C0FFEE /* ExchangeRateService.swift */,
 				A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */,
+				201886237B14648E52E05586 /* EmberElectricityService.swift */,
+				7ED72D67BC46F05B7A3AB508 /* GPSJAMService.swift */,
 				A7E1F0AF2EB9000100C0FFEE /* WeatherService.swift */,
 				2CBDDC1A4F484CE1B64BF918 /* VIIRSImageryService.swift */,
 				A7E1F0A32EB9000100C0FFEE /* FlightDetailsService.swift */,
@@ -431,6 +454,9 @@
 			dependencies = (
 			);
 			name = Tellus;
+			packageProductDependencies = (
+				3CA84D7E029748238E0BC096 /* SwiftyH3 */,
+			);
 			productName = Tellus;
 			productReference = F5EC33F22AB274E4004A2F57 /* Tellus.app */;
 			productType = "com.apple.product-type.application";
@@ -503,6 +529,9 @@
 				Base,
 			);
 			mainGroup = F5EC33E92AB274E4004A2F57;
+			packageReferences = (
+				3CA84D7E029748238E0BC097 /* XCRemoteSwiftPackageReference "SwiftyH3" */,
+			);
 			productRefGroup = F5EC33F32AB274E4004A2F57 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -561,6 +590,7 @@
 				F5FCC84B2C504D9A00569DC5 /* AdvisoryStatus + Color.swift in Sources */,
 				C1D1B7947C34D6C55E901E3D /* CountrySummaryView.swift in Sources */,
 				12C52387703565F52A11BBEF /* MainMapControls.swift in Sources */,
+				07A0DA0940DDF64FA2C88AAB /* GPSJAMLayerView.swift in Sources */,
 				C47A0659FE12897BC7C036B5 /* FlightDetailsView.swift in Sources */,
 				03A02844DE8F5EB55E3FB28A /* NationalityPickerView.swift in Sources */,
 				FB4B54076F8BCC52DB5428DE /* PowerAssetDetailsView.swift in Sources */,
@@ -579,12 +609,15 @@
 				A7E1F0B82EB9000100C0FFEE /* RecentEventsService.swift in Sources */,
 				A7E1F0B22EB9000100C0FFEE /* ExchangeRateService.swift in Sources */,
 				A7E1F0E62EB9000100C0FFEE /* CountryProfileService.swift in Sources */,
+				36025743EF2C792A7B5DFD25 /* EmberElectricityService.swift in Sources */,
+				63A724F8F13B286393591869 /* GPSJAMService.swift in Sources */,
 				A7E1F0B02EB9000100C0FFEE /* WeatherService.swift in Sources */,
 				69BAEDF55B884DD8B0CC5090 /* VIIRSImageryService.swift in Sources */,
 				F54422B82C526D2800CF1A1C /* FlightMarkerAnnotationView.swift in Sources */,
 				A7E1F0CA2EB9000100C0FFEE /* CableDetailsView.swift in Sources */,
 				A7E1F0D22EB9000100C0FFEE /* HazardDetailsView.swift in Sources */,
 				A7E1F0AA2EB9000100C0FFEE /* DestinationGuideView.swift in Sources */,
+				B5C241863D121C9C9D640870 /* CountryElectricityView.swift in Sources */,
 				F5EC34202AB29704004A2F57 /* Country.swift in Sources */,
 				F5FCC85D2C50534E00569DC5 /* Endpoint.swift in Sources */,
 				F5FCC8662C5066FB00569DC5 /* FlightData.swift in Sources */,
@@ -614,6 +647,7 @@
 				A7E1F0DE2EB9000100C0FFEE /* CountryOutlineOverlay.swift in Sources */,
 				A7E1F0E42EB9000100C0FFEE /* NightOverlay.swift in Sources */,
 				C5243EDA2F9E4E65A688192B /* PowerGridOverlay.swift in Sources */,
+				C163B2D824A919764624265F /* GPSJAMOverlay.swift in Sources */,
 				FCA3CD367AEB4A3FBC0806CE /* PowerGridTile.swift in Sources */,
 				A7E1F0D02EB9000100C0FFEE /* HazardAnnotation.swift in Sources */,
 				F5FCC8622C50610F00569DC5 /* CountriesService.swift in Sources */,
@@ -626,6 +660,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				0BDD4EE90DA1E7972966A6A6 /* MainMapViewModelTests.swift in Sources */,
+				C2A9EB89E28CAE0C6D2AFC77 /* EmberElectricityTests.swift in Sources */,
+				8392162ABCE6EF7AA2952CCC /* GPSJAMTests.swift in Sources */,
 				F5EC34072AB274E5004A2F57 /* TellusTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -945,6 +981,24 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+/* Begin XCRemoteSwiftPackageReference section */
+		3CA84D7E029748238E0BC097 /* XCRemoteSwiftPackageReference "SwiftyH3" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pawelmajcher/SwiftyH3.git";
+			requirement = {
+				kind = exactVersion;
+				version = 0.6.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3CA84D7E029748238E0BC096 /* SwiftyH3 */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3CA84D7E029748238E0BC097 /* XCRemoteSwiftPackageReference "SwiftyH3" */;
+			productName = SwiftyH3;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F5EC33EA2AB274E4004A2F57 /* Project object */;
 }

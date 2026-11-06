@@ -6,6 +6,7 @@ enum MapLayer: String {
     case cables = "showsCables"
     case powerGrid = "showsPowerGrid"
     case earthAtNight = "showsEarthAtNight"
+    case gpsJam = "showsGPSJAM"
     case viirsImagery = "showsVIIRSImagery"
 }
 
@@ -48,7 +49,7 @@ final class UserDefaultsMapPreferencesStore: MapPreferencesStore {
                 return true
             case .earthAtNight:
                 return defaults.bool(forKey: "showsDayNight") || defaults.bool(forKey: "showsNightLights")
-            case .cables, .powerGrid, .viirsImagery:
+            case .cables, .powerGrid, .viirsImagery, .gpsJam:
                 return false
             }
         }

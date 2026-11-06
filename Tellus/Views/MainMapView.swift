@@ -12,6 +12,7 @@ struct MainMapView: View {
 
     @Bindable var viewModel: MainMapViewModel
     @Environment(\.scenePhase) private var scenePhase
+    @State private var gpsJam = GPSJAMLayerState()
     @State private var selectedPowerAsset: PowerGridAsset?
     @State private var viirsDates: [String] = []
     @State private var selectedVIIRSDate: String?
@@ -21,6 +22,10 @@ struct MainMapView: View {
     private var viirsImageryDate: String? {
         guard viewModel.showsVIIRSImagery else { return nil }
         return selectedVIIRSDate ?? viirsDates.first
+    }
+
+    private var gpsJamRequest: GPSJAMLayerState.Request {
+        .init(isActive: viewModel.showsGPSJAM && scenePhase == .active, day: gpsJam.selectedDay)
     }
 
     var body: some View {
@@ -33,6 +38,8 @@ struct MainMapView: View {
             viirsImageryDate: viirsImageryDate,
             showsPowerGrid: viewModel.showsPowerGrid,
             selectPowerAsset: { selectedPowerAsset = $0 },
+            gpsJamOverlay: viewModel.showsGPSJAM ? gpsJam.overlay : nil,
+            selectGPSJAMCell: { gpsJam.selectedCell = $0 },
             cables: viewModel.cables,
             landingPoints: viewModel.landingPoints,
             selectedCableID: viewModel.selectedCableID,
@@ -59,10 +66,14 @@ struct MainMapView: View {
         .overlay(alignment: .bottom) {
             MainMapControls(
                 viewModel: viewModel,
+                gpsJam: gpsJam,
                 isPickingCountry: $isPickingCountry,
                 selectedVIIRSDate: $selectedVIIRSDate,
                 viirsDates: viirsDates
             )
+        }
+        .task(id: gpsJamRequest) { [request = gpsJamRequest] in
+            await gpsJam.load(request, fetch: viewModel.loadGPSJAMOverlay(for:))
         }
         .task(id: viewModel.showsVIIRSImagery && scenePhase == .active) {
             guard viewModel.showsVIIRSImagery, scenePhase == .active else { return }
@@ -109,6 +120,9 @@ struct MainMapView: View {
         }
         .sheet(item: $viewModel.selectedHazard) { hazard in
             HazardDetailsView(hazard: hazard)
+        }
+        .sheet(item: Binding(get: { gpsJam.selectedCell }, set: { gpsJam.selectedCell = $0 })) { cell in
+            GPSJAMCellDetails(cell: cell)
         }
         .sheet(item: $selectedPowerAsset) { asset in
             PowerAssetDetailsView(asset: asset)

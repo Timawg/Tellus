@@ -25,6 +25,7 @@ final class MainMapViewModel {
         self.showsHazards = preferences[.hazards]
         self.showsPowerGrid = preferences[.powerGrid]
         self.showsEarthAtNight = preferences[.earthAtNight]
+        self.showsGPSJAM = preferences[.gpsJam]
         self.showsVIIRSImagery = preferences[.viirsImagery]
     }
 
@@ -163,6 +164,10 @@ final class MainMapViewModel {
     var recentEvents: RecentEvents?
     /// Current GDACS orange and red alerts for the selected country.
     var disasterAlerts: [DisasterAlert] = []
+
+    func loadElectricityProfile(countryCode: String) async throws -> CountryElectricityProfile? {
+        try await services.emberElectricityService.getProfile(countryCode: countryCode)
+    }
 
     func loadCountryProfile(countryCode: String) async throws -> [CountryIndicatorObservation] {
         try await services.countryProfileService.getProfile(countryCode: countryCode)
@@ -317,6 +322,14 @@ final class MainMapViewModel {
 
     var showsEarthAtNight: Bool {
         didSet { preferences[.earthAtNight] = showsEarthAtNight }
+    }
+
+    var showsGPSJAM: Bool {
+        didSet { preferences[.gpsJam] = showsGPSJAM }
+    }
+
+    func loadGPSJAMOverlay(for day: Date?) async throws -> GPSJAMOverlay {
+        try await services.gpsJamService.getOverlay(for: day)
     }
 
     var showsVIIRSImagery: Bool {
