@@ -2,8 +2,6 @@
 
 Tellus is a world map and travel guide for iPhone and iPad, built with SwiftUI and Apple MapKit. Explore countries, follow aircraft, trace submarine cables, and see which side of Earth is in darkness.
 
-![Tellus app walkthrough](https://github.com/user-attachments/assets/00da079a-e881-4e0a-afb1-789fc2519c29)
-
 ## Explore a country
 
 Tellus starts on a random country. Tap a country on the map, search for it in the country picker, or jump to a neighbouring country from its guide. The map outlines the selected country and zooms to fit it.
