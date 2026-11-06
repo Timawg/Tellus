@@ -1,0 +1,32 @@
+name: Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ios-tests:
+    name: iOS tests
+    runs-on: macos-26
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run XCTest
+        run: >
+          xcodebuild
+          -project Tellus.xcodeproj
+          -scheme Tellus
+          -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest'
+          -parallel-testing-enabled NO
+          DEVELOPMENT_TEAM=
+          CODE_SIGN_IDENTITY=-
+          test
