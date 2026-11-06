@@ -362,20 +362,7 @@ struct MainMapView: View {
                     if !isPickingCountry {
                         VStack(spacing: 6) {
                             flightsNotice
-                            if showsEarthAtNight {
-                                if let nightLightsDate {
-                                    mapCredit("NASA GIBS · Black Marble\n\(nightLightsDate) UTC")
-                                } else {
-                                    mapCredit(nightLightsLoadFailed ? "Night lights unavailable" : "Loading night lights…")
-                                }
-                            }
-                            if showsVIIRSImagery {
-                                if let date = viirsImageryDate {
-                                    mapCredit("NASA GIBS · VIIRS\n\(date) UTC")
-                                } else {
-                                    mapCredit(viirsLoadFailed ? "VIIRS imagery unavailable" : "Loading VIIRS dates…")
-                                }
-                            }
+
                             if showsPowerGrid {
                                 powerGridCredit
                             }
@@ -401,16 +388,6 @@ struct MainMapView: View {
         .sheet(isPresented: $showingNationalityPicker) {
             NationalityPickerView(countries: viewModel.countries, selection: $viewModel.nationality)
         }
-    }
-
-    private func mapCredit(_ credit: String) -> some View {
-        Text(credit)
-            .font(.caption2)
-            .foregroundStyle(.white)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(.black.opacity(0.65), in: Capsule())
     }
 
     private var powerGridCredit: some View {

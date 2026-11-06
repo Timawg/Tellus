@@ -26,6 +26,7 @@
 		F55BBEF22ABA9D1E005E32E1 /* AdvisoryStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = F55BBEF12ABA9D1E005E32E1 /* AdvisoryStatus.swift */; };
 		F5EC33F62AB274E4004A2F57 /* TellusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC33F52AB274E4004A2F57 /* TellusApp.swift */; };
 		A7E1F0E02EB9000100C0FFEE /* country-borders.geojson in Resources */ = {isa = PBXBuildFile; fileRef = A7E1F0DF2EB9000100C0FFEE /* country-borders.geojson */; };
+		63485538B62549CFBE52F735 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E4E3AEB39488436297AF18A5 /* LaunchScreen.storyboard */; };
 		F5EC33F82AB274E4004A2F57 /* MainMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC33F72AB274E4004A2F57 /* MainMapView.swift */; };
 		F5EC33FA2AB274E5004A2F57 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F5EC33F92AB274E5004A2F57 /* Assets.xcassets */; };
 		F5EC33FD2AB274E5004A2F57 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F5EC33FC2AB274E5004A2F57 /* Preview Assets.xcassets */; };
@@ -114,6 +115,7 @@
 		F5EC33F22AB274E4004A2F57 /* Tellus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tellus.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5EC33F52AB274E4004A2F57 /* TellusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TellusApp.swift; sourceTree = "<group>"; };
 		A7E1F0DF2EB9000100C0FFEE /* country-borders.geojson */ = {isa = PBXFileReference; lastKnownFileType = text; name = country-borders.geojson; path = Resources/country-borders.geojson; sourceTree = "<group>"; };
+		E4E3AEB39488436297AF18A5 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		F5EC33F72AB274E4004A2F57 /* MainMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMapView.swift; sourceTree = "<group>"; };
 		F5EC33F92AB274E5004A2F57 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F5EC33FC2AB274E5004A2F57 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
@@ -246,6 +248,7 @@
 				F5FCC8402C504BB700569DC5 /* ViewModels */,
 				F5EC33F52AB274E4004A2F57 /* TellusApp.swift */,
 				A7E1F0DF2EB9000100C0FFEE /* country-borders.geojson */,
+				E4E3AEB39488436297AF18A5 /* LaunchScreen.storyboard */,
 				F5EC33F92AB274E5004A2F57 /* Assets.xcassets */,
 				F5EC33FB2AB274E5004A2F57 /* Preview Content */,
 			);
@@ -486,6 +489,7 @@
 				F5EC33FD2AB274E5004A2F57 /* Preview Assets.xcassets in Resources */,
 				F5EC33FA2AB274E5004A2F57 /* Assets.xcassets in Resources */,
 				A7E1F0E02EB9000100C0FFEE /* country-borders.geojson in Resources */,
+				63485538B62549CFBE52F735 /* LaunchScreen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -734,7 +738,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
@@ -764,7 +768,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
