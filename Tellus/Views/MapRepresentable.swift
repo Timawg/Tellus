@@ -16,6 +16,8 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
     var showsEarthAtNight = false
     var nightLightsDate: String?
     var viirsImageryDate: String?
+    var showsPowerGrid = false
+    var selectPowerAsset: (PowerGridAsset) -> Void = { _ in }
     /// Undersea cables to draw; empty when the layer is off.
     var cables: [SubmarineCable] = []
     var landingPoints: [CableLandingPoint] = []
@@ -51,6 +53,7 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         private var nightLightsOverlay: MKTileOverlay?
         private var nightLightsDate: String?
         private var nightTimer: Timer?
+        private var powerGridOverlay: PowerGridOverlay?
 
         init(parent: MapRepresentable) {
             self.parent = parent
@@ -95,6 +98,22 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
             tiles.canReplaceMapContent = false
             viirsOverlay = tiles
             mapView.insertOverlay(tiles, at: 0, level: .aboveRoads)
+        }
+
+        func updatePowerGrid(on mapView: MKMapView, enabled: Bool) {
+            if enabled {
+                guard powerGridOverlay == nil else { return }
+                let grid = PowerGridOverlay()
+                powerGridOverlay = grid
+                if let imagery = (nightLightsOverlay as MKOverlay?) ?? (nightOverlay as MKOverlay?) ?? viirsOverlay {
+                    mapView.insertOverlay(grid, above: imagery)
+                } else {
+                    mapView.insertOverlay(grid, at: 0, level: .aboveRoads)
+                }
+            } else if let powerGridOverlay {
+                mapView.removeOverlay(powerGridOverlay)
+                self.powerGridOverlay = nil
+            }
         }
 
         @MainActor
@@ -171,7 +190,8 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
 
             let coordinate = mapView.convert(location, toCoordinateFrom: mapView)
             let point = MKMapPoint(coordinate)
-            let tolerance = 22 * mapView.visibleMapRect.width / Double(mapView.bounds.width)
+            let mapPointsPerScreenPoint = mapView.visibleMapRect.width / Double(mapView.bounds.width)
+            let tolerance = 22 * mapPointsPerScreenPoint
             let nearest = cableOverlays.values
                 .filter { $0.boundingMapRect.insetBy(dx: -tolerance, dy: -tolerance).contains(point) }
                 .map { (id: $0.cableID, distance: $0.distance(to: point)) }
@@ -179,6 +199,8 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
                 .min { $0.distance < $1.distance }
             if let nearest {
                 parent.selectCable(nearest.id)
+            } else if let asset = powerGridOverlay?.asset(at: point, mapPointsPerScreenPoint: mapPointsPerScreenPoint) {
+                parent.selectPowerAsset(asset)
             } else {
                 parent.tapCountry(coordinate)
             }
@@ -235,9 +257,10 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
             }
             outlineOverlay = border.map(CountryOutlineOverlay.init(border:))
             if let outlineOverlay {
-                // Keep it above the imagery and under cables and tracks.
-                if let imagery = (nightLightsOverlay as MKOverlay?) ?? (nightOverlay as MKOverlay?) ?? viirsOverlay {
-                    mapView.insertOverlay(outlineOverlay, above: imagery)
+                // Keep it above the imagery and grid, and under cables and tracks.
+                if let backdrop = (powerGridOverlay as MKOverlay?) ?? (nightLightsOverlay as MKOverlay?)
+                    ?? (nightOverlay as MKOverlay?) ?? viirsOverlay {
+                    mapView.insertOverlay(outlineOverlay, above: backdrop)
                 } else {
                     mapView.insertOverlay(outlineOverlay, at: 0, level: .aboveRoads)
                 }
@@ -406,6 +429,7 @@ struct MapRepresentable<T: MKAnnotation>: UIViewRepresentable {
         context.coordinator.parent = self
         context.coordinator.updateVIIRSImagery(on: uiView, date: viirsImageryDate)
         context.coordinator.updateEarthAtNight(on: uiView, enabled: showsEarthAtNight, lightsDate: nightLightsDate)
+        context.coordinator.updatePowerGrid(on: uiView, enabled: showsPowerGrid)
         context.coordinator.updateCables(on: uiView, cables: cables, landingPoints: landingPoints, selectedID: selectedCableID)
         context.coordinator.updateHazards(on: uiView, hazards: hazards, tracks: cycloneTracks)
         context.coordinator.updateOutline(on: uiView, border: outline)

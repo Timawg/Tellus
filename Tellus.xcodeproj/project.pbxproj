@@ -17,6 +17,8 @@
 		A7E1F0C82EB9000100C0FFEE /* CableOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0C72EB9000100C0FFEE /* CableOverlay.swift */; };
 		A7E1F0DE2EB9000100C0FFEE /* CountryOutlineOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0DD2EB9000100C0FFEE /* CountryOutlineOverlay.swift */; };
 		A7E1F0E42EB9000100C0FFEE /* NightOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0E32EB9000100C0FFEE /* NightOverlay.swift */; };
+		C5243EDA2F9E4E65A688192B /* PowerGridOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C21F409D3FB4975A7CA5FCC /* PowerGridOverlay.swift */; };
+		FCA3CD367AEB4A3FBC0806CE /* PowerGridTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2999EEBC0C7D4835BC99731F /* PowerGridTile.swift */; };
 		A7E1F0D02EB9000100C0FFEE /* HazardAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0CF2EB9000100C0FFEE /* HazardAnnotation.swift */; };
 		F54422C22C59774800CF1A1C /* FlightAnnotationAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F54422C12C59774800CF1A1C /* FlightAnnotationAnimator.swift */; };
 		F54422C42C599F7300CF1A1C /* CGAffineTransform.swift in Sources */ = {isa = PBXBuildFile; fileRef = F54422C32C599F7300CF1A1C /* CGAffineTransform.swift */; };
@@ -102,6 +104,8 @@
 		A7E1F0C72EB9000100C0FFEE /* CableOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CableOverlay.swift; sourceTree = "<group>"; };
 		A7E1F0DD2EB9000100C0FFEE /* CountryOutlineOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryOutlineOverlay.swift; sourceTree = "<group>"; };
 		A7E1F0E32EB9000100C0FFEE /* NightOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightOverlay.swift; sourceTree = "<group>"; };
+		1C21F409D3FB4975A7CA5FCC /* PowerGridOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerGridOverlay.swift; sourceTree = "<group>"; };
+		2999EEBC0C7D4835BC99731F /* PowerGridTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerGridTile.swift; sourceTree = "<group>"; };
 		A7E1F0CF2EB9000100C0FFEE /* HazardAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HazardAnnotation.swift; sourceTree = "<group>"; };
 		F54422C12C59774800CF1A1C /* FlightAnnotationAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightAnnotationAnimator.swift; sourceTree = "<group>"; };
 		F54422C32C599F7300CF1A1C /* CGAffineTransform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGAffineTransform.swift; sourceTree = "<group>"; };
@@ -194,6 +198,8 @@
 				A7E1F0C72EB9000100C0FFEE /* CableOverlay.swift */,
 				A7E1F0DD2EB9000100C0FFEE /* CountryOutlineOverlay.swift */,
 				A7E1F0E32EB9000100C0FFEE /* NightOverlay.swift */,
+				1C21F409D3FB4975A7CA5FCC /* PowerGridOverlay.swift */,
+				2999EEBC0C7D4835BC99731F /* PowerGridTile.swift */,
 				A7E1F0CF2EB9000100C0FFEE /* HazardAnnotation.swift */,
 			);
 			path = Annotations;
@@ -560,6 +566,8 @@
 				A7E1F0C82EB9000100C0FFEE /* CableOverlay.swift in Sources */,
 				A7E1F0DE2EB9000100C0FFEE /* CountryOutlineOverlay.swift in Sources */,
 				A7E1F0E42EB9000100C0FFEE /* NightOverlay.swift in Sources */,
+				C5243EDA2F9E4E65A688192B /* PowerGridOverlay.swift in Sources */,
+				FCA3CD367AEB4A3FBC0806CE /* PowerGridTile.swift in Sources */,
 				A7E1F0D02EB9000100C0FFEE /* HazardAnnotation.swift in Sources */,
 				F5FCC8622C50610F00569DC5 /* CountriesService.swift in Sources */,
 				F5EC34262AB96F1F004A2F57 /* AdmissoryStatus.swift in Sources */,

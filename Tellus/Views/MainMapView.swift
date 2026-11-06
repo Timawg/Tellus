@@ -14,6 +14,8 @@ struct MainMapView: View {
     @AppStorage("showsEarthAtNight") private var showsEarthAtNight =
         UserDefaults.standard.bool(forKey: "showsDayNight") || UserDefaults.standard.bool(forKey: "showsNightLights")
     @AppStorage("showsVIIRSImagery") private var showsVIIRSImagery = false
+    @AppStorage("showsPowerGrid") private var showsPowerGrid = false
+    @State private var selectedPowerAsset: PowerGridAsset?
     @Environment(\.scenePhase) private var scenePhase
     @State private var viirsDates: [String] = []
     @State private var selectedVIIRSDate: String?
@@ -39,6 +41,8 @@ struct MainMapView: View {
             showsEarthAtNight: showsEarthAtNight,
             nightLightsDate: nightLightsDate,
             viirsImageryDate: viirsImageryDate,
+            showsPowerGrid: showsPowerGrid,
+            selectPowerAsset: { selectedPowerAsset = $0 },
             cables: viewModel.cables,
             landingPoints: viewModel.landingPoints,
             selectedCableID: viewModel.selectedCableID,
@@ -131,6 +135,9 @@ struct MainMapView: View {
         }
         .sheet(item: $viewModel.selectedHazard) { hazard in
             HazardDetailsView(hazard: hazard)
+        }
+        .sheet(item: $selectedPowerAsset) { asset in
+            powerAssetDetails(asset)
         }
         .sheet(item: $viewModel.selectedFlight) {
             viewModel.selectedFlight = nil
@@ -369,6 +376,9 @@ struct MainMapView: View {
                                     mapCredit(viirsLoadFailed ? "VIIRS imagery unavailable" : "Loading VIIRS dates…")
                                 }
                             }
+                            if showsPowerGrid {
+                                powerGridCredit
+                            }
                         }
                     }
                     Spacer()
@@ -401,6 +411,51 @@ struct MainMapView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(.black.opacity(0.65), in: Capsule())
+    }
+
+    private var powerGridCredit: some View {
+        VStack(spacing: 3) {
+            HStack(spacing: 5) {
+                Text("Lines").foregroundStyle(Color(cgColor: PowerGridAsset.Kind.line.color))
+                Text("Substations").foregroundStyle(Color(cgColor: PowerGridAsset.Kind.substation.color))
+                Text("Plants").foregroundStyle(Color(cgColor: PowerGridAsset.Kind.plant.color))
+            }
+            Link("© OpenStreetMap contributors", destination: URL(string: "https://www.openstreetmap.org/copyright")!)
+        }
+        .font(.caption2)
+        .foregroundStyle(.white)
+        .multilineTextAlignment(.center)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 9))
+    }
+
+    private func powerAssetDetails(_ asset: PowerGridAsset) -> some View {
+        NavigationStack {
+            List {
+                Section {
+                    LabeledContent("Type", value: asset.kind.rawValue)
+                    if let operatorName = asset.operatorName {
+                        LabeledContent("Operator", value: operatorName)
+                    }
+                    if let voltage = asset.voltage, voltage > 0 {
+                        LabeledContent("Voltage", value: "\(voltage.formatted(.number.precision(.fractionLength(0...2)))) kV")
+                    }
+                    if let energySource = asset.energySource {
+                        LabeledContent("Energy source", value: energySource.replacingOccurrences(of: "_", with: " "))
+                    }
+                }
+                Link("View on OpenStreetMap", destination: asset.sourceURL)
+            }
+            .navigationTitle(asset.name ?? asset.kind.rawValue)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { selectedPowerAsset = nil }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 
     private func updateVIIRSImageryDates() async {
@@ -473,6 +528,9 @@ struct MainMapView: View {
             }
             Toggle(isOn: $viewModel.showsCables) {
                 Label("Undersea cables", systemImage: "cable.connector")
+            }
+            Toggle(isOn: $showsPowerGrid) {
+                Label("Power grid", systemImage: "bolt")
             }
             Toggle(isOn: $showsEarthAtNight) {
                 Label("Earth at night", systemImage: "circle.lefthalf.filled")

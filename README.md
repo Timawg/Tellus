@@ -27,6 +27,7 @@ Open **Map layers** to enable or disable each layer. Tellus remembers the settin
 | **Live flights** | Aircraft in the visible map area, including military traffic. Tap an aircraft for available flight telemetry, registration, aircraft photo, and route details. | On |
 | **Natural hazards** | Earthquakes, tropical cyclones and their tracks, floods, wildfires, droughts, and volcanic eruptions. Tap a marker for details. | On |
 | **Undersea cables** | Submarine cable routes and landing points. Tap a cable to see its details and source link. | Off |
+| **Power grid** | Mapped power lines, substations, and power plants. Zoom in and tap a feature to see available details and open its OpenStreetMap record. | Off |
 | **Earth at night** | A moving shade over the night hemisphere and a transparent overlay from the latest available daily NOAA-20 Black Marble nighttime imagery. | Off |
 | **VIIRS true colour** | Recent NOAA-21 satellite imagery. Starts on the latest date NASA GIBS lists, with a choice of available dates from the past seven UTC days. | Off |
 
@@ -87,6 +88,7 @@ python3 scripts/build_country_borders.py ne_50m_admin_0_countries.geojson countr
 | Aircraft positions | [OpenSky Network](https://opensky-network.org/) and [adsb.lol](https://www.adsb.lol/) |
 | Aircraft registration, routes, and photos | [adsbdb](https://www.adsbdb.com/) and [Airport-Data.com](https://www.airport-data.com/) |
 | Submarine cables and landing points | [TeleGeography Submarine Cable Map](https://www.submarinecablemap.com/) |
+| Power lines, substations, and plants | [Open Infrastructure Map vector tiles](https://openinframap.org/about). Data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL. |
 | Day–night boundary | [U.S. Naval Observatory solar position calculation](https://aa.usno.navy.mil/faq/sun_approx) |
 | Black Marble night lights | [NASA Global Imagery Browse Services (GIBS)](https://nasa-gibs.github.io/gibs-api-docs/), part of NASA's Earth Science Data and Information System (ESDIS) |
 
