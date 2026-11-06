@@ -8,73 +8,137 @@
 import Foundation
 import UIKit
 import MapKit
-import Combine
 
+@MainActor
 @Observable
 final class MainMapViewModel {
-    
-    private let countriesService: CountriesServiceProtocol
-    private let admissoryService: AdmissoryServiceProtocol
-    private let advisoryService: AdvisoryServiceProtocol
-    private let flightService: FlightServiceProtocol
-    private let flightDetailsService: FlightDetailsServiceProtocol
-    private let weatherService: WeatherServiceProtocol
-    private let viirsImageryService: VIIRSImageryServiceProtocol
-    private let exchangeRateService: ExchangeRateServiceProtocol
-    private let recentEventsService: RecentEventsServiceProtocol
-    private let countryProfileService: CountryProfileServiceProtocol
-    private let disasterAlertService: DisasterAlertServiceProtocol
-    private let internetOutageService: InternetOutageServiceProtocol
-    private let outbreakService: OutbreakServiceProtocol
-    private let cableService: CableServiceProtocol
-    private let hazardService: HazardServiceProtocol
-    private var timerSubscription: AnyCancellable?
-    /// The latest flights from both feeds, by ICAO address.
-    private var liveFlights: [String: LiveFlight] = [:]
-    /// OpenSky's last answer, kept while it rate limits us so military
-    /// updates don't wipe the civil traffic.
-    private var lastOpenSkyFlights: [LiveFlight] = []
 
-    init(
-        countriesService: CountriesServiceProtocol,
-        admissoryService: AdmissoryServiceProtocol,
-        advisoryService: AdvisoryServiceProtocol,
-        flightService: FlightServiceProtocol,
-        flightDetailsService: FlightDetailsServiceProtocol,
-        weatherService: WeatherServiceProtocol,
-        viirsImageryService: VIIRSImageryServiceProtocol,
-        exchangeRateService: ExchangeRateServiceProtocol,
-        recentEventsService: RecentEventsServiceProtocol,
-        countryProfileService: CountryProfileServiceProtocol,
-        disasterAlertService: DisasterAlertServiceProtocol,
-        internetOutageService: InternetOutageServiceProtocol,
-        outbreakService: OutbreakServiceProtocol,
-        cableService: CableServiceProtocol,
-        hazardService: HazardServiceProtocol
-    ) {
-        self.countriesService = countriesService
-        self.admissoryService = admissoryService
-        self.advisoryService = advisoryService
-        self.flightService = flightService
-        self.flightDetailsService = flightDetailsService
-        self.weatherService = weatherService
-        self.viirsImageryService = viirsImageryService
-        self.exchangeRateService = exchangeRateService
-        self.recentEventsService = recentEventsService
-        self.countryProfileService = countryProfileService
-        self.disasterAlertService = disasterAlertService
-        self.internetOutageService = internetOutageService
-        self.outbreakService = outbreakService
-        self.cableService = cableService
-        self.hazardService = hazardService
+    private let services: MainMapServices
+    private let preferences: MapPreferencesStore
+
+    init(services: MainMapServices, preferences: MapPreferencesStore) {
+        self.services = services
+        self.preferences = preferences
+        self.nationality = preferences.nationality
+        self.showsFlights = preferences[.flights]
+        self.showsCables = preferences[.cables]
+        self.showsHazards = preferences[.hazards]
+        self.showsPowerGrid = preferences[.powerGrid]
+        self.showsEarthAtNight = preferences[.earthAtNight]
+        self.showsVIIRSImagery = preferences[.viirsImagery]
     }
+
+    // MARK: Country selection and map region
+
+    @ObservationIgnored private var visibleRect: MKMapRect = .world
+    var region: MKCoordinateRegion = .init(.world)
+    var countries: [Country] = []
+    var current: Country?
+    var loadingError: String?
+
+    func retrieveCountries() async {
+        do {
+            // Alphabetical, so the pickers are easy to scan.
+            let loaded = try await services.countriesService.getAllCountries()
+            guard !Task.isCancelled else { return }
+            countries = loaded.sorted {
+                ($0.name?.common ?? "").localizedStandardCompare($1.name?.common ?? "") == .orderedAscending
+            }
+            loadingError = nil
+            selectRandomCountry()
+        } catch {
+            guard !Task.isCancelled else { return }
+            loadingError = "Could not load countries. Please check your connection and try again."
+        }
+    }
+
+    private func findRegion(by name: String) async -> MKCoordinateRegion? {
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = name
+        let results = try? await MKLocalSearch(request: request).start()
+        return results?.boundingRegion
+    }
+
+    func selectRandomCountry() {
+        guard let randomCountry = countries.randomElement() else {
+            return
+        }
+        current = randomCountry
+    }
+
+    /// Countries sharing a border with `country`, by name.
+    func neighbours(of country: Country) -> [Country] {
+        let codes = Set(country.borders ?? [])
+        return countries.filter { $0.cca3.map(codes.contains) ?? false }
+    }
+
+    /// The selected country's outline; nil when it isn't in the bundled
+    /// borders (a few tiny territories).
+    var selectedBorder: CountryBorder?
+    @ObservationIgnored private var borders: [String: CountryBorder]?
+    @ObservationIgnored private var bordersTask: Task<[String: CountryBorder], Never>?
+
+    /// Selects the country under a tap on the map. Taps on the sea, or on
+    /// the selected country, do nothing.
+    func selectCountry(at coordinate: CLLocationCoordinate2D) async {
+        let borders = await loadBorders()
+        guard let code = CountryBorders.country(at: coordinate, in: borders),
+              code != current?.cca3,
+              let country = countries.first(where: { $0.cca3 == code }) else { return }
+        UISelectionFeedbackGenerator().selectionChanged()
+        current = country
+    }
+
+    /// Decodes the bundled borders once, off the main thread.
+    private func loadBorders() async -> [String: CountryBorder] {
+        if let borders { return borders }
+        let task = bordersTask ?? Task.detached(priority: .userInitiated) {
+            (try? CountryBorders.load()) ?? [:]
+        }
+        bordersTask = task
+        let loaded = await task.value
+        borders = loaded
+        bordersTask = nil
+        return loaded
+    }
+
+    /// Outlines the selected country and zooms to fit it between the
+    /// country card and the bottom buttons. Countries without an outline fall
+    /// back to a zoom based on their area.
+    private func updateRegion() async {
+        guard let country = current else {
+            selectedBorder = nil
+            return
+        }
+        let border = await loadBorders()[country.cca3 ?? ""]
+        guard !Task.isCancelled, current?.id == country.id else { return }
+        selectedBorder = border
+        if let border {
+            region = MapRegionCalculator.fitting(border, in: visibleRect)
+        } else if let areaRegion = MapRegionCalculator.region(for: country) {
+            region = areaRegion
+        } else if let name = country.name?.common,
+                  let searchRegion = await findRegion(by: name),
+                  !Task.isCancelled, current?.id == country.id {
+            region = searchRegion
+        }
+    }
+
+    // MARK: Destination and passport information
+
+    var nationality: Country? {
+        didSet { preferences.nationality = nationality }
+    }
+    var advisoryStatus: AdvisoryStatus?
+    /// The advisory's entry, health, laws and climate advice and emergency
+    /// numbers, without the parts that only apply to Canadians.
+    var destinationGuide: DestinationGuide?
+    var isLoadingDestinationGuide = false
+    var admissoryStatus: AdmissoryStatus?
 
     /// Weather at the selected country's capital.
     var destinationWeather: DestinationWeather?
 
-    func loadVIIRSImageryDates(for product: VIIRSImageryService.Product) async throws -> [String] {
-        try await viirsImageryService.getAvailableDates(for: product)
-    }
     /// What one unit of the home currency buys in each of the selected
     /// country's currencies. Empty when they share a currency.
     var exchangeRates: [ExchangeRate] = []
@@ -87,13 +151,11 @@ final class MainMapViewModel {
             ?? "USD"
     }
 
-    @MainActor
-    func updateWeather() async {
+    private func updateWeather() async {
         guard let country = current else { return }
-        destinationWeather = nil
-        let weather = try? await weatherService.getWeather(for: country)
+        let weather = try? await services.weatherService.getWeather(for: country)
         // Another country may have been chosen while loading.
-        guard current?.cca2 == country.cca2 else { return }
+        guard !Task.isCancelled, current?.id == country.id else { return }
         destinationWeather = weather
     }
 
@@ -103,24 +165,20 @@ final class MainMapViewModel {
     var disasterAlerts: [DisasterAlert] = []
 
     func loadCountryProfile(countryCode: String) async throws -> [CountryIndicatorObservation] {
-        try await countryProfileService.getProfile(countryCode: countryCode)
+        try await services.countryProfileService.getProfile(countryCode: countryCode)
     }
 
-    @MainActor
-    func updateRecentEvents() async {
+    private func updateRecentEvents() async {
         guard let country = current else { return }
-        recentEvents = nil
-        let events = try? await recentEventsService.getRecentEvents(for: country)
-        guard current?.cca2 == country.cca2 else { return }
+        let events = try? await services.recentEventsService.getRecentEvents(for: country)
+        guard !Task.isCancelled, current?.id == country.id else { return }
         recentEvents = events
     }
 
-    @MainActor
-    func updateDisasterAlerts() async {
+    private func updateDisasterAlerts() async {
         guard let country = current, let code = country.cca2 else { return }
-        disasterAlerts = []
-        let alerts = (try? await disasterAlertService.getAlerts(countryCode: code)) ?? []
-        guard current?.cca2 == country.cca2 else { return }
+        let alerts = (try? await services.disasterAlertService.getAlerts(countryCode: code)) ?? []
+        guard !Task.isCancelled, current?.id == country.id else { return }
         disasterAlerts = alerts
     }
 
@@ -132,58 +190,256 @@ final class MainMapViewModel {
     /// Reports per country, built once from WHO's list.
     @ObservationIgnored private var outbreakIndex: [String: [OutbreakReport]]?
 
-    @MainActor
-    func updateInternetOutages() async {
+    private func updateInternetOutages() async {
         guard let country = current, let code = country.cca2 else { return }
-        internetOutages = []
-        let outages = (try? await internetOutageService.getOutages(countryCode: code)) ?? []
-        guard current?.cca2 == country.cca2 else { return }
+        let outages = (try? await services.internetOutageService.getOutages(countryCode: code)) ?? []
+        guard !Task.isCancelled, current?.id == country.id else { return }
         internetOutages = outages
     }
 
-    @MainActor
-    func updateOutbreakReports() async {
+    private func updateOutbreakReports() async {
         guard let country = current, let code = country.cca2 else { return }
-        outbreakReports = []
-        if outbreakIndex == nil, let reports = try? await outbreakService.getReports() {
+        if outbreakIndex == nil, let reports = try? await services.outbreakService.getReports() {
             let countries = countries
             outbreakIndex = await Task.detached(priority: .userInitiated) {
                 OutbreakCountryMatcher.index(reports, countries: countries)
             }.value
         }
-        guard current?.cca2 == country.cca2 else { return }
+        guard !Task.isCancelled, current?.id == country.id else { return }
         outbreakReports = outbreakIndex?[code] ?? []
     }
 
-    @MainActor
-    func updateExchangeRates() async {
+    private func updateExchangeRates() async {
         guard let country = current else { return }
-        exchangeRates = []
+        let selection = travelSelection
         let home = homeCurrency
         let destinationCurrencies = (country.currencies ?? [:]).keys.sorted().filter { $0 != home }
         guard !destinationCurrencies.isEmpty,
-              let rates = try? await exchangeRateService.getRates(base: home) else {
-            exchangeRates = []
-            return
-        }
-        guard current?.cca2 == country.cca2, homeCurrency == home else { return }
+              let rates = try? await services.exchangeRateService.getRates(base: home),
+              !Task.isCancelled, travelSelection == selection else { return }
         exchangeRates = destinationCurrencies.compactMap { code in
             rates.rates[code].map { ExchangeRate(home: home, destination: code, rate: $0, date: rates.date) }
         }
     }
 
-    @ObservationIgnored var visibleRect: MKMapRect = .world
-    var region: MKCoordinateRegion = .init(.world)
-    var countries: [Country] = []
-    var current: Country?
-    var nationality: Country? = getPersistedNationality()
-    var advisoryStatus: AdvisoryStatus?
-    /// The advisory's entry, health, laws and climate advice and emergency
-    /// numbers, without the parts that only apply to Canadians.
-    var destinationGuide: DestinationGuide?
-    var isLoadingDestinationGuide = false
-    var admissoryStatus: AdmissoryStatus?
-    var loadingError: String?
+    struct TravelSelection: Equatable {
+        let destinationID: Country.ID?
+        let nationalityID: Country.ID?
+    }
+
+    var travelSelection: TravelSelection {
+        TravelSelection(destinationID: current?.id, nationalityID: nationality?.id)
+    }
+
+    func refreshDestination() async {
+        guard !Task.isCancelled else { return }
+        advisoryStatus = nil
+        destinationGuide = nil
+        isLoadingDestinationGuide = current?.cca2 != nil
+        destinationWeather = nil
+        recentEvents = nil
+        disasterAlerts = []
+        internetOutages = []
+        outbreakReports = []
+
+        async let map: Void = updateRegion()
+        async let advisory: Void = updateAdvisoryStatus()
+        async let weather: Void = updateWeather()
+        async let events: Void = updateRecentEvents()
+        async let alerts: Void = updateDisasterAlerts()
+        async let outages: Void = updateInternetOutages()
+        async let outbreaks: Void = updateOutbreakReports()
+        _ = await (map, advisory, weather, events, alerts, outages, outbreaks)
+    }
+
+    func refreshPassportInformation() async {
+        guard !Task.isCancelled else { return }
+        admissoryStatus = nil
+        exchangeRates = []
+
+        async let visa: Void = updateAdmissoryStatus()
+        async let rates: Void = updateExchangeRates()
+        _ = await (visa, rates)
+    }
+
+    private func updateAdmissoryStatus() async {
+        let selection = travelSelection
+        guard let passport = nationality?.cca2, let destination = current?.cca2 else { return }
+        let status = try? await services.admissoryService.getAdmissoryStatus(passport: passport, destination: destination)
+        guard !Task.isCancelled, travelSelection == selection else { return }
+        admissoryStatus = status
+    }
+
+    private func updateAdvisoryStatus() async {
+        guard let country = current, let code = country.cca2 else { return }
+        let status = try? await services.advisoryService.getAdvisoryStatus(destination: code)
+        guard !Task.isCancelled, current?.id == country.id else { return }
+        advisoryStatus = status
+        guard let information = status?.data.eng else {
+            isLoadingDestinationGuide = false
+            return
+        }
+        // Parsing a country's advice takes tens of milliseconds, so keep it
+        // off the main thread.
+        let guide = await Task.detached(priority: .userInitiated) {
+            DestinationGuide(information: information)
+        }.value
+        // Another country may have been chosen while parsing.
+        guard !Task.isCancelled, current?.id == country.id else { return }
+        destinationGuide = guide
+        isLoadingDestinationGuide = false
+    }
+
+    // MARK: Map layers
+
+    /// Live aircraft. Off also stops polling OpenSky.
+    var showsFlights: Bool {
+        didSet {
+            guard showsFlights != oldValue else { return }
+            preferences[.flights] = showsFlights
+            if showsFlights {
+                startUpdatingFlightData()
+            } else {
+                stopUpdatingFlightData()
+                selectedFlight = nil
+                flightAnnotations = []
+                liveFlights = [:]
+                lastOpenSkyFlights = []
+                totalFlightCount = 0
+                flightsPausedUntil = nil
+            }
+        }
+    }
+
+    var showsPowerGrid: Bool {
+        didSet { preferences[.powerGrid] = showsPowerGrid }
+    }
+
+    var showsEarthAtNight: Bool {
+        didSet { preferences[.earthAtNight] = showsEarthAtNight }
+    }
+
+    var showsVIIRSImagery: Bool {
+        didSet { preferences[.viirsImagery] = showsVIIRSImagery }
+    }
+
+    func loadVIIRSImageryDates(for product: VIIRSImageryService.Product) async throws -> [String] {
+        try await services.viirsImageryService.getAvailableDates(for: product)
+    }
+
+    /// Undersea cables and their landing points.
+    var showsCables: Bool {
+        didSet {
+            guard showsCables != oldValue else { return }
+            preferences[.cables] = showsCables
+            if !showsCables { selectedCableID = nil }
+            Task { await loadCablesIfNeeded() }
+        }
+    }
+
+    @ObservationIgnored private var allCables: [SubmarineCable] = []
+    @ObservationIgnored private var allLandingPoints: [CableLandingPoint] = []
+    /// The cables and landing points to draw: empty while the layer is off.
+    var cables: [SubmarineCable] = []
+    var landingPoints: [CableLandingPoint] = []
+    var cableLoadingError: String?
+
+    func loadCablesIfNeeded() async {
+        guard showsCables else {
+            cables = []
+            landingPoints = []
+            return
+        }
+        if allCables.isEmpty {
+            do {
+                let data = try await services.cableService.getCables()
+                allCables = data.cables
+                allLandingPoints = data.landingPoints
+                cableLoadingError = nil
+            } catch {
+                cableLoadingError = "Couldn't load undersea cables."
+                return
+            }
+        }
+        guard showsCables else { return }
+        cables = allCables
+        landingPoints = allLandingPoints
+    }
+
+    /// The cable tapped on the map; its details sheet is open while set.
+    var selectedCableID: String? {
+        didSet {
+            guard selectedCableID != oldValue else { return }
+            selectedCableDetails = nil
+            if let id = selectedCableID {
+                Task { await loadCableDetails(id: id) }
+            }
+        }
+    }
+    var selectedCableDetails: CableDetails?
+
+    var selectedCable: SubmarineCable? {
+        selectedCableID.flatMap { id in cables.first { $0.id == id } }
+    }
+
+    private func loadCableDetails(id: String) async {
+        let details = try? await services.cableService.getDetails(cableID: id)
+        guard selectedCableID == id else { return }
+        selectedCableDetails = details
+    }
+
+    /// Earthquakes, cyclones, floods, wildfires and erupting volcanoes.
+    var showsHazards: Bool {
+        didSet {
+            guard showsHazards != oldValue else { return }
+            preferences[.hazards] = showsHazards
+            if !showsHazards { selectedHazard = nil }
+            Task { await updateHazards() }
+        }
+    }
+
+    /// The hazards to draw: empty while the layer is off.
+    var hazards: [NaturalHazard] = []
+    var cycloneTracks: [CycloneTrack] = []
+    /// The hazard tapped on the map; its details sheet is open while set.
+    /// Kept as is, so a refresh doesn't change the sheet under the user.
+    var selectedHazard: NaturalHazard?
+
+    func selectHazard(id: String) {
+        selectedHazard = hazards.first { $0.id == id }
+    }
+
+    /// Loads hazards, or clears them while the layer is off. The service
+    /// keeps them for 15 minutes, so this is cheap to call again.
+    func updateHazards() async {
+        guard showsHazards else {
+            hazards = []
+            cycloneTracks = []
+            return
+        }
+        guard let loaded = try? await services.hazardService.getHazards(), showsHazards else { return }
+        if loaded != hazards {
+            hazards = loaded
+        }
+        var tracks: [CycloneTrack] = []
+        for cyclone in loaded where cyclone.kind == .cyclone {
+            if let track = try? await services.hazardService.getTrack(for: cyclone) {
+                tracks.append(track)
+            }
+        }
+        guard showsHazards, tracks != cycloneTracks else { return }
+        cycloneTracks = tracks
+    }
+
+    // MARK: Live flights
+
+    @ObservationIgnored private var flightUpdateTask: Task<Void, Never>?
+    /// The latest flights from both feeds, by ICAO address.
+    private var liveFlights: [String: LiveFlight] = [:]
+    /// OpenSky's last answer, kept while it rate limits us so military
+    /// updates don't wipe the civil traffic.
+    @ObservationIgnored private var lastOpenSkyFlights: [LiveFlight] = []
+
     var flightAnnotations: [FlightAnnotation] = []
     var selectedFlight: FlightAnnotation?
     /// Set while OpenSky is rate limiting us; live flights resume at this time.
@@ -216,22 +472,21 @@ final class MainMapViewModel {
     var selectedRoute: FlightRoute?
     var isLoadingFlightDetails = false
 
-    @MainActor
     func loadFlightDetails() async {
         // On deselect, keep the details so the sheet doesn't empty while it
         // slides away; they're replaced when the next flight is selected.
-        guard let flightID = selectedFlight?.id else { return }
+        guard !Task.isCancelled, let flightID = selectedFlight?.id else { return }
         selectedAircraft = nil
         selectedRoute = nil
         let callsign = selectedLiveFlight?.callsign ?? ""
 
         isLoadingFlightDetails = true
-        async let aircraft = try? flightDetailsService.getAircraft(icao24: flightID)
-        async let route = callsign.isEmpty ? nil : try? flightDetailsService.getRoute(callsign: callsign)
+        async let aircraft = try? services.flightDetailsService.getAircraft(icao24: flightID)
+        async let route = callsign.isEmpty ? nil : try? services.flightDetailsService.getRoute(callsign: callsign)
         let (loadedAircraft, loadedRoute) = await (aircraft, route)
 
         // Another flight may have been selected while we waited.
-        guard selectedFlight?.id == flightID else { return }
+        guard !Task.isCancelled, selectedFlight?.id == flightID else { return }
         isLoadingFlightDetails = false
         selectedAircraft = loadedAircraft
         if let loadedRoute, let coordinate = selectedLiveFlight?.coordinate,
@@ -239,350 +494,31 @@ final class MainMapViewModel {
             selectedRoute = loadedRoute
         }
     }
-    
-    func selectRandomCountry() {
-        guard let randomCountry = countries.randomElement() else {
-            return
-        }
-        current = randomCountry
-    }
-    
-    func persist(nationality: Country?) {
-        if let nationality, let encoded = try? JSONEncoder().encode(nationality) {
-            UserDefaults.standard.set(encoded, forKey: "nationality")
-        }
-    }
-    
-    static func getPersistedNationality() -> Country? {
-        guard let data = UserDefaults.standard.object(forKey: "nationality") as? Data else {
-            return nil
-        }
-        return try? JSONDecoder().decode(Country.self, from: data)
-    }
-    
-    func updateAdmissoryStatus() async {
-        admissoryStatus = await retrieveAdmissoryStatus()
-    }
-    
-    @MainActor
-    func updateAdvisoryStatus() async {
-        let country = current?.cca2
-        destinationGuide = nil
-        isLoadingDestinationGuide = true
-        let status = await retrieveAdvisoryStatus()
-        guard current?.cca2 == country else { return }
-        advisoryStatus = status
-        guard let information = status?.data.eng else {
-            isLoadingDestinationGuide = false
-            return
-        }
-        // Parsing a country's advice takes tens of milliseconds, so keep it
-        // off the main thread.
-        let guide = await Task.detached(priority: .userInitiated) {
-            DestinationGuide(information: information)
-        }.value
-        // Another country may have been chosen while parsing.
-        guard current?.cca2 == country else { return }
-        destinationGuide = guide
-        isLoadingDestinationGuide = false
-    }
 
-    /// Countries sharing a border with `country`, by name.
-    func neighbours(of country: Country) -> [Country] {
-        let codes = Set(country.borders ?? [])
-        return countries.filter { $0.cca3.map(codes.contains) ?? false }
-    }
-    
-    var timerPublisher: Timer.TimerPublisher {
-        return Timer.publish(every: 15, on: .main, in: .common)
-    }
-    
-    @MainActor
     func startUpdatingFlightData() {
-        guard showsFlights else { return }
-        Task {
-            await updateFlightData()
-            timerSubscription = timerPublisher
-                .autoconnect()
-                .sink(receiveValue: { _ in
-                    Task {
-                        await self.updateFlightData()
-                    }
-                })
+        guard showsFlights, flightUpdateTask == nil else { return }
+        flightUpdateTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard await self?.updateFlightData() != nil else { return }
+                try? await Task.sleep(for: .seconds(15))
+            }
         }
     }
-    
+
     func stopUpdatingFlightData() {
-        timerSubscription?.cancel()
+        flightUpdateTask?.cancel()
+        flightUpdateTask = nil
     }
 
-    // MARK: Map layers
-
-    /// Live aircraft. Off also stops polling OpenSky.
-    var showsFlights: Bool = UserDefaults.standard.object(forKey: "showsFlights") as? Bool ?? true {
-        didSet {
-            UserDefaults.standard.set(showsFlights, forKey: "showsFlights")
-            if showsFlights {
-                Task { @MainActor in self.startUpdatingFlightData() }
-            } else {
-                stopUpdatingFlightData()
-                selectedFlight = nil
-                flightAnnotations = []
-                liveFlights = [:]
-                lastOpenSkyFlights = []
-                totalFlightCount = 0
-                flightsPausedUntil = nil
-            }
-        }
+    func updateViewport(_ rect: MKMapRect) {
+        stopUpdatingFlightData()
+        visibleRect = rect
+        startUpdatingFlightData()
     }
 
-    /// Undersea cables and their landing points.
-    var showsCables: Bool = UserDefaults.standard.bool(forKey: "showsCables") {
-        didSet {
-            UserDefaults.standard.set(showsCables, forKey: "showsCables")
-            if !showsCables { selectedCableID = nil }
-            Task { await loadCablesIfNeeded() }
-        }
-    }
-
-    @ObservationIgnored private var allCables: [SubmarineCable] = []
-    @ObservationIgnored private var allLandingPoints: [CableLandingPoint] = []
-    /// The cables and landing points to draw: empty while the layer is off.
-    var cables: [SubmarineCable] = []
-    var landingPoints: [CableLandingPoint] = []
-    var cableLoadingError: String?
-
-    @MainActor
-    func loadCablesIfNeeded() async {
-        guard showsCables else {
-            cables = []
-            landingPoints = []
-            return
-        }
-        if allCables.isEmpty {
-            do {
-                let data = try await cableService.getCables()
-                allCables = data.cables
-                allLandingPoints = data.landingPoints
-                cableLoadingError = nil
-            } catch {
-                cableLoadingError = "Couldn't load undersea cables."
-                return
-            }
-        }
-        guard showsCables else { return }
-        cables = allCables
-        landingPoints = allLandingPoints
-    }
-
-    /// The cable tapped on the map; its details sheet is open while set.
-    var selectedCableID: String? {
-        didSet {
-            guard selectedCableID != oldValue else { return }
-            selectedCableDetails = nil
-            if let id = selectedCableID {
-                Task { await loadCableDetails(id: id) }
-            }
-        }
-    }
-    var selectedCableDetails: CableDetails?
-
-    var selectedCable: SubmarineCable? {
-        selectedCableID.flatMap { id in cables.first { $0.id == id } }
-    }
-
-    @MainActor
-    private func loadCableDetails(id: String) async {
-        let details = try? await cableService.getDetails(cableID: id)
-        guard selectedCableID == id else { return }
-        selectedCableDetails = details
-    }
-
-    /// Earthquakes, cyclones, floods, wildfires and erupting volcanoes.
-    var showsHazards: Bool = UserDefaults.standard.object(forKey: "showsHazards") as? Bool ?? true {
-        didSet {
-            UserDefaults.standard.set(showsHazards, forKey: "showsHazards")
-            if !showsHazards { selectedHazard = nil }
-            Task { await updateHazards() }
-        }
-    }
-
-    /// The hazards to draw: empty while the layer is off.
-    var hazards: [NaturalHazard] = []
-    var cycloneTracks: [CycloneTrack] = []
-    /// The hazard tapped on the map; its details sheet is open while set.
-    /// Kept as is, so a refresh doesn't change the sheet under the user.
-    var selectedHazard: NaturalHazard?
-
-    func selectHazard(id: String) {
-        selectedHazard = hazards.first { $0.id == id }
-    }
-
-    /// Loads hazards, or clears them while the layer is off. The service
-    /// keeps them for 15 minutes, so this is cheap to call again.
-    @MainActor
-    func updateHazards() async {
-        guard showsHazards else {
-            hazards = []
-            cycloneTracks = []
-            return
-        }
-        guard let loaded = try? await hazardService.getHazards(), showsHazards else { return }
-        if loaded != hazards {
-            hazards = loaded
-        }
-        var tracks: [CycloneTrack] = []
-        for cyclone in loaded where cyclone.kind == .cyclone {
-            if let track = try? await hazardService.getTrack(for: cyclone) {
-                tracks.append(track)
-            }
-        }
-        guard showsHazards, tracks != cycloneTracks else { return }
-        cycloneTracks = tracks
-    }
-    
-    /// The selected country's outline; nil when it isn't in the bundled
-    /// borders (a few tiny territories).
-    var selectedBorder: CountryBorder?
-    @ObservationIgnored private var borders: [String: CountryBorder]?
-    @ObservationIgnored private var bordersTask: Task<[String: CountryBorder], Never>?
-
-    /// Selects the country under a tap on the map. Taps on the sea, or on
-    /// the selected country, do nothing.
-    @MainActor
-    func selectCountry(at coordinate: CLLocationCoordinate2D) async {
-        let borders = await loadBorders()
-        guard let code = CountryBorders.country(at: coordinate, in: borders),
-              code != current?.cca3,
-              let country = countries.first(where: { $0.cca3 == code }) else { return }
-        UISelectionFeedbackGenerator().selectionChanged()
-        current = country
-    }
-
-    /// Decodes the bundled borders once, off the main thread.
-    private func loadBorders() async -> [String: CountryBorder] {
-        if let borders { return borders }
-        let task = bordersTask ?? Task.detached(priority: .userInitiated) {
-            (try? CountryBorders.load()) ?? [:]
-        }
-        bordersTask = task
-        let loaded = await task.value
-        borders = loaded
-        return loaded
-    }
-
-    /// Outlines the selected country and zooms to fit it between the
-    /// country card and the bottom buttons. Countries without an outline fall
-    /// back to a zoom based on their area.
-    @MainActor
-    func updateRegion() {
-        guard let current else {
-            return
-        }
-        Task { @MainActor in
-            let border = await loadBorders()[current.cca3 ?? ""]
-            // Another country may have been chosen while loading.
-            guard self.current?.cca3 == current.cca3 else { return }
-            selectedBorder = border
-            if let border {
-                let aspectRatio = visibleRect.height > 0 ? visibleRect.width / visibleRect.height : 402.0 / 874.0
-                region = MKCoordinateRegion(fitting: border.focusRect, aspectRatio: aspectRatio)
-            } else {
-                updateRegionFromArea(of: current)
-            }
-        }
-    }
-
-    private func updateRegionFromArea(of current: Country) {
-        if let area = current.area {
-            let centerLatitude: CLLocationDegrees = current.latlng[0]
-            let centerLongitude: CLLocationDegrees = current.latlng[1]
-            self.region = calculateRegion(area: area, latitude: centerLatitude, longitude: centerLongitude)
-        } else {
-            guard let name = current.name?.common else {
-                return
-            }
-            Task {
-                guard let region = await findRegion(by: name) else {
-                    return
-                }
-                self.region = region
-            }
-        }
-    }
-
-    func retrieveCountries() async {
-        do {
-            // Alphabetical, so the pickers are easy to scan.
-            self.countries = try await countriesService.getAllCountries().sorted {
-                ($0.name?.common ?? "").localizedStandardCompare($1.name?.common ?? "") == .orderedAscending
-            }
-            self.loadingError = nil
-            self.selectRandomCountry()
-        } catch {
-            self.loadingError = "Could not load countries. Please check your connection and try again."
-        }
-    }
-    
-    private func calculateRegion(area: Double, latitude: CLLocationDegrees, longitude: CLLocationDegrees) -> MKCoordinateRegion {
-        
-        let latitudeDelta = sqrt(area) / 110
-        let longitudeDelta = (sqrt(area) / 110) + latitudeDelta
-        
-        let span = MKCoordinateSpan(latitudeDelta: latitudeDelta, longitudeDelta: longitudeDelta)
-        
-        let centerCoordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-        return MKCoordinateRegion(center: centerCoordinate, span: span)
-    }
-    
-    private func calculateVisibleRegion(visibleMapRect: MKMapRect) -> (latitude: CoordinateSpan, longitude: CoordinateSpan) {
-        let region = MKCoordinateRegion(visibleMapRect)
-        let minLatitude = region.center.latitude - region.span.latitudeDelta / 2
-        let maxLatitude = region.center.latitude + region.span.latitudeDelta / 2
-        let minLongitude = region.center.longitude - region.span.longitudeDelta / 2
-        let maxLongitude = region.center.longitude + region.span.longitudeDelta / 2
-
-        let latitudeSpan = CoordinateSpan(minimum: minLatitude, maximum: maxLatitude)
-        let longitudeSpan = CoordinateSpan(minimum: minLongitude, maximum: maxLongitude)
-        return (latitude: latitudeSpan, longitude: longitudeSpan)
-    }
-    
-    private func findRegion(by name: String) async -> MKCoordinateRegion? {
-        let request = MKLocalSearch.Request()
-        request.naturalLanguageQuery = name
-        let results = try? await MKLocalSearch(request: request).start()
-        return results?.boundingRegion
-    }
-    
-    private func retrieveAdmissoryStatus() async -> AdmissoryStatus? {
-        guard let current else {
-            return nil
-        }
-        
-        guard let passport = nationality?.cca2,
-              let destination = current.cca2 else {
-            return nil
-        }
-        
-        return try? await admissoryService.getAdmissoryStatus(passport: passport, destination: destination)
-    }
-    
-    private func retrieveAdvisoryStatus() async -> AdvisoryStatus? {
-        guard let current else {
-            return nil
-        }
-        
-        guard let destination = current.cca2 else {
-            return nil
-        }
-        
-        let status = try? await advisoryService.getAdvisoryStatus(destination: destination)
-        return status
-    }
-    
     private func openSkyFlights(in region: (latitude: CoordinateSpan, longitude: CoordinateSpan)) async -> Result<[LiveFlight], Error> {
         do {
-            return .success(try await flightService.getFlights(latitudeSpan: region.latitude, longitudeSpan: region.longitude))
+            return .success(try await services.flightService.getFlights(latitudeSpan: region.latitude, longitudeSpan: region.longitude))
         } catch {
             return .failure(error)
         }
@@ -590,15 +526,15 @@ final class MainMapViewModel {
 
     /// Polls OpenSky for the visible area and adsb.lol for military
     /// aircraft at the same time, and draws both as one set of flights.
-    @MainActor
     private func updateFlightData() async {
-        let visibleRegion = calculateVisibleRegion(visibleMapRect: visibleRect)
+        let viewport = visibleRect
+        let visibleRegion = MapRegionCalculator.bounds(of: viewport)
         async let openSky = openSkyFlights(in: visibleRegion)
-        async let military = try? flightService.getMilitaryFlights()
+        async let military = try? services.flightService.getMilitaryFlights()
         let (openSkyResult, militaryFlights) = await (openSky, military)
 
-        // Flights may have been switched off while this poll was running.
-        guard showsFlights else { return }
+        // The viewport or layer may have changed while this poll was running.
+        guard !Task.isCancelled, showsFlights else { return }
         switch openSkyResult {
         case .success(let flights):
             lastOpenSkyFlights = flights
@@ -619,7 +555,7 @@ final class MainMapViewModel {
         let annotations = flights.map(FlightAnnotation.init(flight:))
         totalFlightCount = annotations.count
         flightAnnotations = annotations.nearest(
-            to: visibleRect,
+            to: viewport,
             limit: Self.maxVisibleFlights,
             keeping: selectedFlight?.id
         )
