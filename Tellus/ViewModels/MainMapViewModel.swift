@@ -25,6 +25,7 @@ final class MainMapViewModel {
         self.showsHazards = preferences[.hazards]
         self.showsPowerGrid = preferences[.powerGrid]
         self.showsEarthAtNight = preferences[.earthAtNight]
+        self.showsAurora = preferences[.aurora]
         self.showsGPSJAM = preferences[.gpsJam]
         self.showsVIIRSImagery = preferences[.viirsImagery]
     }
@@ -322,6 +323,14 @@ final class MainMapViewModel {
 
     var showsEarthAtNight: Bool {
         didSet { preferences[.earthAtNight] = showsEarthAtNight }
+    }
+
+    var showsAurora: Bool {
+        didSet { preferences[.aurora] = showsAurora }
+    }
+
+    func loadAuroraForecast() async throws -> AuroraOverlay {
+        try await services.auroraService.getForecast()
     }
 
     var showsGPSJAM: Bool {

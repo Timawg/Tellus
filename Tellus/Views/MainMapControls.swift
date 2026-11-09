@@ -3,6 +3,7 @@ import SwiftUI
 struct MainMapControls: View {
     @Bindable var viewModel: MainMapViewModel
     @Bindable var gpsJam: GPSJAMLayerState
+    let aurora: AuroraLayerState
     @Binding var isPickingCountry: Bool
     @Binding var selectedVIIRSDate: String?
     let viirsDates: [String]
@@ -25,6 +26,9 @@ struct MainMapControls: View {
 
                             if viewModel.showsGPSJAM {
                                 GPSJAMLegend(state: gpsJam)
+                            }
+                            if viewModel.showsAurora {
+                                AuroraLegend(state: aurora)
                             }
                             if viewModel.showsPowerGrid {
                                 powerGridCredit
@@ -116,6 +120,9 @@ struct MainMapControls: View {
             }
             Toggle(isOn: $viewModel.showsEarthAtNight) {
                 Label("Earth at night", systemImage: "circle.lefthalf.filled")
+            }
+            Toggle(isOn: $viewModel.showsAurora) {
+                Label("Aurora forecast", systemImage: "sparkles")
             }
             Toggle(isOn: $viewModel.showsVIIRSImagery) {
                 Label("VIIRS true colour", systemImage: "camera")

@@ -28,6 +28,7 @@ Open **Map layers** to enable or disable each layer. Tellus remembers the settin
 | **Power grid** | Mapped power lines, substations, and power plants. Zoom in and tap a feature to see available details and open its OpenStreetMap record. | Off |
 | **GPS interference** | Daily GPSJAM cells with elevated or high reports of low aircraft navigation accuracy. Choose a recent UTC day and tap a shaded cell for counts and the source. | Off |
 | **Earth at night** | A moving shade over the night hemisphere and a transparent overlay from the latest available daily NOAA-20 Black Marble nighttime imagery. | Off |
+| **Aurora forecast** | NOAA's short-term aurora forecast for both hemispheres, with an intensity legend and the forecast's valid time in UTC. | Off |
 | **VIIRS true colour** | Recent NOAA-21 satellite imagery. Starts on the latest date NASA GIBS lists, with a choice of available dates from the past seven UTC days. | Off |
 
 The flight layer polls about every 15 seconds while the map is settled and backs off when OpenSky rate-limits requests. At wide zoom levels, Tellus draws up to 500 aircraft. The natural hazards layer refreshes every 15 minutes while the map is open.
@@ -43,6 +44,10 @@ Tellus calculates the day–night boundary on the device from the current time a
 When the layer is enabled, Tellus checks NASA GIBS for the latest available date of its corrected daily NOAA-20 Black Marble imagery and shows that date in UTC. MapKit fetches the visible PNG tiles over HTTPS at native zoom levels 0–8. Tellus renders the grayscale light measurements as a transparent overlay. Some pixels can use older observations to fill gaps. An internet connection is needed to fetch uncached tiles. [NASA Black Marble daily product](https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/VJ146A2) · [GIBS tile documentation](https://nasa-gibs.github.io/gibs-api-docs/access-basics/)
 
 **VIIRS true colour** uses the separate `VIIRS_NOAA21_CorrectedReflectance_TrueColor` layer at native zoom levels 0–9. It shows the observation date in UTC. The newest date may have gaps while satellite passes are still being processed. [NOAA-21 VIIRS layer metadata](https://gibs.earthdata.nasa.gov/layer-metadata/v1.0/VIIRS_NOAA21_CorrectedReflectance_TrueColor.json)
+
+### Aurora forecast
+
+Tellus fetches the latest OVATION forecast from NOAA when the layer is enabled and checks every five minutes while the app is active. The last successful forecast stays visible if a refresh fails. Tellus labels it as older once it is 30 minutes past its valid time. Enable **Earth at night** alongside it to see which regions are in darkness. Viewing conditions also depend on clouds and local light. [NOAA aurora forecast](https://www.spaceweather.gov/products/aurora-30-minute-forecast)
 
 ## Run locally
 
@@ -97,5 +102,6 @@ python3 scripts/build_country_borders.py ne_50m_admin_0_countries.geojson countr
 | Aircraft navigation accuracy by area | [GPSJAM](https://gpsjam.org/about), based on reports from airplanes.live and ADS-B Exchange |
 | Day–night boundary | [U.S. Naval Observatory solar position calculation](https://aa.usno.navy.mil/faq/sun_approx) |
 | Black Marble night lights | [NASA Global Imagery Browse Services (GIBS)](https://nasa-gibs.github.io/gibs-api-docs/), part of NASA's Earth Science Data and Information System (ESDIS) |
+| Aurora forecast grid | [NOAA Space Weather Prediction Center](https://www.spaceweather.gov/products/aurora-30-minute-forecast), OVATION model |
 
 Coverage and update times vary by provider. When a destination guide is available, it links to the full Government of Canada advisory.

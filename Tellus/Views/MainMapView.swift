@@ -13,6 +13,7 @@ struct MainMapView: View {
     @Bindable var viewModel: MainMapViewModel
     @Environment(\.scenePhase) private var scenePhase
     @State private var gpsJam = GPSJAMLayerState()
+    @State private var aurora = AuroraLayerState()
     @State private var selectedPowerAsset: PowerGridAsset?
     @State private var viirsDates: [String] = []
     @State private var selectedVIIRSDate: String?
@@ -36,6 +37,7 @@ struct MainMapView: View {
             showsEarthAtNight: viewModel.showsEarthAtNight,
             nightLightsDate: nightLightsDate,
             viirsImageryDate: viirsImageryDate,
+            auroraOverlay: viewModel.showsAurora ? aurora.overlay : nil,
             showsPowerGrid: viewModel.showsPowerGrid,
             selectPowerAsset: { selectedPowerAsset = $0 },
             gpsJamOverlay: viewModel.showsGPSJAM ? gpsJam.overlay : nil,
@@ -67,6 +69,7 @@ struct MainMapView: View {
             MainMapControls(
                 viewModel: viewModel,
                 gpsJam: gpsJam,
+                aurora: aurora,
                 isPickingCountry: $isPickingCountry,
                 selectedVIIRSDate: $selectedVIIRSDate,
                 viirsDates: viirsDates
@@ -74,6 +77,10 @@ struct MainMapView: View {
         }
         .task(id: gpsJamRequest) { [request = gpsJamRequest] in
             await gpsJam.load(request, fetch: viewModel.loadGPSJAMOverlay(for:))
+        }
+        .task(id: viewModel.showsAurora && scenePhase == .active) {
+            guard viewModel.showsAurora, scenePhase == .active else { return }
+            await aurora.refreshWhileActive(fetch: viewModel.loadAuroraForecast)
         }
         .task(id: viewModel.showsVIIRSImagery && scenePhase == .active) {
             guard viewModel.showsVIIRSImagery, scenePhase == .active else { return }

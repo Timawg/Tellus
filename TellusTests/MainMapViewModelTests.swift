@@ -1,4 +1,5 @@
 import Foundation
+import MapKit
 import Observation
 import XCTest
 @testable import Tellus
@@ -54,10 +55,12 @@ final class MainMapViewModelTests: XCTestCase {
         XCTAssertFalse(model.showsHazards)
         XCTAssertFalse(model.showsPowerGrid)
         XCTAssertFalse(model.showsVIIRSImagery)
+        XCTAssertFalse(model.showsAurora)
 
         model.showsEarthAtNight = false
         model.showsPowerGrid = true
         model.showsVIIRSImagery = true
+        model.showsAurora = true
         model.showsCables = false
         model.nationality = nil
 
@@ -67,6 +70,7 @@ final class MainMapViewModelTests: XCTestCase {
         XCTAssertFalse(reopened.showsCables)
         XCTAssertTrue(reopened.showsPowerGrid)
         XCTAssertTrue(reopened.showsVIIRSImagery)
+        XCTAssertTrue(reopened.showsAurora)
     }
 
     func testDefaultsStorePreservesLegacyNightSettingsAndPassportFormat() async throws {
@@ -84,12 +88,47 @@ final class MainMapViewModelTests: XCTestCase {
         XCTAssertTrue(model.showsFlights)
         XCTAssertTrue(model.showsHazards)
         XCTAssertFalse(model.showsCables)
+        XCTAssertFalse(model.showsAurora)
 
         model.showsEarthAtNight = false
         model.nationality = nil
 
         XCTAssertNil(defaults.data(forKey: "nationality"))
         XCTAssertFalse(makeModel(preferences: preferences).showsEarthAtNight)
+    }
+
+    func testAuroraForecastUsesValidTimeAndProjectsBothHemispheres() async throws {
+        let model = makeModel { request in
+            XCTAssertEqual(request.url?.absoluteString, "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json")
+            return Data("""
+                {"Observation Time":"2026-11-06T23:36:00Z","Forecast Time":"2026-11-07T00:41:00Z",
+                 "coordinates":[[350,65,12],[349,65,13],[45,-60,28],[180,70,60],[0,0,0],[0,90,90]]}
+                """.utf8)
+        }
+
+        let overlay = try await model.loadAuroraForecast()
+
+        XCTAssertEqual(overlay.validAt, try Date("2026-11-07T00:41:00Z", strategy: .iso8601))
+        XCTAssertFalse(overlay.isOlder(at: overlay.validAt.addingTimeInterval(29 * 60)))
+        XCTAssertTrue(overlay.isOlder(at: overlay.validAt.addingTimeInterval(30 * 60)))
+        XCTAssertEqual(overlay.bands.count, 3)
+        let green = try XCTUnwrap(overlay.bands[.green]?.first)
+        XCTAssertEqual(overlay.bands[.green]?.count, 1)
+        XCTAssertTrue(green.contains(MKMapPoint(CLLocationCoordinate2D(latitude: 65, longitude: -10))))
+        XCTAssertTrue(green.contains(MKMapPoint(CLLocationCoordinate2D(latitude: 65, longitude: -11))))
+        let teal = try XCTUnwrap(overlay.bands[.teal]?.first)
+        XCTAssertTrue(teal.contains(MKMapPoint(CLLocationCoordinate2D(latitude: -60, longitude: 45))))
+        let dateLine = try XCTUnwrap(overlay.bands[.amber]?.first)
+        XCTAssertLessThan(dateLine.minX, 0)
+        XCTAssertGreaterThan(dateLine.maxX, 0)
+    }
+
+    func testAuroraForecastRejectsInvalidGridAndKeepsValidZeroGrid() throws {
+        let date = Date.now
+        XCTAssertThrowsError(try AuroraOverlay(validAt: date, coordinates: []))
+        XCTAssertThrowsError(try AuroraOverlay(validAt: date, coordinates: [[0, 0]]))
+        XCTAssertThrowsError(try AuroraOverlay(validAt: date, coordinates: [[360, 0, 10]]))
+        XCTAssertTrue(try AuroraOverlay(validAt: date, coordinates: [[0, 0, 0]]).bands.isEmpty)
     }
 
     func testPassportRefreshPublishesVisaAndOnlyDestinationCurrencies() async throws {

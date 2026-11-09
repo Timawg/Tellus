@@ -20,6 +20,7 @@
 		A7E1F0E42EB9000100C0FFEE /* NightOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0E32EB9000100C0FFEE /* NightOverlay.swift */; };
 		C5243EDA2F9E4E65A688192B /* PowerGridOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C21F409D3FB4975A7CA5FCC /* PowerGridOverlay.swift */; };
 		C163B2D824A919764624265F /* GPSJAMOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BBE7C5D835D9FB185D2C08 /* GPSJAMOverlay.swift */; };
+		5ABBD1A71FDC44B68519DE48 /* AuroraOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF194D67CEAD4FC297CC79BC /* AuroraOverlay.swift */; };
 		FCA3CD367AEB4A3FBC0806CE /* PowerGridTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2999EEBC0C7D4835BC99731F /* PowerGridTile.swift */; };
 		A7E1F0D02EB9000100C0FFEE /* HazardAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0CF2EB9000100C0FFEE /* HazardAnnotation.swift */; };
 		F54422C22C59774800CF1A1C /* FlightAnnotationAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F54422C12C59774800CF1A1C /* FlightAnnotationAnimator.swift */; };
@@ -58,6 +59,7 @@
 		A7E1F0E62EB9000100C0FFEE /* CountryProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */; };
 		36025743EF2C792A7B5DFD25 /* EmberElectricityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 201886237B14648E52E05586 /* EmberElectricityService.swift */; };
 		63A724F8F13B286393591869 /* GPSJAMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED72D67BC46F05B7A3AB508 /* GPSJAMService.swift */; };
+		C78DB1AB1FD64EF1A04722E1 /* AuroraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57CB046E9814F9D8465A35E /* AuroraService.swift */; };
 		A7E1F0B02EB9000100C0FFEE /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0AF2EB9000100C0FFEE /* WeatherService.swift */; };
 		69BAEDF55B884DD8B0CC5090 /* VIIRSImageryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CBDDC1A4F484CE1B64BF918 /* VIIRSImageryService.swift */; };
 		F5FCC85C2C50534E00569DC5 /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5FCC8562C50534E00569DC5 /* NetworkService.swift */; };
@@ -85,6 +87,7 @@
 		C1D1B7947C34D6C55E901E3D /* CountrySummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C2CE51F435BA7A627606311 /* CountrySummaryView.swift */; };
 		12C52387703565F52A11BBEF /* MainMapControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2985B005ABE01B7AC39AF206 /* MainMapControls.swift */; };
 		07A0DA0940DDF64FA2C88AAB /* GPSJAMLayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1BEB3EA3B0BE54B9E24F1D7 /* GPSJAMLayerView.swift */; };
+		95E720F6D2194DA6B2E49D47 /* AuroraLayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F42F28716764C239DD62783 /* AuroraLayerView.swift */; };
 		C47A0659FE12897BC7C036B5 /* FlightDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 218BAA0A1D86C88205F502AD /* FlightDetailsView.swift */; };
 		03A02844DE8F5EB55E3FB28A /* NationalityPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3789458953881C171E8D2B6B /* NationalityPickerView.swift */; };
 		FB4B54076F8BCC52DB5428DE /* PowerAssetDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E548B4245B41AC99E9E66D7 /* PowerAssetDetailsView.swift */; };
@@ -127,6 +130,7 @@
 		A7E1F0E32EB9000100C0FFEE /* NightOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightOverlay.swift; sourceTree = "<group>"; };
 		1C21F409D3FB4975A7CA5FCC /* PowerGridOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerGridOverlay.swift; sourceTree = "<group>"; };
 		E5BBE7C5D835D9FB185D2C08 /* GPSJAMOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPSJAMOverlay.swift; sourceTree = "<group>"; };
+		FF194D67CEAD4FC297CC79BC /* AuroraOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuroraOverlay.swift; sourceTree = "<group>"; };
 		2999EEBC0C7D4835BC99731F /* PowerGridTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerGridTile.swift; sourceTree = "<group>"; };
 		A7E1F0CF2EB9000100C0FFEE /* HazardAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HazardAnnotation.swift; sourceTree = "<group>"; };
 		F54422C12C59774800CF1A1C /* FlightAnnotationAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightAnnotationAnimator.swift; sourceTree = "<group>"; };
@@ -168,6 +172,7 @@
 		A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryProfileService.swift; sourceTree = "<group>"; };
 		201886237B14648E52E05586 /* EmberElectricityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmberElectricityService.swift; sourceTree = "<group>"; };
 		7ED72D67BC46F05B7A3AB508 /* GPSJAMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPSJAMService.swift; sourceTree = "<group>"; };
+		A57CB046E9814F9D8465A35E /* AuroraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuroraService.swift; sourceTree = "<group>"; };
 		A7E1F0AF2EB9000100C0FFEE /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
 		2CBDDC1A4F484CE1B64BF918 /* VIIRSImageryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VIIRSImageryService.swift; sourceTree = "<group>"; };
 		F5FCC8562C50534E00569DC5 /* NetworkService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = "<group>"; };
@@ -195,6 +200,7 @@
 		8C2CE51F435BA7A627606311 /* CountrySummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountrySummaryView.swift; sourceTree = "<group>"; };
 		2985B005ABE01B7AC39AF206 /* MainMapControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMapControls.swift; sourceTree = "<group>"; };
 		F1BEB3EA3B0BE54B9E24F1D7 /* GPSJAMLayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPSJAMLayerView.swift; sourceTree = "<group>"; };
+		2F42F28716764C239DD62783 /* AuroraLayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuroraLayerView.swift; sourceTree = "<group>"; };
 		218BAA0A1D86C88205F502AD /* FlightDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightDetailsView.swift; sourceTree = "<group>"; };
 		3789458953881C171E8D2B6B /* NationalityPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NationalityPickerView.swift; sourceTree = "<group>"; };
 		3E548B4245B41AC99E9E66D7 /* PowerAssetDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerAssetDetailsView.swift; sourceTree = "<group>"; };
@@ -240,6 +246,7 @@
 				A7E1F0E32EB9000100C0FFEE /* NightOverlay.swift */,
 				1C21F409D3FB4975A7CA5FCC /* PowerGridOverlay.swift */,
 				E5BBE7C5D835D9FB185D2C08 /* GPSJAMOverlay.swift */,
+				FF194D67CEAD4FC297CC79BC /* AuroraOverlay.swift */,
 				2999EEBC0C7D4835BC99731F /* PowerGridTile.swift */,
 				A7E1F0CF2EB9000100C0FFEE /* HazardAnnotation.swift */,
 			);
@@ -347,6 +354,7 @@
 				8C2CE51F435BA7A627606311 /* CountrySummaryView.swift */,
 				2985B005ABE01B7AC39AF206 /* MainMapControls.swift */,
 				F1BEB3EA3B0BE54B9E24F1D7 /* GPSJAMLayerView.swift */,
+				2F42F28716764C239DD62783 /* AuroraLayerView.swift */,
 				218BAA0A1D86C88205F502AD /* FlightDetailsView.swift */,
 				3789458953881C171E8D2B6B /* NationalityPickerView.swift */,
 				3E548B4245B41AC99E9E66D7 /* PowerAssetDetailsView.swift */,
@@ -428,6 +436,7 @@
 				A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */,
 				201886237B14648E52E05586 /* EmberElectricityService.swift */,
 				7ED72D67BC46F05B7A3AB508 /* GPSJAMService.swift */,
+				A57CB046E9814F9D8465A35E /* AuroraService.swift */,
 				A7E1F0AF2EB9000100C0FFEE /* WeatherService.swift */,
 				2CBDDC1A4F484CE1B64BF918 /* VIIRSImageryService.swift */,
 				A7E1F0A32EB9000100C0FFEE /* FlightDetailsService.swift */,
@@ -591,6 +600,7 @@
 				C1D1B7947C34D6C55E901E3D /* CountrySummaryView.swift in Sources */,
 				12C52387703565F52A11BBEF /* MainMapControls.swift in Sources */,
 				07A0DA0940DDF64FA2C88AAB /* GPSJAMLayerView.swift in Sources */,
+				95E720F6D2194DA6B2E49D47 /* AuroraLayerView.swift in Sources */,
 				C47A0659FE12897BC7C036B5 /* FlightDetailsView.swift in Sources */,
 				03A02844DE8F5EB55E3FB28A /* NationalityPickerView.swift in Sources */,
 				FB4B54076F8BCC52DB5428DE /* PowerAssetDetailsView.swift in Sources */,
@@ -611,6 +621,7 @@
 				A7E1F0E62EB9000100C0FFEE /* CountryProfileService.swift in Sources */,
 				36025743EF2C792A7B5DFD25 /* EmberElectricityService.swift in Sources */,
 				63A724F8F13B286393591869 /* GPSJAMService.swift in Sources */,
+				C78DB1AB1FD64EF1A04722E1 /* AuroraService.swift in Sources */,
 				A7E1F0B02EB9000100C0FFEE /* WeatherService.swift in Sources */,
 				69BAEDF55B884DD8B0CC5090 /* VIIRSImageryService.swift in Sources */,
 				F54422B82C526D2800CF1A1C /* FlightMarkerAnnotationView.swift in Sources */,
@@ -648,6 +659,7 @@
 				A7E1F0E42EB9000100C0FFEE /* NightOverlay.swift in Sources */,
 				C5243EDA2F9E4E65A688192B /* PowerGridOverlay.swift in Sources */,
 				C163B2D824A919764624265F /* GPSJAMOverlay.swift in Sources */,
+				5ABBD1A71FDC44B68519DE48 /* AuroraOverlay.swift in Sources */,
 				FCA3CD367AEB4A3FBC0806CE /* PowerGridTile.swift in Sources */,
 				A7E1F0D02EB9000100C0FFEE /* HazardAnnotation.swift in Sources */,
 				F5FCC8622C50610F00569DC5 /* CountriesService.swift in Sources */,

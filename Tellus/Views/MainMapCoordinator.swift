@@ -27,7 +27,8 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
             showsEarthAtNight: parent.showsEarthAtNight,
             nightLightsDate: parent.nightLightsDate,
             showsPowerGrid: parent.showsPowerGrid,
-            gpsJam: parent.gpsJamOverlay
+            gpsJam: parent.gpsJamOverlay,
+            aurora: parent.auroraOverlay
         )
         updateCables(on: mapView, cables: parent.cables, landingPoints: parent.landingPoints, selectedID: parent.selectedCableID)
         updateHazards(on: mapView, hazards: parent.hazards, tracks: parent.cycloneTracks)

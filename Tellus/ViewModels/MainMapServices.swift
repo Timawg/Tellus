@@ -16,6 +16,7 @@ struct MainMapServices {
     let outbreakService: OutbreakServiceProtocol
     let cableService: CableServiceProtocol
     let gpsJamService: GPSJAMServiceProtocol
+    let auroraService: AuroraService
     let hazardService: HazardServiceProtocol
 }
 
@@ -38,6 +39,7 @@ extension MainMapServices {
             outbreakService: OutbreakService(networkService: networkService),
             cableService: CableService(networkService: networkService),
             gpsJamService: GPSJAMService(networkService: networkService),
+            auroraService: AuroraService(networkService: networkService),
             hazardService: HazardService(networkService: networkService)
         )
     }

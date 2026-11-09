@@ -16,6 +16,7 @@ struct MapRepresentable: UIViewRepresentable {
     var showsEarthAtNight = false
     var nightLightsDate: String?
     var viirsImageryDate: String?
+    var auroraOverlay: AuroraOverlay?
     var showsPowerGrid = false
     var selectPowerAsset: (PowerGridAsset) -> Void = { _ in }
     var gpsJamOverlay: GPSJAMOverlay?
