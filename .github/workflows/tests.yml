@@ -12,7 +12,7 @@ permissions:
 jobs:
   ios-tests:
     name: iOS tests
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 25
 
     steps:
@@ -20,12 +20,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Prepare iOS simulator
+      - name: Select iOS simulator
         id: simulator
         shell: bash
         run: |
           find_iphone() {
-            xcodebuild -project Tellus.xcodeproj -scheme Tellus -showdestinations | awk '
+            awk '
               /Available destinations|Destinations compatible/ { eligible = 1; next }
               /Ineligible destinations|Destinations incompatible/ { eligible = 0 }
               eligible && /platform: *iOS Simulator,/ && /name: *iPhone / && !id {
@@ -35,30 +35,30 @@ jobs:
                 }
               }
               END { if (id) print id }
-            '
+            ' <<< "$1"
           }
 
           xcodebuild -version
-          simulator_id=$(find_iphone)
-          if [[ -z "$simulator_id" ]]; then
-            xcodebuild -downloadPlatform iOS
-            simulator_id=$(find_iphone)
-          fi
+          simulator_id=
+          for attempt in 1 2 3; do
+            if destinations=$(xcodebuild -project Tellus.xcodeproj -scheme Tellus -showdestinations 2>&1); then
+              simulator_id=$(find_iphone "$destinations")
+              if [[ -n "$simulator_id" ]]; then
+                break
+              fi
+            fi
+            if [[ "$attempt" != 3 ]]; then
+              echo "No eligible iPhone simulator on attempt $attempt. Retrying in 5 seconds."
+              sleep 5
+            fi
+          done
 
           if [[ -z "$simulator_id" ]]; then
-            # A runtime may be installed without any registered iPhone devices.
-            runtime_and_type=$(xcrun simctl list runtimes --json | jq -er '
-              [.runtimes[]
-                | select(.isAvailable and (.identifier | startswith("com.apple.CoreSimulator.SimRuntime.iOS-")))
-                | . as $runtime
-                | first(.supportedDeviceTypes[]? | select(.productFamily == "iPhone"))
-                | {runtime: $runtime.identifier, version: $runtime.version, deviceType: .identifier}]
-              | max_by(.version | split(".") | map(tonumber))
-              | select(. != null)
-              | [.runtime, .deviceType] | @tsv
-            ') || { echo "::error::No installed iOS runtime supports an iPhone simulator"; exit 1; }
-            read -r runtime device_type <<< "$runtime_and_type"
-            simulator_id=$(xcrun simctl create "iPhone (Tellus CI)" "$device_type" "$runtime")
+            printf '%s\n' "$destinations"
+            xcrun simctl list runtimes || true
+            xcrun simctl list devices available || true
+            echo "::error::The runner did not expose an iPhone simulator for Tellus."
+            exit 1
           fi
 
           echo "Using iOS simulator $simulator_id"
