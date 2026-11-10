@@ -41,6 +41,7 @@ struct CountrySummaryView: View {
                         recentEvents: viewModel.recentEvents,
                         loadCountryProfile: viewModel.loadCountryProfile(countryCode:),
                         loadElectricityProfile: viewModel.loadElectricityProfile(countryCode:),
+                        loadPriceLevels: viewModel.loadPriceLevels,
                         initialTopic: topic,
                         advisoryStatus: viewModel.advisoryStatus,
                         admissoryStatus: viewModel.admissoryStatus,

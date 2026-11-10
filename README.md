@@ -16,6 +16,8 @@ The country card shows weather and local time at the capital, exchange rates, an
 
 The passport picker saves your choice on the device. It sets the passport used for visa lookups and the preferred home currency. Without a passport selection, exchange rates use the device region's currency when available.
 
+Open **Cost of living** under **Prices** to compare household prices with the EU average or another country in Eurostat's dataset. Tellus uses the latest year with an overall index for both places and shows the breakdown for that same year where available. The figures compare national price levels for food and non-alcoholic drinks, housing and utilities, transport, and restaurants and accommodation. Eurostat's detailed coverage is primarily European. [Eurostat price level data](https://ec.europa.eu/eurostat/databrowser/view/prc_ppp_ind_1/default/table?lang=en)
+
 ## Map layers
 
 Open **Map layers** to enable or disable each layer. Tellus remembers the settings on the device.
@@ -87,6 +89,7 @@ python3 scripts/build_country_borders.py ne_50m_admin_0_countries.geojson countr
 | Basemap | Apple MapKit |
 | Country metadata, boundaries, and flags | [mledoze/countries](https://github.com/mledoze/countries), [Natural Earth](https://www.naturalearthdata.com/), and [Flagcdn](https://flagcdn.com/) |
 | Country profile figures | [World Bank World Development Indicators](https://datatopics.worldbank.org/world-development-indicators/) |
+| Household price level comparisons | [Eurostat purchasing power parities and price level indices](https://ec.europa.eu/eurostat/databrowser/view/prc_ppp_ind_1/default/table?lang=en) |
 | Electricity generation mix and net trade | [Ember Yearly Electricity Data](https://ember-energy.org/data/yearly-electricity-data/), CC BY 4.0. Tellus downloads the public CSV when a profile is opened and caches the latest country observations for seven days. |
 | Travel advisories and destination guidance | [Government of Canada Travel Advice and Advisories](https://travel.gc.ca/travelling/advisories) |
 | Passport-based visa requirements | [Passport Index dataset](https://github.com/ilyankou/passport-index-dataset), served through jsDelivr |

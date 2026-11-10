@@ -131,6 +131,47 @@ final class MainMapViewModelTests: XCTestCase {
         XCTAssertTrue(try AuroraOverlay(validAt: date, coordinates: [[0, 0, 0]]).bands.isEmpty)
     }
 
+    func testEurostatPriceComparisonUsesLatestSharedYearAndKeepsMissingCategories() async throws {
+        let model = makeModel { request in
+            XCTAssertEqual(request.url?.lastPathComponent, "prc_ppp_ind_1")
+            let query = request.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false)?.queryItems } ?? []
+            XCTAssertTrue(query.contains(URLQueryItem(name: "indic_ppp", value: "PLI_EU27_2020")))
+            XCTAssertEqual(Set(query.filter { $0.name == "ppp_cat18" }.compactMap(\.value)),
+                           ["E011", "A0101", "A0104", "A0107", "A0111"])
+            return Data("""
+                {
+                  "id": ["freq", "indic_ppp", "ppp_cat18", "geo", "time"],
+                  "size": [1, 1, 3, 4, 3],
+                  "dimension": {
+                    "freq": {"category": {"index": {"A": 0}}},
+                    "indic_ppp": {"category": {"index": {"PLI_EU27_2020": 0}}},
+                    "ppp_cat18": {"category": {"index": {"A0101": 0, "A0107": 1, "E011": 2}}},
+                    "geo": {"category": {"index": {"EU27_2020": 0, "SE": 1, "EL": 2, "UK": 3},
+                                         "label": {"SE": "Sweden", "EL": "Greece", "UK": "United Kingdom"}}},
+                    "time": {"category": {"index": {"2023": 0, "2024": 1, "2025": 2}}}
+                  },
+                  "value": {"4": 100, "7": 110, "16": 120, "18": 100,
+                            "24": 100, "25": 100, "26": 100, "28": 120, "29": 121,
+                            "30": 85, "31": 90, "35": 123}
+                }
+                """.utf8)
+        }
+
+        let prices = try await model.loadPriceLevels()
+        let greece = try XCTUnwrap(prices.comparison(for: "GR", against: "SE"))
+        XCTAssertEqual(greece.year, 2024)
+        XCTAssertEqual(try XCTUnwrap(greece.changes[.overall]), -0.25, accuracy: 0.0001)
+        XCTAssertEqual(try XCTUnwrap(greece.changes[.groceries]), 0.10, accuracy: 0.0001)
+        XCTAssertNil(greece.changes[.transport])
+        XCTAssertEqual(prices.referenceAreas(for: "GR").map(\.id), ["EU27_2020", "SE"])
+
+        let sweden = try XCTUnwrap(prices.comparison(for: "SE", against: EurostatPriceLevels.euAverageCode))
+        XCTAssertEqual(sweden.year, 2025)
+        XCTAssertEqual(try XCTUnwrap(sweden.changes[.overall]), 0.21, accuracy: 0.0001)
+        XCTAssertEqual(prices.comparison(for: "GB", against: EurostatPriceLevels.euAverageCode)?.year, 2025)
+        XCTAssertNil(prices.comparison(for: "CA", against: EurostatPriceLevels.euAverageCode))
+    }
+
     func testPassportRefreshPublishesVisaAndOnlyDestinationCurrencies() async throws {
         let model = makeModel { request in
             switch request.url?.lastPathComponent {

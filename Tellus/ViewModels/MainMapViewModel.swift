@@ -174,6 +174,10 @@ final class MainMapViewModel {
         try await services.countryProfileService.getProfile(countryCode: countryCode)
     }
 
+    func loadPriceLevels() async throws -> EurostatPriceLevels {
+        try await services.eurostatPriceService.getPriceLevels()
+    }
+
     private func updateRecentEvents() async {
         guard let country = current else { return }
         let events = try? await services.recentEventsService.getRecentEvents(for: country)

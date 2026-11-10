@@ -24,6 +24,7 @@ struct DestinationGuideView: View {
     let recentEvents: RecentEvents?
     let loadCountryProfile: (String) async throws -> [CountryIndicatorObservation]
     let loadElectricityProfile: (String) async throws -> CountryElectricityProfile?
+    let loadPriceLevels: () async throws -> EurostatPriceLevels
     /// The tab shown when the guide opens.
     var initialTopic: DestinationGuide.Topic = .overview
     let advisoryStatus: AdvisoryStatus?
@@ -109,6 +110,16 @@ struct DestinationGuideView: View {
         statusOverviewSection
         CountryProfileSections(countryCode: country.cca2, loadProfile: loadCountryProfile)
             .id(country.cca2)
+        if let code = country.cca2 {
+            Section("Prices") {
+                NavigationLink {
+                    CountryCostOfLivingView(countryCode: code, countryName: country.name?.common ?? code,
+                                            loadPriceLevels: loadPriceLevels)
+                } label: {
+                    Label("Cost of living", systemImage: "basket")
+                }
+            }
+        }
         if let code = country.cca3 {
             Section("Energy") {
                 NavigationLink {

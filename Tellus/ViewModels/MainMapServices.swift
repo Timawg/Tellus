@@ -11,6 +11,7 @@ struct MainMapServices {
     let recentEventsService: RecentEventsServiceProtocol
     let emberElectricityService: EmberElectricityServiceProtocol
     let countryProfileService: CountryProfileServiceProtocol
+    let eurostatPriceService: EurostatPriceService
     let disasterAlertService: DisasterAlertServiceProtocol
     let internetOutageService: InternetOutageServiceProtocol
     let outbreakService: OutbreakServiceProtocol
@@ -34,6 +35,7 @@ extension MainMapServices {
             recentEventsService: RecentEventsService(networkService: networkService),
             emberElectricityService: EmberElectricityService(networkService: networkService),
             countryProfileService: CountryProfileService(networkService: networkService),
+            eurostatPriceService: EurostatPriceService(networkService: networkService),
             disasterAlertService: DisasterAlertService(networkService: networkService),
             internetOutageService: InternetOutageService(networkService: networkService),
             outbreakService: OutbreakService(networkService: networkService),

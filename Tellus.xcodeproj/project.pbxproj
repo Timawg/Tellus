@@ -13,6 +13,7 @@
 		A7E1F0D22EB9000100C0FFEE /* HazardDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0D12EB9000100C0FFEE /* HazardDetailsView.swift */; };
 		A7E1F0AA2EB9000100C0FFEE /* DestinationGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0A92EB9000100C0FFEE /* DestinationGuideView.swift */; };
 		B5C241863D121C9C9D640870 /* CountryElectricityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5BEF787C2452DB3CCB8E5E /* CountryElectricityView.swift */; };
+		177B333FAC7F4A3B9EE90FCF /* CountryCostOfLivingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 198D852A5A26482BB27058E6 /* CountryCostOfLivingView.swift */; };
 		F54422BA2C526D8F00CF1A1C /* MapRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = F54422B92C526D8E00CF1A1C /* MapRepresentable.swift */; };
 		F54422BF2C53C2E000CF1A1C /* FlightAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F54422BE2C53C2E000CF1A1C /* FlightAnnotation.swift */; };
 		A7E1F0C82EB9000100C0FFEE /* CableOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0C72EB9000100C0FFEE /* CableOverlay.swift */; };
@@ -57,6 +58,7 @@
 		A7E1F0B82EB9000100C0FFEE /* RecentEventsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0B72EB9000100C0FFEE /* RecentEventsService.swift */; };
 		A7E1F0B22EB9000100C0FFEE /* ExchangeRateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0B12EB9000100C0FFEE /* ExchangeRateService.swift */; };
 		A7E1F0E62EB9000100C0FFEE /* CountryProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */; };
+		0BC57D027F064B89BA3CBAA9 /* EurostatPriceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B93D6FD41594BAFAB3E47AD /* EurostatPriceService.swift */; };
 		36025743EF2C792A7B5DFD25 /* EmberElectricityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 201886237B14648E52E05586 /* EmberElectricityService.swift */; };
 		63A724F8F13B286393591869 /* GPSJAMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED72D67BC46F05B7A3AB508 /* GPSJAMService.swift */; };
 		C78DB1AB1FD64EF1A04722E1 /* AuroraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57CB046E9814F9D8465A35E /* AuroraService.swift */; };
@@ -123,6 +125,7 @@
 		A7E1F0D12EB9000100C0FFEE /* HazardDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HazardDetailsView.swift; sourceTree = "<group>"; };
 		A7E1F0A92EB9000100C0FFEE /* DestinationGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationGuideView.swift; sourceTree = "<group>"; };
 		1D5BEF787C2452DB3CCB8E5E /* CountryElectricityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryElectricityView.swift; sourceTree = "<group>"; };
+		198D852A5A26482BB27058E6 /* CountryCostOfLivingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryCostOfLivingView.swift; sourceTree = "<group>"; };
 		F54422B92C526D8E00CF1A1C /* MapRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapRepresentable.swift; sourceTree = "<group>"; };
 		F54422BE2C53C2E000CF1A1C /* FlightAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightAnnotation.swift; sourceTree = "<group>"; };
 		A7E1F0C72EB9000100C0FFEE /* CableOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CableOverlay.swift; sourceTree = "<group>"; };
@@ -170,6 +173,7 @@
 		A7E1F0B72EB9000100C0FFEE /* RecentEventsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentEventsService.swift; sourceTree = "<group>"; };
 		A7E1F0B12EB9000100C0FFEE /* ExchangeRateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateService.swift; sourceTree = "<group>"; };
 		A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryProfileService.swift; sourceTree = "<group>"; };
+		0B93D6FD41594BAFAB3E47AD /* EurostatPriceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EurostatPriceService.swift; sourceTree = "<group>"; };
 		201886237B14648E52E05586 /* EmberElectricityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmberElectricityService.swift; sourceTree = "<group>"; };
 		7ED72D67BC46F05B7A3AB508 /* GPSJAMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPSJAMService.swift; sourceTree = "<group>"; };
 		A57CB046E9814F9D8465A35E /* AuroraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuroraService.swift; sourceTree = "<group>"; };
@@ -350,6 +354,7 @@
 				A7E1F0D12EB9000100C0FFEE /* HazardDetailsView.swift */,
 				A7E1F0A92EB9000100C0FFEE /* DestinationGuideView.swift */,
 				1D5BEF787C2452DB3CCB8E5E /* CountryElectricityView.swift */,
+				198D852A5A26482BB27058E6 /* CountryCostOfLivingView.swift */,
 				F54422B92C526D8E00CF1A1C /* MapRepresentable.swift */,
 				8C2CE51F435BA7A627606311 /* CountrySummaryView.swift */,
 				2985B005ABE01B7AC39AF206 /* MainMapControls.swift */,
@@ -434,6 +439,7 @@
 				A7E1F0B72EB9000100C0FFEE /* RecentEventsService.swift */,
 				A7E1F0B12EB9000100C0FFEE /* ExchangeRateService.swift */,
 				A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */,
+				0B93D6FD41594BAFAB3E47AD /* EurostatPriceService.swift */,
 				201886237B14648E52E05586 /* EmberElectricityService.swift */,
 				7ED72D67BC46F05B7A3AB508 /* GPSJAMService.swift */,
 				A57CB046E9814F9D8465A35E /* AuroraService.swift */,
@@ -619,6 +625,7 @@
 				A7E1F0B82EB9000100C0FFEE /* RecentEventsService.swift in Sources */,
 				A7E1F0B22EB9000100C0FFEE /* ExchangeRateService.swift in Sources */,
 				A7E1F0E62EB9000100C0FFEE /* CountryProfileService.swift in Sources */,
+				0BC57D027F064B89BA3CBAA9 /* EurostatPriceService.swift in Sources */,
 				36025743EF2C792A7B5DFD25 /* EmberElectricityService.swift in Sources */,
 				63A724F8F13B286393591869 /* GPSJAMService.swift in Sources */,
 				C78DB1AB1FD64EF1A04722E1 /* AuroraService.swift in Sources */,
@@ -629,6 +636,7 @@
 				A7E1F0D22EB9000100C0FFEE /* HazardDetailsView.swift in Sources */,
 				A7E1F0AA2EB9000100C0FFEE /* DestinationGuideView.swift in Sources */,
 				B5C241863D121C9C9D640870 /* CountryElectricityView.swift in Sources */,
+				177B333FAC7F4A3B9EE90FCF /* CountryCostOfLivingView.swift in Sources */,
 				F5EC34202AB29704004A2F57 /* Country.swift in Sources */,
 				F5FCC85D2C50534E00569DC5 /* Endpoint.swift in Sources */,
 				F5FCC8662C5066FB00569DC5 /* FlightData.swift in Sources */,
