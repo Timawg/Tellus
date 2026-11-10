@@ -20,12 +20,58 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Prepare iOS simulator
+        id: simulator
+        shell: bash
+        run: |
+          find_iphone() {
+            xcodebuild -project Tellus.xcodeproj -scheme Tellus -showdestinations | awk '
+              /Available destinations|Destinations compatible/ { eligible = 1; next }
+              /Ineligible destinations|Destinations incompatible/ { eligible = 0 }
+              eligible && /platform: *iOS Simulator,/ && /name: *iPhone / && !id {
+                if (match($0, /id: *[[:xdigit:]-]+,/)) {
+                  id = substr($0, RSTART + 3, RLENGTH - 4)
+                  gsub(/ /, "", id)
+                }
+              }
+              END { if (id) print id }
+            '
+          }
+
+          xcodebuild -version
+          simulator_id=$(find_iphone)
+          if [[ -z "$simulator_id" ]]; then
+            xcodebuild -downloadPlatform iOS
+            simulator_id=$(find_iphone)
+          fi
+
+          if [[ -z "$simulator_id" ]]; then
+            # A runtime may be installed without any registered iPhone devices.
+            runtime_and_type=$(xcrun simctl list runtimes --json | jq -er '
+              [.runtimes[]
+                | select(.isAvailable and (.identifier | startswith("com.apple.CoreSimulator.SimRuntime.iOS-")))
+                | . as $runtime
+                | first(.supportedDeviceTypes[]? | select(.productFamily == "iPhone"))
+                | {runtime: $runtime.identifier, version: $runtime.version, deviceType: .identifier}]
+              | max_by(.version | split(".") | map(tonumber))
+              | select(. != null)
+              | [.runtime, .deviceType] | @tsv
+            ') || { echo "::error::No installed iOS runtime supports an iPhone simulator"; exit 1; }
+            read -r runtime device_type <<< "$runtime_and_type"
+            simulator_id=$(xcrun simctl create "iPhone (Tellus CI)" "$device_type" "$runtime")
+          fi
+
+          echo "Using iOS simulator $simulator_id"
+          echo "id=$simulator_id" >> "$GITHUB_OUTPUT"
+
       - name: Run unit and UI tests
+        env:
+          SIMULATOR_ID: ${{ steps.simulator.outputs.id }}
         run: >
           xcodebuild
           -project Tellus.xcodeproj
           -scheme Tellus
-          -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest'
+          -destination "platform=iOS Simulator,id=$SIMULATOR_ID"
           -parallel-testing-enabled NO
           DEVELOPMENT_TEAM=
           CODE_SIGN_IDENTITY=-
