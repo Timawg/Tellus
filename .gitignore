@@ -1,3 +1,5 @@
 
 Tellus.xcodeproj/xcuserdata/timgunnarsson.xcuserdatad/xcdebugger/Breakpoints_v2.xcbkptlist
 *.xcbkptlist
+.DS_Store
+*.xcuserstate
