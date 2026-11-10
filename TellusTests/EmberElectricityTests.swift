@@ -1,30 +1,31 @@
 import Foundation
-import XCTest
+import Testing
 @testable import Tellus
 
-final class EmberElectricityTests: XCTestCase {
-    func testSelectsLatestGenerationYearAndKeepsNetTradeSeparate() throws {
+@Suite
+struct EmberElectricityTests {
+    @Test func selectsLatestGenerationYearAndKeepsNetTradeSeparate() throws {
         let profiles = try EmberElectricityDataset.profiles(from: Self.dataset)
-        let sweden = try XCTUnwrap(profiles["SWE"])
+        let sweden = try #require(profiles["SWE"])
 
-        XCTAssertEqual(sweden.year, 2025)
-        XCTAssertEqual(sweden.totalGenerationTWh, 120)
-        XCTAssertEqual(sweden.netImportsTWh, -12)
-        XCTAssertEqual(sweden.fuels, [
+        #expect(sweden.year == 2025)
+        #expect(sweden.totalGenerationTWh == 120)
+        #expect(sweden.netImportsTWh == -12)
+        #expect(sweden.fuels == [
             .init(name: "Hydro", generationTWh: 90, sharePercent: 75),
             .init(name: "Wind", generationTWh: 30, sharePercent: nil),
         ])
 
-        let lesotho = try XCTUnwrap(profiles["LSO"])
-        XCTAssertEqual(lesotho.year, 2024)
-        XCTAssertEqual(lesotho.totalGenerationTWh, 0)
-        XCTAssertEqual(lesotho.netImportsTWh, 0.58)
-        XCTAssertTrue(lesotho.fuels.isEmpty)
-        XCTAssertNil(profiles["ATA"])
-        XCTAssertEqual(profiles.count, 3)
+        let lesotho = try #require(profiles["LSO"])
+        #expect(lesotho.year == 2024)
+        #expect(lesotho.totalGenerationTWh == 0)
+        #expect(lesotho.netImportsTWh == 0.58)
+        #expect(lesotho.fuels.isEmpty)
+        #expect(profiles["ATA"] == nil)
+        #expect(profiles.count == 3)
     }
 
-    func testRefreshIsSharedAndParsedResultsPersistAcrossServiceInstances() async throws {
+    @Test func refreshIsSharedAndParsedResultsPersistAcrossServiceInstances() async throws {
         let cacheURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: cacheURL) }
         let network = StubNetwork(data: Self.dataset)
@@ -33,21 +34,23 @@ final class EmberElectricityTests: XCTestCase {
         async let sweden = service.getProfile(countryCode: "swe")
         async let lesotho = service.getProfile(countryCode: "LSO")
         let (first, second) = try await (sweden, lesotho)
-        XCTAssertEqual(first?.year, 2025)
-        XCTAssertEqual(second?.year, 2024)
+        #expect(first?.year == 2025)
+        #expect(second?.year == 2024)
 
         let reopened = EmberElectricityService(networkService: network, cacheURL: cacheURL)
         let cached = try await reopened.getProfile(countryCode: "SWE")
-        XCTAssertEqual(cached, first)
+        #expect(cached == first)
         let kosovo = try await reopened.getProfile(countryCode: "UNK")
-        XCTAssertEqual(kosovo?.totalGenerationTWh, 5.864)
+        #expect(kosovo?.totalGenerationTWh == 5.864)
         let requests = await network.requests
-        XCTAssertEqual(requests.count, 1)
-        XCTAssertEqual(requests.first?.lastPathComponent, "release_generation_yearly_global.csv")
+        #expect(requests.count == 1)
+        #expect(requests.first?.lastPathComponent == "release_generation_yearly_global.csv")
     }
 
-    func testRejectsUnrecognizedSchema() {
-        XCTAssertThrowsError(try EmberElectricityDataset.profiles(from: Data("Area,Year\nSweden,2025".utf8)))
+    @Test func rejectsUnrecognizedSchema() {
+        #expect(throws: (any Error).self) {
+            _ = try EmberElectricityDataset.profiles(from: Data("Area,Year\nSweden,2025".utf8))
+        }
     }
 
     private static let dataset = Data("""
@@ -75,7 +78,7 @@ final class EmberElectricityTests: XCTestCase {
         }
 
         func send(request: URLRequest) async throws -> Data {
-            requests.append(try XCTUnwrap(request.url))
+            requests.append(try #require(request.url))
             return data
         }
 

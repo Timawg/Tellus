@@ -70,7 +70,7 @@ xcodebuild -project Tellus.xcodeproj -scheme Tellus -destination 'generic/platfo
 - The main view contains the map controls, country card, and detail sheets. The MapKit wrapper manages annotations and overlays. [MainMapView.swift](Tellus/Views/MainMapView.swift) · [MapRepresentable.swift](Tellus/Views/MapRepresentable.swift)
 - The view model coordinates country selection, live data, and map layer state. [MainMapViewModel.swift](Tellus/ViewModels/MainMapViewModel.swift)
 - Services fetch and parse the provider feeds. Models and annotations hold the data and map geometry. [Services](Tellus/Network/Services) · [Models](Tellus/Models) · [Annotations](Tellus/Annotations)
-- Run the XCTest targets with **Product → Test** on a simulator. [TellusTests](TellusTests) · [TellusUITests](TellusUITests)
+- Run **Product → Test** on a simulator. [TellusTests](TellusTests) uses Swift Testing for unit tests, and [TellusUITests](TellusUITests) uses XCTest for UI automation and launch performance.
 
 ### Rebuild the country boundaries
 

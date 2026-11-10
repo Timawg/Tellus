@@ -34,7 +34,6 @@
 		F5EC33F82AB274E4004A2F57 /* MainMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC33F72AB274E4004A2F57 /* MainMapView.swift */; };
 		F5EC33FA2AB274E5004A2F57 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F5EC33F92AB274E5004A2F57 /* Assets.xcassets */; };
 		F5EC33FD2AB274E5004A2F57 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F5EC33FC2AB274E5004A2F57 /* Preview Assets.xcassets */; };
-		F5EC34072AB274E5004A2F57 /* TellusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC34062AB274E5004A2F57 /* TellusTests.swift */; };
 		F5EC34112AB274E5004A2F57 /* TellusUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC34102AB274E5004A2F57 /* TellusUITests.swift */; };
 		F5EC34132AB274E5004A2F57 /* TellusUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC34122AB274E5004A2F57 /* TellusUITestsLaunchTests.swift */; };
 		F5EC34202AB29704004A2F57 /* Country.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC341F2AB29704004A2F57 /* Country.swift */; };
@@ -148,7 +147,6 @@
 		F5EC33F92AB274E5004A2F57 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F5EC33FC2AB274E5004A2F57 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		F5EC34022AB274E5004A2F57 /* TellusTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TellusTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		F5EC34062AB274E5004A2F57 /* TellusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TellusTests.swift; sourceTree = "<group>"; };
 		F5EC340C2AB274E5004A2F57 /* TellusUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TellusUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5EC34102AB274E5004A2F57 /* TellusUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TellusUITests.swift; sourceTree = "<group>"; };
 		F5EC34122AB274E5004A2F57 /* TellusUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TellusUITestsLaunchTests.swift; sourceTree = "<group>"; };
@@ -316,7 +314,6 @@
 		F5EC34052AB274E5004A2F57 /* TellusTests */ = {
 			isa = PBXGroup;
 			children = (
-				F5EC34062AB274E5004A2F57 /* TellusTests.swift */,
 				810E2ADA3671E6CBAEDCACB6 /* MainMapViewModelTests.swift */,
 				52F68695A2CBBA596F4FC1E7 /* EmberElectricityTests.swift */,
 				A4929D018F22D436E173CDCF /* GPSJAMTests.swift */,
@@ -682,7 +679,6 @@
 				0BDD4EE90DA1E7972966A6A6 /* MainMapViewModelTests.swift in Sources */,
 				C2A9EB89E28CAE0C6D2AFC77 /* EmberElectricityTests.swift in Sources */,
 				8392162ABCE6EF7AA2952CCC /* GPSJAMTests.swift in Sources */,
-				F5EC34072AB274E5004A2F57 /* TellusTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

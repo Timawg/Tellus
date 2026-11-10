@@ -20,7 +20,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Run XCTest
+      - name: Run unit and UI tests
         run: >
           xcodebuild
           -project Tellus.xcodeproj
