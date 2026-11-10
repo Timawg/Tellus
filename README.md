@@ -1,6 +1,15 @@
 # Tellus
 
+<img align="right" src="Tellus/Assets.xcassets/AppIcon.appiconset/TellusIcon.png" alt="Tellus app icon" width="88" height="88">
+
 Tellus is a world map and travel guide for iPhone and iPad, built with SwiftUI and Apple MapKit. Explore countries, follow aircraft, trace submarine cables, and see which side of Earth is in darkness.
+
+**Quick start.** Install Xcode 26 or later with the iOS SDK. Open `Tellus.xcodeproj`, select the **Tellus** scheme and an iPhone or iPad simulator, then choose **Product → Run**. Tellus supports iOS and iPadOS 17.5 or later.
+
+<p>
+  <img src="docs/screenshots/map.png" alt="Tellus map with Sweden selected" width="250">
+  <img src="docs/screenshots/country-guide.png" alt="Tellus country guide showing Sweden’s overview and population data" width="250">
+</p>
 
 ## Explore a country
 
@@ -41,9 +50,9 @@ Tellus fetches GPSJAM’s daily CSV directly when the layer is enabled. It opens
 
 ### Earth at night
 
-Tellus calculates the day–night boundary on the device from the current time and updates the shade once a minute. That calculation works offline. The city lights come from a 2016 composite, so they show where lights were observed during that period.
+Tellus calculates the day–night boundary on the device from the current time and updates the shade once a minute. The boundary calculation works offline.
 
-When the layer is enabled, Tellus checks NASA GIBS for the latest available date of its corrected daily NOAA-20 Black Marble imagery and shows that date in UTC. MapKit fetches the visible PNG tiles over HTTPS at native zoom levels 0–8. Tellus renders the grayscale light measurements as a transparent overlay. Some pixels can use older observations to fill gaps. An internet connection is needed to fetch uncached tiles. [NASA Black Marble daily product](https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/VJ146A2) · [GIBS tile documentation](https://nasa-gibs.github.io/gibs-api-docs/access-basics/)
+When the layer is enabled, Tellus asks NASA GIBS for the latest available UTC date of its daily NOAA-20 Black Marble imagery. MapKit fetches the visible PNG tiles over HTTPS at native zoom levels 0–8, and Tellus renders the grayscale light measurements as a transparent overlay. Some pixels use older observations to fill gaps. Uncached tiles require an internet connection. [NASA Black Marble daily product](https://ladsweb.modaps.eosdis.nasa.gov/missions-and-measurements/products/VJ146A2) · [GIBS tile documentation](https://nasa-gibs.github.io/gibs-api-docs/access-basics/)
 
 **VIIRS true colour** uses the separate `VIIRS_NOAA21_CorrectedReflectance_TrueColor` layer at native zoom levels 0–9. It shows the observation date in UTC. The newest date may have gaps while satellite passes are still being processed. [NOAA-21 VIIRS layer metadata](https://gibs.earthdata.nasa.gov/layer-metadata/v1.0/VIIRS_NOAA21_CorrectedReflectance_TrueColor.json)
 
@@ -53,8 +62,8 @@ Tellus fetches the latest OVATION forecast from NOAA when the layer is enabled a
 
 ## Run locally
 
-- Use **Xcode 26 or later** with the iOS SDK installed. The app targets **iOS and iPadOS 17.5 or later**. Controls use Liquid Glass on iOS and iPadOS 26 or later.
-- Open `Tellus.xcodeproj`, select the **Tellus** scheme and an iPhone or iPad simulator, then choose **Product → Run**. To run on a physical device, select your development team under **Signing & Capabilities**.
+- To run on a physical device, select your development team under **Signing & Capabilities**.
+- Controls use Liquid Glass on iOS and iPadOS 26 or later.
 - The app calls its data providers directly. Running it requires no API keys or Tellus backend. Country data loads over the network at startup. The country boundary geometry ships with the app.
 - Xcode resolves the SwiftyH3 package for the GPS interference layer. [SwiftyH3, Apache 2.0](https://github.com/pawelmajcher/SwiftyH3/tree/0.6.0)
 
