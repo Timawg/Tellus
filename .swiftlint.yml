@@ -1,0 +1,6 @@
+included:
+  - Tellus
+  - TellusTests
+  - TellusUITests
+
+baseline: .swiftlint-baseline.json
