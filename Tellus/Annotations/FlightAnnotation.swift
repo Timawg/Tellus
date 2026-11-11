@@ -55,29 +55,66 @@ final class FlightAnnotation: NSObject, MKAnnotation, Identifiable {
 }
 
 extension Array where Element == FlightMarker {
-    /// The `limit` flights closest to the centre of `rect`, always including the
-    /// flight with `keptID` (the selected one) so its details stay available.
-    /// Picking by distance keeps mostly the same aircraft on screen between polls.
-    func nearest(to rect: MKMapRect, limit: Int, keeping keptID: String? = nil) -> [FlightMarker] {
-        guard count > limit else { return self }
-        let center = MKMapPoint(x: rect.midX, y: rect.midY)
-        let worldWidth = MKMapRect.world.width
+    /// Samples occupied cells across the viewport, reserving a place for the
+    /// selected flight if it is visible. All visible flights fit below the limit.
+    func distributed(
+        in rect: MKMapRect,
+        limit: Int,
+        keeping selectedID: String? = nil
+    ) -> (markers: [FlightMarker], visibleCount: Int) {
+        guard rect.minX.isFinite, rect.minY.isFinite,
+              rect.width.isFinite, rect.width > 0,
+              rect.height.isFinite, rect.height > 0 else { return ([], 0) }
 
-        func squaredDistance(_ annotation: FlightMarker) -> Double {
-            if annotation.id == keptID { return -1 }
-            let point = MKMapPoint(annotation.coordinate)
-            // Measure across the 180° meridian when that is shorter.
-            let dx = abs(point.x - center.x)
-            let wrappedDx = Swift.min(dx, worldWidth - dx)
-            let dy = point.y - center.y
-            return wrappedDx * wrappedDx + dy * dy
+        let worldWidth = MKMapRect.world.width
+        let width = Swift.min(rect.width, worldWidth)
+        let visible: [(marker: FlightMarker, x: Double, y: Double)] = compactMap { marker in
+            guard CLLocationCoordinate2DIsValid(marker.coordinate) else { return nil }
+            let point = MKMapPoint(marker.coordinate)
+            // Measure east from the viewport's left edge, wrapping at the date line.
+            let offset = (point.x - rect.minX).truncatingRemainder(dividingBy: worldWidth)
+            let x = offset < 0 ? offset + worldWidth : offset
+            let y = point.y - rect.minY
+            guard (0...width).contains(x), (0...rect.height).contains(y) else { return nil }
+            return (marker, x, y)
         }
 
-        return self
-            .map { ($0, squaredDistance($0)) }
-            .sorted { $0.1 < $1.1 }
-            .prefix(limit)
-            .map(\.0)
+        guard limit > 0 else { return ([], visible.count) }
+        guard visible.count > limit else { return (visible.map(\.marker), visible.count) }
+
+        // Use at most one cell per available slot, with roughly square cells
+        // in map coordinates. Every occupied cell can then contribute a marker.
+        let aspectRatio = Swift.min(Double(limit), Swift.max(1 / Double(limit), width / rect.height))
+        let columns = Swift.max(1, Int((Double(limit) * aspectRatio).squareRoot()))
+        let rows = limit / columns
+        var cells = [[FlightMarker]](repeating: [], count: rows * columns)
+        for (marker, x, y) in visible {
+            let column = Swift.min(columns - 1, Int(x / width * Double(columns)))
+            let row = Swift.min(rows - 1, Int(y / rect.height * Double(rows)))
+            cells[row * columns + column].append(marker)
+        }
+
+        var occupied = cells.filter { !$0.isEmpty }.map { cell in
+            cell.sorted { lhs, rhs in
+                if lhs.id == selectedID { return rhs.id != selectedID }
+                if rhs.id == selectedID { return false }
+                return lhs.id < rhs.id
+            }[...]
+        }
+        var sample: [FlightMarker] = []
+        sample.reserveCapacity(limit)
+        while sample.count < limit, !occupied.isEmpty {
+            let slots = Swift.min(limit - sample.count, occupied.count)
+            // Spread a partial round across the remaining occupied cells too.
+            for slot in 0..<slots {
+                let index = Int((Double(slot) + 0.5) * Double(occupied.count) / Double(slots))
+                if let marker = occupied[index].popFirst() {
+                    sample.append(marker)
+                }
+            }
+            occupied.removeAll(where: \.isEmpty)
+        }
+        return (sample, visible.count)
     }
 }
 

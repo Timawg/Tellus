@@ -172,10 +172,10 @@ final class LiveFlightsModel {
             markers.append(FlightMarker(flight: flight))
         }
         liveFlights = flightsByID
-        totalFlightCount = markers.count
-        let visibleMarkers = markers.nearest(to: viewport, limit: Self.maxVisibleFlights, keeping: selectedFlightID)
-        if markerSnapshot.markers != visibleMarkers {
-            markerSnapshot = FlightMarkerSnapshot(visibleMarkers)
+        let sample = markers.distributed(in: viewport, limit: Self.maxVisibleFlights, keeping: selectedFlightID)
+        totalFlightCount = sample.visibleCount
+        if markerSnapshot.markers != sample.markers {
+            markerSnapshot = FlightMarkerSnapshot(sample.markers)
         }
     }
 }
