@@ -6,6 +6,7 @@ struct CountryGuideServices {
     let recentEventsService: RecentEventsServiceProtocol
     let emberElectricityService: EmberElectricityServiceProtocol
     let countryProfileService: CountryProfileServiceProtocol
+    let democracyDataset = DemocracyDatasetStore()
     let eurostatPriceService: EurostatPriceService
     let disasterAlertService: DisasterAlertServiceProtocol
     let internetOutageService: InternetOutageServiceProtocol

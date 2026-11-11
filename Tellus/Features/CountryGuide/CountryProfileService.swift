@@ -46,13 +46,17 @@ struct CountryIndicatorObservation: Identifiable {
 
 protocol CountryProfileServiceProtocol: Service {
     func getProfile(countryCode: String) async throws -> [CountryIndicatorObservation]
+    func getHomicideTrend(countryCode: String) async throws -> [AnnualObservation]
 }
 
 actor CountryProfileService: CountryProfileServiceProtocol {
     nonisolated let rootURL = "https://api.worldbank.org/v2"
+    static let homicideIndicator = "VC.IHR.PSRC.P5"
     private let networkService: NetworkServiceProtocol
     private let requestFactory: URLRequestFactory
     private var cache: [String: [CountryIndicatorObservation]] = [:]
+    private var homicideCache: [String: [AnnualObservation]] = [:]
+    private var homicideRetryAt: Date?
 
     init(networkService: NetworkServiceProtocol, requestFactory: URLRequestFactory = .default) {
         self.networkService = networkService
@@ -60,42 +64,80 @@ actor CountryProfileService: CountryProfileServiceProtocol {
     }
 
     func getProfile(countryCode: String) async throws -> [CountryIndicatorObservation] {
-        let code = countryCode.uppercased()
-        guard code.count == 2, code.allSatisfy({ $0.isASCII && $0.isLetter }) else { return [] }
+        guard let code = Self.normalizedCode(countryCode) else { return [] }
         if let cached = cache[code] { return cached }
 
-        let request = try requestFactory.createURLRequest(root: rootURL, endpoint: IndicatorsEndpoint(countryCode: code))
-        let response: IndicatorsResponse = try await networkService.send(request: request)
-        let observations = CountryIndicator.allCases.compactMap { indicator in
-            response.observations
-                .filter { $0.indicator == indicator }
+        let indicators = CountryIndicator.allCases
+        let endpoint = IndicatorsEndpoint(countryCode: code, indicators: indicators.map(\.rawValue), periods: 1)
+        let response = try await fetch(endpoint)
+        let observations = indicators.compactMap { indicator in
+            response.annualObservations(indicator: indicator.rawValue)
                 .max { $0.year < $1.year }
+                .map { CountryIndicatorObservation(indicator: indicator, value: $0.value, year: $0.year) }
         }
         cache[code] = observations
         return observations
     }
 
+    func getHomicideTrend(countryCode: String) async throws -> [AnnualObservation] {
+        guard let code = Self.normalizedCode(countryCode) else { return [] }
+        if let cached = homicideCache[code] { return cached }
+        if let retryAt = homicideRetryAt, retryAt > .now {
+            throw HTTPError.rateLimited(retryAfter: retryAt.timeIntervalSinceNow)
+        }
+
+        let indicator = Self.homicideIndicator
+        let endpoint = IndicatorsEndpoint(countryCode: code, indicators: [indicator], periods: 10)
+        let response: IndicatorsResponse
+        do {
+            response = try await fetch(endpoint)
+        } catch HTTPError.rateLimited(let retryAfter) {
+            if let retryAfter { homicideRetryAt = .now.addingTimeInterval(retryAfter) }
+            throw HTTPError.rateLimited(retryAfter: retryAfter)
+        }
+        var reportedYears = Set<Int>()
+        let trend = response.annualObservations(indicator: indicator)
+            .filter { $0.value >= 0 && reportedYears.insert($0.year).inserted }
+            .sorted { $0.year < $1.year }
+        homicideCache[code] = trend
+        return trend
+    }
+
+    private static func normalizedCode(_ countryCode: String) -> String? {
+        let code = countryCode.uppercased()
+        guard code.count == 2, code.allSatisfy({ $0.isASCII && $0.isLetter }) else { return nil }
+        return code
+    }
+
+    private func fetch(_ endpoint: IndicatorsEndpoint) async throws -> IndicatorsResponse {
+        let request = try requestFactory.createURLRequest(root: rootURL, endpoint: endpoint)
+        let response: IndicatorsResponse = try await networkService.send(request: request)
+        try Task.checkCancellation()
+        return response
+    }
+
     private struct IndicatorsEndpoint: Endpoint {
         let countryCode: String
+        let indicators: [String]
+        let periods: Int
         let httpMethod: HTTPMethod = .get
 
         var path: String {
-            let indicators = CountryIndicator.allCases.map(\.rawValue).joined(separator: ";")
-            return "/country/\(countryCode)/indicator/\(indicators)"
+            "/country/\(countryCode)/indicator/\(indicators.joined(separator: ";"))"
         }
 
         var queryItems: [URLQueryItem]? {
             [
                 .init(name: "source", value: "2"), // World Development Indicators
                 .init(name: "format", value: "json"),
-                .init(name: "mrnev", value: "1"), // Latest non-empty value for each series
+                .init(name: "mrnev", value: String(periods)),
                 .init(name: "per_page", value: "50"),
             ]
         }
     }
 
     private struct IndicatorsResponse: Decodable {
-        let observations: [CountryIndicatorObservation]
+        private let rows: [Row]
 
         init(from decoder: Decoder) throws {
             var container = try decoder.unkeyedContainer()
@@ -103,15 +145,18 @@ actor CountryProfileService: CountryProfileServiceProtocol {
             if let messages = metadata.message {
                 // The API returns HTTP 200 with error 120 for unsupported country codes.
                 guard messages.first?.id == "120" else { throw HTTPError.invalidResponse }
-                observations = []
+                rows = []
                 return
             }
             guard let total = metadata.total else { throw HTTPError.invalidResponse }
-            let rows = total == 0 ? [] : try container.decode([Row].self)
-            observations = rows.compactMap { row in
-                guard let indicator = CountryIndicator(rawValue: row.indicator.id),
-                      let value = row.value, let year = Int(row.date) else { return nil }
-                return CountryIndicatorObservation(indicator: indicator, value: value, year: year)
+            rows = total == 0 ? [] : try container.decode([Row].self)
+        }
+
+        func annualObservations(indicator: String) -> [AnnualObservation] {
+            rows.compactMap { row in
+                guard row.indicator.id == indicator, let value = row.value, value.isFinite,
+                      let year = Int(row.date), year > 0 else { return nil }
+                return AnnualObservation(year: year, value: value)
             }
         }
 

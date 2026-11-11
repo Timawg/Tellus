@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2D1A1060DA114269A7B9EB80 /* vdem-democracy.json in Resources */ = {isa = PBXBuildFile; fileRef = 48D1CB6B84DE40D0AD142721 /* vdem-democracy.json */; };
 		24A86F5C2B81524E00B3D94E /* ExpandableSelectionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24A86F5B2B81524E00B3D94E /* ExpandableSelectionButton.swift */; };
 		F54422B82C526D2800CF1A1C /* FlightMarkerAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F54422B72C526D2800CF1A1C /* FlightMarkerAnnotationView.swift */; };
 		A7E1F0CA2EB9000100C0FFEE /* CableDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0C92EB9000100C0FFEE /* CableDetailsView.swift */; };
@@ -28,6 +29,7 @@
 		F54422C42C599F7300CF1A1C /* CGAffineTransform.swift in Sources */ = {isa = PBXBuildFile; fileRef = F54422C32C599F7300CF1A1C /* CGAffineTransform.swift */; };
 		A7E1F0A62EB9000100C0FFEE /* View+FloatingGlass.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1F0A52EB9000100C0FFEE /* View+FloatingGlass.swift */; };
 		F55BBEF22ABA9D1E005E32E1 /* AdvisoryStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = F55BBEF12ABA9D1E005E32E1 /* AdvisoryStatus.swift */; };
+		C3FB6D1F2CA24637AF6B08D4 /* AdviceSection+HTML.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6773393109BC4C6CBB06494A /* AdviceSection+HTML.swift */; };
 		F5EC33F62AB274E4004A2F57 /* TellusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC33F52AB274E4004A2F57 /* TellusApp.swift */; };
 		A7E1F0E02EB9000100C0FFEE /* country-borders.geojson in Resources */ = {isa = PBXBuildFile; fileRef = A7E1F0DF2EB9000100C0FFEE /* country-borders.geojson */; };
 		63485538B62549CFBE52F735 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E4E3AEB39488436297AF18A5 /* LaunchScreen.storyboard */; };
@@ -116,10 +118,14 @@
 		C10AA9550E3F4299971B13D5 /* AuroraTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83967AE6555B420995A945A6 /* AuroraTests.swift */; };
 		2DB578A82D324A5D89856ED3 /* EurostatPriceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10EB506C9AFE4993939FAA64 /* EurostatPriceTests.swift */; };
 		418DC012F92A44C0B260CE62 /* CountryGuideModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20F500BECB2435BA76890FD /* CountryGuideModelTests.swift */; };
+		4F2A79D6FAFA496CA5F9887D /* TravelAdviceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6FB0DFBD03440488C8F7CA2 /* TravelAdviceTests.swift */; };
 		E9E7987E5C914FDEB3140EA9 /* FlightMarkerSamplingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B1DE992B9847F8AF4F444B /* FlightMarkerSamplingTests.swift */; };
 		618040CF5E7A459B99FD08A1 /* HazardLayerModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71D548E861E7417889CF2A3C /* HazardLayerModelTests.swift */; };
 		BC96BD6E8E17498E93B0DD52 /* CableLayerModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C96CE77261E44CD931FA8C6 /* CableLayerModelTests.swift */; };
 		4C0AF8A782D84BFD89E9CB23 /* TestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC204AAE6C134A8CA7F60560 /* TestFixtures.swift */; };
+		D51350CDD0254898AB649EA9 /* DemocracyDataset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19CD05BCA15643ED8ACA0898 /* DemocracyDataset.swift */; };
+		D5E1684D3604465E82A7371A /* DemocracySafetyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90343842FAFD41AE931C3E53 /* DemocracySafetyView.swift */; };
+		CA0F7A7A77884C6CB573D24F /* DemocracySafetyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65FA15963144D72AE221BDC /* DemocracySafetyTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -140,6 +146,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		48D1CB6B84DE40D0AD142721 /* vdem-democracy.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "vdem-democracy.json"; sourceTree = "<group>"; };
 		24A86F5B2B81524E00B3D94E /* ExpandableSelectionButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandableSelectionButton.swift; sourceTree = "<group>"; };
 		F54422B72C526D2800CF1A1C /* FlightMarkerAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightMarkerAnnotationView.swift; sourceTree = "<group>"; };
 		A7E1F0C92EB9000100C0FFEE /* CableDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CableDetailsView.swift; sourceTree = "<group>"; };
@@ -161,6 +168,7 @@
 		F54422C32C599F7300CF1A1C /* CGAffineTransform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGAffineTransform.swift; sourceTree = "<group>"; };
 		A7E1F0A52EB9000100C0FFEE /* View+FloatingGlass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+FloatingGlass.swift"; sourceTree = "<group>"; };
 		F55BBEF12ABA9D1E005E32E1 /* AdvisoryStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvisoryStatus.swift; sourceTree = "<group>"; };
+		6773393109BC4C6CBB06494A /* AdviceSection+HTML.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AdviceSection+HTML.swift"; sourceTree = "<group>"; };
 		F5EC33F22AB274E4004A2F57 /* Tellus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tellus.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5EC33F52AB274E4004A2F57 /* TellusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TellusApp.swift; sourceTree = "<group>"; };
 		A7E1F0DF2EB9000100C0FFEE /* country-borders.geojson */ = {isa = PBXFileReference; lastKnownFileType = text; path = country-borders.geojson; sourceTree = "<group>"; };
@@ -251,10 +259,14 @@
 		83967AE6555B420995A945A6 /* AuroraTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuroraTests.swift; sourceTree = "<group>"; };
 		10EB506C9AFE4993939FAA64 /* EurostatPriceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EurostatPriceTests.swift; sourceTree = "<group>"; };
 		F20F500BECB2435BA76890FD /* CountryGuideModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryGuideModelTests.swift; sourceTree = "<group>"; };
+		C6FB0DFBD03440488C8F7CA2 /* TravelAdviceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelAdviceTests.swift; sourceTree = "<group>"; };
 		31B1DE992B9847F8AF4F444B /* FlightMarkerSamplingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightMarkerSamplingTests.swift; sourceTree = "<group>"; };
 		71D548E861E7417889CF2A3C /* HazardLayerModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HazardLayerModelTests.swift; sourceTree = "<group>"; };
 		6C96CE77261E44CD931FA8C6 /* CableLayerModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CableLayerModelTests.swift; sourceTree = "<group>"; };
 		DC204AAE6C134A8CA7F60560 /* TestFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFixtures.swift; sourceTree = "<group>"; };
+		19CD05BCA15643ED8ACA0898 /* DemocracyDataset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemocracyDataset.swift; sourceTree = "<group>"; };
+		90343842FAFD41AE931C3E53 /* DemocracySafetyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemocracySafetyView.swift; sourceTree = "<group>"; };
+		B65FA15963144D72AE221BDC /* DemocracySafetyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemocracySafetyTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -388,6 +400,7 @@
 				9F073ED5EE7E433E8BB8EA56 /* CountryGuideModel.swift */,
 				5E698FED07AB4837B021B352 /* CountryGuideServices.swift */,
 				2958D288139D416DB598D9AD /* CountryProfileSections.swift */,
+				D7A3419E0A134A678A81E610 /* DemocracySafety */,
 			);
 			path = CountryGuide;
 			sourceTree = "<group>";
@@ -398,6 +411,7 @@
 				F5FCC8552C50534E00569DC5 /* AdvisoryService.swift */,
 				F5FCC84A2C504D9A00569DC5 /* AdvisoryStatus + Color.swift */,
 				F55BBEF12ABA9D1E005E32E1 /* AdvisoryStatus.swift */,
+				6773393109BC4C6CBB06494A /* AdviceSection+HTML.swift */,
 				3B289DEB70F04C1D9D4C6CEC /* TravelAdviceSection.swift */,
 			);
 			path = Advisories;
@@ -639,6 +653,8 @@
 				82E9D30EC5D0451F9A55D716 /* Electricity */,
 				ECD12490DE2F4AE593CCCB26 /* CostOfLiving */,
 				F20F500BECB2435BA76890FD /* CountryGuideModelTests.swift */,
+				C6FB0DFBD03440488C8F7CA2 /* TravelAdviceTests.swift */,
+				51F9078DCF5341F69A37D40E /* DemocracySafety */,
 			);
 			path = CountryGuide;
 			sourceTree = "<group>";
@@ -722,6 +738,24 @@
 				DC204AAE6C134A8CA7F60560 /* TestFixtures.swift */,
 			);
 			path = Support;
+			sourceTree = "<group>";
+		};
+		D7A3419E0A134A678A81E610 /* DemocracySafety */ = {
+			isa = PBXGroup;
+			children = (
+				19CD05BCA15643ED8ACA0898 /* DemocracyDataset.swift */,
+				90343842FAFD41AE931C3E53 /* DemocracySafetyView.swift */,
+				48D1CB6B84DE40D0AD142721 /* vdem-democracy.json */,
+			);
+			path = DemocracySafety;
+			sourceTree = "<group>";
+		};
+		51F9078DCF5341F69A37D40E /* DemocracySafety */ = {
+			isa = PBXGroup;
+			children = (
+				B65FA15963144D72AE221BDC /* DemocracySafetyTests.swift */,
+			);
+			path = DemocracySafety;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -840,6 +874,7 @@
 				BA674B15FF0441E9BC51590B /* PassportAssets.xcassets in Resources */,
 				F18A030BAC1642438FD47E38 /* TravelStatusAssets.xcassets in Resources */,
 				A7E1F0E02EB9000100C0FFEE /* country-borders.geojson in Resources */,
+				2D1A1060DA114269A7B9EB80 /* vdem-democracy.json in Resources */,
 				63485538B62549CFBE52F735 /* LaunchScreen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -935,6 +970,7 @@
 				F5FCC84F2C5051E200569DC5 /* CircularStatusView.swift in Sources */,
 				F5FCC8512C50520300569DC5 /* AsyncFlagView.swift in Sources */,
 				F55BBEF22ABA9D1E005E32E1 /* AdvisoryStatus.swift in Sources */,
+				C3FB6D1F2CA24637AF6B08D4 /* AdviceSection+HTML.swift in Sources */,
 				F5FCC85A2C50534E00569DC5 /* HTTPError.swift in Sources */,
 				F54422BF2C53C2E000CF1A1C /* FlightAnnotation.swift in Sources */,
 				A7E1F0C82EB9000100C0FFEE /* CableOverlay.swift in Sources */,
@@ -958,6 +994,8 @@
 				927052B87E054D3F80B4C6F1 /* HazardMapLayer.swift in Sources */,
 				D5296B7B6C2645BEA4448C54 /* CableLayerModel.swift in Sources */,
 				431EE9E36C1D4C1A8B710D06 /* CableMapLayer.swift in Sources */,
+				D51350CDD0254898AB649EA9 /* DemocracyDataset.swift in Sources */,
+				D5E1684D3604465E82A7371A /* DemocracySafetyView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -971,10 +1009,12 @@
 				C10AA9550E3F4299971B13D5 /* AuroraTests.swift in Sources */,
 				2DB578A82D324A5D89856ED3 /* EurostatPriceTests.swift in Sources */,
 				418DC012F92A44C0B260CE62 /* CountryGuideModelTests.swift in Sources */,
+				4F2A79D6FAFA496CA5F9887D /* TravelAdviceTests.swift in Sources */,
 				E9E7987E5C914FDEB3140EA9 /* FlightMarkerSamplingTests.swift in Sources */,
 				618040CF5E7A459B99FD08A1 /* HazardLayerModelTests.swift in Sources */,
 				BC96BD6E8E17498E93B0DD52 /* CableLayerModelTests.swift in Sources */,
 				4C0AF8A782D84BFD89E9CB23 /* TestFixtures.swift in Sources */,
+				CA0F7A7A77884C6CB573D24F /* DemocracySafetyTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

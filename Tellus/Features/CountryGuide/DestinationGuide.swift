@@ -39,6 +39,7 @@ struct DestinationGuide {
         }
     }
 
+    let advisories: [AdviceSection]
     let entry: [AdviceSection]
     let health: [AdviceSection]
     let laws: [AdviceSection]
@@ -50,6 +51,7 @@ struct DestinationGuide {
     let adviceURL: URL?
 
     init(information: Information) {
+        advisories = AdviceSection.sections(fromHTML: information.advisories)
         entry = AdviceSection.sections(fromHTML: information.entryExit)
             .withoutCanadaSpecificAdvice()
             .withoutCanadianEntryRules()
@@ -101,8 +103,8 @@ extension AdviceSection.Block {
         switch self {
         case .paragraph(let text):
             return .paragraph(Self.linkingNumbers(in: text))
-        case .bullet(let text):
-            return .bullet(Self.linkingNumbers(in: text))
+        case .bullet(let text, let depth):
+            return .bullet(Self.linkingNumbers(in: text), depth: depth)
         case .subheading:
             return self
         }
@@ -157,7 +159,7 @@ extension Array where Element == AdviceSection {
 extension AdviceSection.Block {
     var hasPhoneLink: Bool {
         switch self {
-        case .paragraph(let text), .bullet(let text):
+        case .paragraph(let text), .bullet(let text, _):
             text.runs.contains { $0.link?.scheme == "tel" }
         case .subheading:
             false
@@ -167,7 +169,7 @@ extension AdviceSection.Block {
     /// Text of a paragraph or bullet; nil for subheadings.
     var plainText: String? {
         switch self {
-        case .paragraph(let text), .bullet(let text):
+        case .paragraph(let text), .bullet(let text, _):
             String(text.characters)
         case .subheading:
             nil

@@ -13,8 +13,8 @@ final class CountryGuideModel {
     private(set) var travelSelection = TravelSelection(destinationID: nil, nationalityID: nil)
 
     private(set) var advisoryStatus: AdvisoryStatus?
-    /// The advisory's entry, health, laws and climate advice and emergency
-    /// numbers, without the parts that only apply to Canadians.
+    private(set) var advisoryLoadFailed = false
+    /// The Canadian travel advisory, destination advice and emergency numbers.
     private(set) var destinationGuide: DestinationGuide?
     private(set) var isLoadingDestinationGuide = false
     private(set) var admissoryStatus: AdmissoryStatus?
@@ -86,6 +86,14 @@ final class CountryGuideModel {
         try await services.countryProfileService.getProfile(countryCode: countryCode)
     }
 
+    func loadDemocracyProfile(countryCode: String?) async throws -> DemocracyProfile {
+        try await services.democracyDataset.profile(countryCode: countryCode)
+    }
+
+    func loadHomicideTrend(countryCode: String) async throws -> [AnnualObservation] {
+        try await services.countryProfileService.getHomicideTrend(countryCode: countryCode)
+    }
+
     func loadPriceLevels() async throws -> EurostatPriceLevels {
         try await services.eurostatPriceService.getPriceLevels()
     }
@@ -101,6 +109,7 @@ final class CountryGuideModel {
 
     private func clearDestination(isLoading: Bool) {
         advisoryStatus = nil
+        advisoryLoadFailed = false
         destinationGuide = nil
         isLoadingDestinationGuide = isLoading
         destinationWeather = nil
@@ -124,13 +133,22 @@ final class CountryGuideModel {
 
     private func updateAdvisoryStatus(for country: Country) async {
         guard let code = country.cca2 else { return }
-        let status = try? await services.advisoryService.getAdvisoryStatus(destination: code)
-        guard !Task.isCancelled, travelSelection.destinationID == country.id else { return }
-        advisoryStatus = status
-        guard let information = status?.data.eng else {
+        let status: AdvisoryStatus
+        do {
+            status = try await services.advisoryService.getAdvisoryStatus(destination: code)
+        } catch {
+            guard !Task.isCancelled, travelSelection.destinationID == country.id else { return }
+            if case HTTPError.invalidStatus(code: 404, _) = error {
+                advisoryLoadFailed = false
+            } else {
+                advisoryLoadFailed = true
+            }
             isLoadingDestinationGuide = false
             return
         }
+        guard !Task.isCancelled, travelSelection.destinationID == country.id else { return }
+        advisoryStatus = status
+        let information = status.data.eng
         // Parsing a country's advice takes tens of milliseconds, so keep it
         // off the main thread.
         let guide = await Task.detached(priority: .userInitiated) {

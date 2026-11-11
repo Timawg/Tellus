@@ -36,7 +36,7 @@ struct DestinationGuideView: View {
                 case .overview:
                     overview
                 case .entry:
-                    statusSection(for: [.advisory, .visa])
+                    statusSection(for: [.visa])
                 case .health:
                     statusSection(for: [.health])
                     if !model.outbreakReports.isEmpty {
@@ -54,11 +54,13 @@ struct DestinationGuideView: View {
                     TravelAdviceSection(
                         topic: topic,
                         guide: model.destinationGuide,
-                        isLoading: model.isLoadingDestinationGuide
+                        advisoryStatus: model.advisoryStatus,
+                        isLoading: model.isLoadingDestinationGuide,
+                        loadFailed: model.advisoryLoadFailed
                     )
                 }
                 if let guide = model.destinationGuide {
-                    sourceSection(guide)
+                    GuideAdviceSource(guide: guide)
                 }
             }
             .safeAreaInset(edge: .top, spacing: 0) {
@@ -86,12 +88,21 @@ struct DestinationGuideView: View {
         .presentationBackground(Color(uiColor: .systemGroupedBackground))
         .preferredColorScheme(.dark)
     }
+}
 
+private extension DestinationGuideView {
     // MARK: Overview
 
     @ViewBuilder
-    private var overview: some View {
+    var overview: some View {
         statusOverviewSection
+        Section {
+            NavigationLink {
+                DemocracySafetyView(country: country, model: model)
+            } label: {
+                Label("Democracy & Safety", systemImage: "building.columns")
+            }
+        }
         CountryProfileSections(countryCode: country.cca2, loadProfile: model.loadCountryProfile(countryCode:))
             .id(country.cca2)
         if let code = country.cca2 {
@@ -191,7 +202,7 @@ struct DestinationGuideView: View {
         }
     }
 
-    private func moneySection(_ exchangeRates: [ExchangeRate]) -> some View {
+    func moneySection(_ exchangeRates: [ExchangeRate]) -> some View {
         Section {
             ForEach(exchangeRates) { rate in
                 LabeledContent("1 \(rate.home)", value: "\(ExchangeRate.format(rate.rate)) \(rate.destination)")
@@ -204,7 +215,7 @@ struct DestinationGuideView: View {
         }
     }
 
-    private var outagesSection: some View {
+    var outagesSection: some View {
         Section {
             ForEach(model.internetOutages) { outage in
                 VStack(alignment: .leading, spacing: 6) {
@@ -233,7 +244,7 @@ struct DestinationGuideView: View {
         }
     }
 
-    private var outbreaksSection: some View {
+    var outbreaksSection: some View {
         Section {
             ForEach(model.outbreakReports.prefix(5)) { report in
                 VStack(alignment: .leading, spacing: 4) {
@@ -261,7 +272,7 @@ struct DestinationGuideView: View {
         }
     }
 
-    private var alertsSection: some View {
+    var alertsSection: some View {
         Section {
             ForEach(model.disasterAlerts) { alert in
                 VStack(alignment: .leading, spacing: 6) {
@@ -301,7 +312,7 @@ struct DestinationGuideView: View {
     }
 
     @ViewBuilder
-    private var emergencySection: some View {
+    var emergencySection: some View {
         if let guide = model.destinationGuide, !guide.emergency.isEmpty {
             Section {
                 AdviceBlocks(blocks: guide.emergency)
@@ -325,7 +336,7 @@ struct DestinationGuideView: View {
     /// Every status, each opening the tab that explains it. These are the
     /// dots on the map card's guide button.
     @ViewBuilder
-    private var statusOverviewSection: some View {
+    var statusOverviewSection: some View {
         if !statuses.isEmpty {
             Section("Status") {
                 ForEach(statuses) { status in
@@ -350,7 +361,7 @@ struct DestinationGuideView: View {
 
     /// The statuses a tab is about, at the top of that tab.
     @ViewBuilder
-    private func statusSection(for kinds: [TravelStatus.Kind]) -> some View {
+    func statusSection(for kinds: [TravelStatus.Kind]) -> some View {
         let shown = statuses.filter { kinds.contains($0.kind) }
         if !shown.isEmpty || kinds.contains(.visa) {
             Section {
@@ -362,21 +373,6 @@ struct DestinationGuideView: View {
             } footer: {
                 if kinds.contains(.visa), model.admissoryStatus == nil {
                     Text("Choose your passport on the map to see visa rules.")
-                }
-            }
-        }
-    }
-
-    private func sourceSection(_ guide: DestinationGuide) -> some View {
-        Section {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Advice from the Government of Canada, adapted for all travellers. Updated \(guide.updated).")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                if let url = guide.adviceURL {
-                    Link("Read the full advice on travel.gc.ca", destination: url)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.blue)
                 }
             }
         }

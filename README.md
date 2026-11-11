@@ -18,12 +18,14 @@ Tellus starts on a random country. Tap a country on the map, search for it in th
 The country card shows weather and local time at the capital, exchange rates, and relevant alerts. The **Country guide** has five tabs.
 
 - **Overview** shows population, economy, geography, and infrastructure figures alongside recent events. Each figure includes its observation year and a link to its source. Open **Electricity profile** under **Energy** to see domestic generation by source and net electricity trade for the latest available year. The tab also covers the forecast, exchange rates, connectivity disruptions, emergency numbers, and neighbouring countries.
-- **Entry** covers entry advice and visa requirements for the passport selected in Tellus.
+- **Entry** covers visa requirements for the selected passport, entry advice, and Canada’s travel advisory. Expand the nationwide and regional topics for the affected areas and exceptions.
 - **Health** covers health advice and WHO outbreak reports.
 - **Laws** covers local laws and culture.
 - **Climate** covers climate and natural hazards, including active disaster alerts.
 
 The passport picker saves your choice on the device. It sets the passport used for visa lookups and the preferred home currency. Without a passport selection, exchange rates use the device region's currency when available.
+
+Open **Democracy & Safety** from **Overview** for V-Dem’s Electoral Democracy Index and reported homicides per 100,000 people. The democracy chart uses the ten most recent years in the bundled release. The homicide chart uses up to ten reported years from the World Bank. Each section shows its observation year.
 
 Open **Cost of living** under **Prices** to compare household prices with the EU average or another country in Eurostat's dataset. Tellus uses the latest year with an overall index for both places and shows the breakdown for that same year where available. The figures compare national price levels for food and non-alcoholic drinks, housing and utilities, transport, and restaurants and accommodation. Eurostat's detailed coverage is primarily European. [Eurostat price level data](https://ec.europa.eu/eurostat/databrowser/view/prc_ppp_ind_1/default/table?lang=en)
 
@@ -91,6 +93,14 @@ Run the script from the repository root with Python 3. It matches boundaries to 
 python3 scripts/build_country_borders.py ne_50m_admin_0_countries.geojson countries.json
 ```
 
+### Update the democracy dataset
+
+Download a V-Dem Country-Year Core CSV archive and run the command below from the repository root. The script keeps the Electoral Democracy Index and the ten most recent years in the release. The bundled extract uses version 16 and is distributed under CC BY-SA 4.0. [V-Dem archive](https://v-dem.net/data/dataset-archive/) · [Bundled data](Tellus/Features/CountryGuide/DemocracySafety/vdem-democracy.json) · [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
+
+```sh
+python3 scripts/build_vdem_democracy.py V-Dem-CY-Core-v16_csv.zip
+```
+
 ## Data sources and credits
 
 | Data | Provider |
@@ -98,6 +108,8 @@ python3 scripts/build_country_borders.py ne_50m_admin_0_countries.geojson countr
 | Basemap | Apple MapKit |
 | Country metadata, boundaries, and flags | [mledoze/countries](https://github.com/mledoze/countries), [Natural Earth](https://www.naturalearthdata.com/), and [Flagcdn](https://flagcdn.com/) |
 | Country profile figures | [World Bank World Development Indicators](https://datatopics.worldbank.org/world-development-indicators/) |
+| Electoral Democracy Index | Coppedge et al. (2026), [V-Dem Country-Year Dataset v16](https://doi.org/10.23696/vdemds26), Varieties of Democracy Project. The bundled extract selects one indicator and ten years under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). |
+| Intentional homicides per 100,000 people | UNODC Research Data Portal, via [World Bank World Development Indicators](https://data.worldbank.org/indicator/VC.IHR.PSRC.P5), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). |
 | Household price level comparisons | [Eurostat purchasing power parities and price level indices](https://ec.europa.eu/eurostat/databrowser/view/prc_ppp_ind_1/default/table?lang=en) |
 | Electricity generation mix and net trade | [Ember Yearly Electricity Data](https://ember-energy.org/data/yearly-electricity-data/), CC BY 4.0. Tellus downloads the public CSV when a profile is opened and caches the latest country observations for seven days. |
 | Travel advisories and destination guidance | [Government of Canada Travel Advice and Advisories](https://travel.gc.ca/travelling/advisories) |
