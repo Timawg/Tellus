@@ -13,22 +13,9 @@ import SwiftUI
 struct DestinationGuideView: View {
 
     let country: Country
-    /// Nil while the advice is loading, or for places without advice.
-    let guide: DestinationGuide?
-    let isLoading: Bool
-    let weather: DestinationWeather?
-    let exchangeRates: [ExchangeRate]
-    let alerts: [DisasterAlert]
-    let outages: [InternetOutage]
-    let outbreaks: [OutbreakReport]
-    let recentEvents: RecentEvents?
-    let loadCountryProfile: (String) async throws -> [CountryIndicatorObservation]
-    let loadElectricityProfile: (String) async throws -> CountryElectricityProfile?
-    let loadPriceLevels: () async throws -> EurostatPriceLevels
+    let model: CountryGuideModel
     /// The tab shown when the guide opens.
     var initialTopic: DestinationGuide.Topic = .overview
-    let advisoryStatus: AdvisoryStatus?
-    let admissoryStatus: AdmissoryStatus?
     /// The passport the visa status is for.
     let passport: Country?
     let neighbours: [Country]
@@ -40,14 +27,7 @@ struct DestinationGuideView: View {
 
     private var topic: DestinationGuide.Topic { selectedTopic ?? initialTopic }
 
-    private var statuses: [TravelStatus] {
-        [
-            TravelStatus.advisory(advisoryStatus),
-            TravelStatus.visa(admissoryStatus, passport: passport),
-            TravelStatus.health(outbreaks),
-            TravelStatus.disasters(alerts),
-        ].compactMap { $0 }
-    }
+    private var statuses: [TravelStatus] { model.travelStatuses(passport: passport) }
 
     var body: some View {
         NavigationStack {
@@ -57,24 +37,28 @@ struct DestinationGuideView: View {
                     overview
                 case .entry:
                     statusSection(for: [.advisory, .visa])
-                    advice(for: topic)
                 case .health:
                     statusSection(for: [.health])
-                    if !outbreaks.isEmpty {
+                    if !model.outbreakReports.isEmpty {
                         outbreaksSection
                     }
-                    advice(for: topic)
                 case .climate:
                     statusSection(for: [.disasters])
-                    if !alerts.isEmpty {
+                    if !model.disasterAlerts.isEmpty {
                         alertsSection
                     }
-                    advice(for: topic)
                 case .laws:
-                    advice(for: topic)
+                    EmptyView()
                 }
-                if guide != nil {
-                    sourceSection
+                if topic != .overview {
+                    TravelAdviceSection(
+                        topic: topic,
+                        guide: model.destinationGuide,
+                        isLoading: model.isLoadingDestinationGuide
+                    )
+                }
+                if let guide = model.destinationGuide {
+                    sourceSection(guide)
                 }
             }
             .safeAreaInset(edge: .top, spacing: 0) {
@@ -108,13 +92,13 @@ struct DestinationGuideView: View {
     @ViewBuilder
     private var overview: some View {
         statusOverviewSection
-        CountryProfileSections(countryCode: country.cca2, loadProfile: loadCountryProfile)
+        CountryProfileSections(countryCode: country.cca2, loadProfile: model.loadCountryProfile(countryCode:))
             .id(country.cca2)
         if let code = country.cca2 {
             Section("Prices") {
                 NavigationLink {
                     CountryCostOfLivingView(countryCode: code, countryName: country.name?.common ?? code,
-                                            loadPriceLevels: loadPriceLevels)
+                                            loadPriceLevels: model.loadPriceLevels)
                 } label: {
                     Label("Cost of living", systemImage: "basket")
                 }
@@ -126,24 +110,24 @@ struct DestinationGuideView: View {
                     CountryElectricityView(
                         countryCode: code,
                         countryName: country.name?.common ?? code,
-                        loadProfile: loadElectricityProfile
+                        loadProfile: model.loadElectricityProfile(countryCode:)
                     )
                 } label: {
                     Label("Electricity profile", systemImage: "bolt")
                 }
             }
         }
-        if let recentEvents, !recentEvents.events.isEmpty {
-            eventsSection(recentEvents)
+        if let recentEvents = model.recentEvents, !recentEvents.events.isEmpty {
+            RecentEventsSection(recentEvents: recentEvents)
         }
-        if !outages.isEmpty {
+        if !model.internetOutages.isEmpty {
             outagesSection
         }
-        if let weather {
-            weatherSection(weather)
+        if let weather = model.destinationWeather {
+            DestinationWeatherSection(weather: weather)
         }
-        if !exchangeRates.isEmpty {
-            moneySection
+        if !model.exchangeRates.isEmpty {
+            moneySection(model.exchangeRates)
         }
         Section("At a glance") {
             if let capital = country.capital?.first {
@@ -207,59 +191,7 @@ struct DestinationGuideView: View {
         }
     }
 
-    private func weatherSection(_ weather: DestinationWeather) -> some View {
-        Section {
-            HStack(spacing: 16) {
-                Image(systemName: weather.symbolName)
-                    .symbolRenderingMode(.multicolor)
-                    .font(.system(size: 44))
-                    .frame(width: 56)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(DestinationWeather.temperatureText(weather.temperature))
-                        .font(.system(.largeTitle, design: .rounded).weight(.semibold))
-                    Text(weather.condition.description)
-                        .font(.subheadline)
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Feels like \(DestinationWeather.temperatureText(weather.feelsLike))")
-                    Text("Wind \(DestinationWeather.windText(weather.windSpeed))")
-                    Text("Humidity \(weather.humidity)%")
-                }
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 4)
-            .accessibilityElement(children: .combine)
-
-            TimelineView(.everyMinute) { context in
-                LabeledContent("Local time") {
-                    Text(weather.localTime(at: context.date))
-                }
-            }
-
-            ForEach(weather.days) { day in
-                HStack {
-                    Text(dayName(day.date, in: weather.timeZone))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Image(systemName: day.condition.symbolName())
-                        .symbolRenderingMode(.multicolor)
-                        .frame(width: 32)
-                        .accessibilityLabel(day.condition.description)
-                    Text("\(DestinationWeather.temperatureText(day.low)) – \(DestinationWeather.temperatureText(day.high))")
-                        .monospacedDigit()
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                }
-                .accessibilityElement(children: .combine)
-            }
-        } header: {
-            Label("Weather in \(weather.placeName)", systemImage: "thermometer.medium")
-        } footer: {
-            Text("Weather data by Open-Meteo.com")
-        }
-    }
-
-    private var moneySection: some View {
+    private func moneySection(_ exchangeRates: [ExchangeRate]) -> some View {
         Section {
             ForEach(exchangeRates) { rate in
                 LabeledContent("1 \(rate.home)", value: "\(ExchangeRate.format(rate.rate)) \(rate.destination)")
@@ -274,7 +206,7 @@ struct DestinationGuideView: View {
 
     private var outagesSection: some View {
         Section {
-            ForEach(outages) { outage in
+            ForEach(model.internetOutages) { outage in
                 VStack(alignment: .leading, spacing: 6) {
                     Label {
                         Text(outage.isOngoing ? "Internet disruption detected" : "Recent internet disruption")
@@ -303,7 +235,7 @@ struct DestinationGuideView: View {
 
     private var outbreaksSection: some View {
         Section {
-            ForEach(outbreaks.prefix(5)) { report in
+            ForEach(model.outbreakReports.prefix(5)) { report in
                 VStack(alignment: .leading, spacing: 4) {
                     Text(report.published, format: .dateTime.day().month(.abbreviated).year())
                         .font(.caption.weight(.semibold))
@@ -331,7 +263,7 @@ struct DestinationGuideView: View {
 
     private var alertsSection: some View {
         Section {
-            ForEach(alerts) { alert in
+            ForEach(model.disasterAlerts) { alert in
                 VStack(alignment: .leading, spacing: 6) {
                     Label {
                         Text(alert.name)
@@ -368,61 +300,11 @@ struct DestinationGuideView: View {
         }
     }
 
-    /// The latest events, newest first; older ones behind "More events".
-    private func eventsSection(_ recentEvents: RecentEvents) -> some View {
-        let shown = 5
-        let events = recentEvents.events
-        return Section {
-            ForEach(events.prefix(shown)) { event in
-                eventRow(event)
-            }
-            if events.count > shown {
-                DisclosureGroup("More events") {
-                    ForEach(events.dropFirst(shown).prefix(25)) { event in
-                        eventRow(event)
-                    }
-                }
-            }
-        } header: {
-            Label("Recent events", systemImage: "newspaper")
-        } footer: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("From the Wikipedia article “\(recentEvents.articleTitle)”, written by volunteers (CC BY-SA 4.0).")
-                if let url = recentEvents.articleURL {
-                    Link("Read on Wikipedia", destination: url)
-                        .foregroundStyle(.blue)
-                }
-            }
-        }
-    }
-
-    private func eventRow(_ event: RecentEvent) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(event.date, format: .dateTime.day().month(.abbreviated).year())
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-            Text(event.text)
-                .font(.subheadline)
-        }
-        .padding(.vertical, 2)
-        .accessibilityElement(children: .combine)
-    }
-
-    /// "Today", then weekday names ("Thursday"), in the destination's time zone.
-    private func dayName(_ date: Date, in timeZone: TimeZone) -> String {
-        var calendar = Calendar.current
-        calendar.timeZone = timeZone
-        if calendar.isDate(date, inSameDayAs: Date()) {
-            return "Today"
-        }
-        return date.formatted(Date.FormatStyle(timeZone: timeZone).weekday(.wide))
-    }
-
     @ViewBuilder
     private var emergencySection: some View {
-        if let guide, !guide.emergency.isEmpty {
+        if let guide = model.destinationGuide, !guide.emergency.isEmpty {
             Section {
-                blocks(guide.emergency)
+                AdviceBlocks(blocks: guide.emergency)
             } header: {
                 Label("Emergency numbers", systemImage: "phone.fill")
             } footer: {
@@ -431,9 +313,9 @@ struct DestinationGuideView: View {
                     Text("Tap a number to call it.")
                 }
             }
-        } else if guide == nil, isLoading {
+        } else if model.isLoadingDestinationGuide {
             Section("Emergency numbers") {
-                loadingRow
+                AdviceLoadingRow()
             }
         }
     }
@@ -478,168 +360,25 @@ struct DestinationGuideView: View {
             } header: {
                 Text("Status")
             } footer: {
-                if kinds.contains(.visa), admissoryStatus == nil {
+                if kinds.contains(.visa), model.admissoryStatus == nil {
                     Text("Choose your passport on the map to see visa rules.")
                 }
             }
         }
     }
 
-    // MARK: Advice topics
-
-    @ViewBuilder
-    private func advice(for topic: DestinationGuide.Topic) -> some View {
-        if let guide {
-            let sections = guide.sections(for: topic)
-            if sections.isEmpty {
-                ContentUnavailableView("No \(topic.heading.lowercased()) advice",
-                                       systemImage: "doc.text.magnifyingglass")
-            } else {
-                if let introduction = sections.first(where: { $0.title == nil }) {
-                    Section(topic.heading) {
-                        blocks(introduction.blocks)
-                    }
-                }
-                Section(sections.first?.title == nil ? "Topics" : topic.heading) {
-                    ForEach(sections.filter { $0.title != nil }) { section in
-                        DisclosureGroup {
-                            blocks(section.blocks)
-                                .padding(.vertical, 4)
-                        } label: {
-                            Text(section.title ?? "")
-                                .font(.body.weight(.semibold))
-                        }
-                    }
-                }
-            }
-        } else if isLoading {
-            loadingRow
-        } else {
-            ContentUnavailableView("No travel advice",
-                                   systemImage: "doc.text.magnifyingglass",
-                                   description: Text("There's no travel advice for this destination."))
-        }
-    }
-
-    private var sourceSection: some View {
+    private func sourceSection(_ guide: DestinationGuide) -> some View {
         Section {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Advice from the Government of Canada, adapted for all travellers. Updated \(guide?.updated ?? "").")
+                Text("Advice from the Government of Canada, adapted for all travellers. Updated \(guide.updated).")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                if let url = guide?.adviceURL {
+                if let url = guide.adviceURL {
                     Link("Read the full advice on travel.gc.ca", destination: url)
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(.blue)
                 }
             }
-        }
-    }
-
-    // MARK: Pieces
-
-    private var loadingRow: some View {
-        HStack(spacing: 10) {
-            ProgressView()
-            Text("Loading advice…")
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private func blocks(_ blocks: [AdviceSection.Block]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
-                switch block {
-                case .paragraph(let text):
-                    Text(text)
-                case .bullet(let text):
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text("•")
-                        Text(text)
-                    }
-                    .padding(.leading, 4)
-                case .subheading(let text):
-                    Text(text)
-                        .font(.subheadline.weight(.semibold))
-                        .padding(.top, 4)
-                }
-            }
-        }
-        .font(.subheadline)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-private struct CountryProfileSections: View {
-    let countryCode: String?
-    let loadProfile: (String) async throws -> [CountryIndicatorObservation]
-
-    @State private var result: Result<[CountryIndicatorObservation], Error>?
-
-    var body: some View {
-        switch result {
-        case .success(let observations) where !observations.isEmpty:
-            ForEach(CountryIndicator.Category.allCases, id: \.self) { category in
-                let rows = observations.filter { $0.indicator.category == category }
-                if !rows.isEmpty {
-                    Section(category.rawValue) {
-                        ForEach(rows) { row in
-                            observationRow(row)
-                        }
-                    }
-                }
-            }
-        case .success:
-            Section("Country profile") {
-                Text("No country indicators are available from the World Bank.")
-                    .foregroundStyle(.secondary)
-            }
-        case .failure:
-            Section("Country profile") {
-                Text("Couldn't load country indicators.")
-                    .foregroundStyle(.secondary)
-                Button("Retry") { result = nil }
-            }
-        case nil:
-            Section("Country profile") {
-                ProgressView("Loading country indicators…")
-                    .task {
-                        do {
-                            let observations = try await loadProfile(countryCode ?? "")
-                            if !Task.isCancelled { result = .success(observations) }
-                        } catch {
-                            if !Task.isCancelled { result = .failure(error) }
-                        }
-                    }
-            }
-        }
-    }
-
-    private func observationRow(_ row: CountryIndicatorObservation) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            LabeledContent(row.indicator.title, value: formattedValue(row))
-            if let countryCode,
-               let source = URL(string: "https://data.worldbank.org/indicator/\(row.indicator.rawValue)?locations=\(countryCode)") {
-                Link("World Bank · \(String(row.year))", destination: source)
-                    .font(.caption)
-                    .foregroundStyle(.blue)
-                    .accessibilityLabel("\(row.indicator.title), World Bank, observation year \(String(row.year))")
-            }
-        }
-    }
-
-    private func formattedValue(_ row: CountryIndicatorObservation) -> String {
-        switch row.indicator {
-        case .population:
-            row.value.formatted(.number.precision(.fractionLength(0)))
-        case .gdp:
-            row.value.formatted(.number.notation(.compactName).precision(.significantDigits(3))) + " USD"
-        case .gdpPerCapita:
-            row.value.formatted(.currency(code: "USD").presentation(.isoCode).precision(.fractionLength(0)))
-        case .surfaceArea:
-            row.value.formatted(.number.precision(.fractionLength(0...1))) + " km²"
-        case .internetUse, .electricityAccess:
-            (row.value / 100).formatted(.percent.precision(.fractionLength(0...1)))
         }
     }
 }

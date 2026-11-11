@@ -102,6 +102,24 @@
 		41922FF0B3664956820DBE82 /* FlightAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 567F09A9FF444918B3CA9A46 /* FlightAssets.xcassets */; };
 		BA674B15FF0441E9BC51590B /* PassportAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CC57367C43014919BC27A3B8 /* PassportAssets.xcassets */; };
 		F18A030BAC1642438FD47E38 /* TravelStatusAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9E8DDAC1F86544D193395468 /* TravelStatusAssets.xcassets */; };
+		968A0AB706FA4CC4A354E612 /* TravelAdviceSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B289DEB70F04C1D9D4C6CEC /* TravelAdviceSection.swift */; };
+		0B9C62D2526F4B249B31623D /* CountryGuideModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F073ED5EE7E433E8BB8EA56 /* CountryGuideModel.swift */; };
+		20E9F9A36A2644178D7F44E4 /* CountryGuideServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E698FED07AB4837B021B352 /* CountryGuideServices.swift */; };
+		E0996C9722A04A8B9C0CED51 /* CountryProfileSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2958D288139D416DB598D9AD /* CountryProfileSections.swift */; };
+		6A26C484991E4B6AAE26BCA4 /* RecentEventsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25B1274C2EC84685883C1EBA /* RecentEventsSection.swift */; };
+		6436DDA489D44367995878AA /* DestinationWeatherSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89DFAA4554F94B8A9D4FB26A /* DestinationWeatherSection.swift */; };
+		D2978CB3E9CA477EA0F4A3BC /* FlightMapLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92D3D2033D1B4271A130137F /* FlightMapLayer.swift */; };
+		D8C4117AF8C74767B23F606F /* HazardLayerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6069696D72AB43BDA9E22888 /* HazardLayerModel.swift */; };
+		927052B87E054D3F80B4C6F1 /* HazardMapLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F86EC792DE974A7F8E7DD85D /* HazardMapLayer.swift */; };
+		D5296B7B6C2645BEA4448C54 /* CableLayerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C53391EAB8074DD69D9F926B /* CableLayerModel.swift */; };
+		431EE9E36C1D4C1A8B710D06 /* CableMapLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8917AA527E634D82BC6C9A20 /* CableMapLayer.swift */; };
+		C10AA9550E3F4299971B13D5 /* AuroraTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83967AE6555B420995A945A6 /* AuroraTests.swift */; };
+		2DB578A82D324A5D89856ED3 /* EurostatPriceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10EB506C9AFE4993939FAA64 /* EurostatPriceTests.swift */; };
+		418DC012F92A44C0B260CE62 /* CountryGuideModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20F500BECB2435BA76890FD /* CountryGuideModelTests.swift */; };
+		E9E7987E5C914FDEB3140EA9 /* FlightMarkerSamplingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B1DE992B9847F8AF4F444B /* FlightMarkerSamplingTests.swift */; };
+		618040CF5E7A459B99FD08A1 /* HazardLayerModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71D548E861E7417889CF2A3C /* HazardLayerModelTests.swift */; };
+		BC96BD6E8E17498E93B0DD52 /* CableLayerModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C96CE77261E44CD931FA8C6 /* CableLayerModelTests.swift */; };
+		4C0AF8A782D84BFD89E9CB23 /* TestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC204AAE6C134A8CA7F60560 /* TestFixtures.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -219,6 +237,24 @@
 		567F09A9FF444918B3CA9A46 /* FlightAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = FlightAssets.xcassets; sourceTree = "<group>"; };
 		CC57367C43014919BC27A3B8 /* PassportAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = PassportAssets.xcassets; sourceTree = "<group>"; };
 		9E8DDAC1F86544D193395468 /* TravelStatusAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = TravelStatusAssets.xcassets; sourceTree = "<group>"; };
+		3B289DEB70F04C1D9D4C6CEC /* TravelAdviceSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelAdviceSection.swift; sourceTree = "<group>"; };
+		9F073ED5EE7E433E8BB8EA56 /* CountryGuideModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryGuideModel.swift; sourceTree = "<group>"; };
+		5E698FED07AB4837B021B352 /* CountryGuideServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryGuideServices.swift; sourceTree = "<group>"; };
+		2958D288139D416DB598D9AD /* CountryProfileSections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryProfileSections.swift; sourceTree = "<group>"; };
+		25B1274C2EC84685883C1EBA /* RecentEventsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentEventsSection.swift; sourceTree = "<group>"; };
+		89DFAA4554F94B8A9D4FB26A /* DestinationWeatherSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationWeatherSection.swift; sourceTree = "<group>"; };
+		92D3D2033D1B4271A130137F /* FlightMapLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightMapLayer.swift; sourceTree = "<group>"; };
+		6069696D72AB43BDA9E22888 /* HazardLayerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HazardLayerModel.swift; sourceTree = "<group>"; };
+		F86EC792DE974A7F8E7DD85D /* HazardMapLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HazardMapLayer.swift; sourceTree = "<group>"; };
+		C53391EAB8074DD69D9F926B /* CableLayerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CableLayerModel.swift; sourceTree = "<group>"; };
+		8917AA527E634D82BC6C9A20 /* CableMapLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CableMapLayer.swift; sourceTree = "<group>"; };
+		83967AE6555B420995A945A6 /* AuroraTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuroraTests.swift; sourceTree = "<group>"; };
+		10EB506C9AFE4993939FAA64 /* EurostatPriceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EurostatPriceTests.swift; sourceTree = "<group>"; };
+		F20F500BECB2435BA76890FD /* CountryGuideModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryGuideModelTests.swift; sourceTree = "<group>"; };
+		31B1DE992B9847F8AF4F444B /* FlightMarkerSamplingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightMarkerSamplingTests.swift; sourceTree = "<group>"; };
+		71D548E861E7417889CF2A3C /* HazardLayerModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HazardLayerModelTests.swift; sourceTree = "<group>"; };
+		6C96CE77261E44CD931FA8C6 /* CableLayerModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CableLayerModelTests.swift; sourceTree = "<group>"; };
+		DC204AAE6C134A8CA7F60560 /* TestFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFixtures.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -349,6 +385,9 @@
 				A7E1F0A92EB9000100C0FFEE /* DestinationGuideView.swift */,
 				A7E1F0E12EB9000100C0FFEE /* TravelStatus.swift */,
 				9E8DDAC1F86544D193395468 /* TravelStatusAssets.xcassets */,
+				9F073ED5EE7E433E8BB8EA56 /* CountryGuideModel.swift */,
+				5E698FED07AB4837B021B352 /* CountryGuideServices.swift */,
+				2958D288139D416DB598D9AD /* CountryProfileSections.swift */,
 			);
 			path = CountryGuide;
 			sourceTree = "<group>";
@@ -359,6 +398,7 @@
 				F5FCC8552C50534E00569DC5 /* AdvisoryService.swift */,
 				F5FCC84A2C504D9A00569DC5 /* AdvisoryStatus + Color.swift */,
 				F55BBEF12ABA9D1E005E32E1 /* AdvisoryStatus.swift */,
+				3B289DEB70F04C1D9D4C6CEC /* TravelAdviceSection.swift */,
 			);
 			path = Advisories;
 			sourceTree = "<group>";
@@ -425,6 +465,7 @@
 			children = (
 				A7E1F0B32EB9000100C0FFEE /* RecentEvents.swift */,
 				A7E1F0B72EB9000100C0FFEE /* RecentEventsService.swift */,
+				25B1274C2EC84685883C1EBA /* RecentEventsSection.swift */,
 			);
 			path = RecentEvents;
 			sourceTree = "<group>";
@@ -434,6 +475,7 @@
 			children = (
 				A7E1F0AB2EB9000100C0FFEE /* Weather.swift */,
 				A7E1F0AF2EB9000100C0FFEE /* WeatherService.swift */,
+				89DFAA4554F94B8A9D4FB26A /* DestinationWeatherSection.swift */,
 			);
 			path = Weather;
 			sourceTree = "<group>";
@@ -453,6 +495,7 @@
 				F5FCC8632C5063C500569DC5 /* FlightService.swift */,
 				A7E1F0D32EB9000100C0FFEE /* LiveFlight.swift */,
 				B411570F0100000000000002 /* LiveFlightsModel.swift */,
+				92D3D2033D1B4271A130137F /* FlightMapLayer.swift */,
 			);
 			path = Flights;
 			sourceTree = "<group>";
@@ -476,6 +519,8 @@
 				A7E1F0D12EB9000100C0FFEE /* HazardDetailsView.swift */,
 				A7E1F0CD2EB9000100C0FFEE /* HazardService.swift */,
 				A7E1F0CB2EB9000100C0FFEE /* NaturalHazards.swift */,
+				6069696D72AB43BDA9E22888 /* HazardLayerModel.swift */,
+				F86EC792DE974A7F8E7DD85D /* HazardMapLayer.swift */,
 			);
 			path = Hazards;
 			sourceTree = "<group>";
@@ -522,6 +567,8 @@
 				A7E1F0C72EB9000100C0FFEE /* CableOverlay.swift */,
 				A7E1F0C52EB9000100C0FFEE /* CableService.swift */,
 				A7E1F0C32EB9000100C0FFEE /* SubmarineCables.swift */,
+				C53391EAB8074DD69D9F926B /* CableLayerModel.swift */,
+				8917AA527E634D82BC6C9A20 /* CableMapLayer.swift */,
 			);
 			path = SubmarineCables;
 			sourceTree = "<group>";
@@ -567,6 +614,7 @@
 			isa = PBXGroup;
 			children = (
 				BF0991CE88F440969C8F5581 /* Features */,
+				0B7140F8969D4EFA8C53165F /* Support */,
 			);
 			path = TellusTests;
 			sourceTree = "<group>";
@@ -577,6 +625,10 @@
 				D9541756EF48476082E086FD /* CountryGuide */,
 				42093500C78C47CC882D0E19 /* GPSJAM */,
 				50ACA190DC40486080597263 /* Map */,
+				2A01ECB4432B4ABD8757B54F /* Aurora */,
+				229DD4796EDF4EF5B350C21E /* Flights */,
+				BF4109BD78044339A8FFBC0A /* Hazards */,
+				8630E2F3A863463A8C297BF0 /* SubmarineCables */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -585,6 +637,8 @@
 			isa = PBXGroup;
 			children = (
 				82E9D30EC5D0451F9A55D716 /* Electricity */,
+				ECD12490DE2F4AE593CCCB26 /* CostOfLiving */,
+				F20F500BECB2435BA76890FD /* CountryGuideModelTests.swift */,
 			);
 			path = CountryGuide;
 			sourceTree = "<group>";
@@ -620,6 +674,54 @@
 				F5EC34122AB274E5004A2F57 /* TellusUITestsLaunchTests.swift */,
 			);
 			path = TellusUITests;
+			sourceTree = "<group>";
+		};
+		2A01ECB4432B4ABD8757B54F /* Aurora */ = {
+			isa = PBXGroup;
+			children = (
+				83967AE6555B420995A945A6 /* AuroraTests.swift */,
+			);
+			path = Aurora;
+			sourceTree = "<group>";
+		};
+		ECD12490DE2F4AE593CCCB26 /* CostOfLiving */ = {
+			isa = PBXGroup;
+			children = (
+				10EB506C9AFE4993939FAA64 /* EurostatPriceTests.swift */,
+			);
+			path = CostOfLiving;
+			sourceTree = "<group>";
+		};
+		229DD4796EDF4EF5B350C21E /* Flights */ = {
+			isa = PBXGroup;
+			children = (
+				31B1DE992B9847F8AF4F444B /* FlightMarkerSamplingTests.swift */,
+			);
+			path = Flights;
+			sourceTree = "<group>";
+		};
+		BF4109BD78044339A8FFBC0A /* Hazards */ = {
+			isa = PBXGroup;
+			children = (
+				71D548E861E7417889CF2A3C /* HazardLayerModelTests.swift */,
+			);
+			path = Hazards;
+			sourceTree = "<group>";
+		};
+		8630E2F3A863463A8C297BF0 /* SubmarineCables */ = {
+			isa = PBXGroup;
+			children = (
+				6C96CE77261E44CD931FA8C6 /* CableLayerModelTests.swift */,
+			);
+			path = SubmarineCables;
+			sourceTree = "<group>";
+		};
+		0B7140F8969D4EFA8C53165F /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				DC204AAE6C134A8CA7F60560 /* TestFixtures.swift */,
+			);
+			path = Support;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -845,6 +947,17 @@
 				A7E1F0D02EB9000100C0FFEE /* HazardAnnotation.swift in Sources */,
 				F5FCC8622C50610F00569DC5 /* CountriesService.swift in Sources */,
 				F5EC34262AB96F1F004A2F57 /* AdmissoryStatus.swift in Sources */,
+				968A0AB706FA4CC4A354E612 /* TravelAdviceSection.swift in Sources */,
+				0B9C62D2526F4B249B31623D /* CountryGuideModel.swift in Sources */,
+				20E9F9A36A2644178D7F44E4 /* CountryGuideServices.swift in Sources */,
+				E0996C9722A04A8B9C0CED51 /* CountryProfileSections.swift in Sources */,
+				6A26C484991E4B6AAE26BCA4 /* RecentEventsSection.swift in Sources */,
+				6436DDA489D44367995878AA /* DestinationWeatherSection.swift in Sources */,
+				D2978CB3E9CA477EA0F4A3BC /* FlightMapLayer.swift in Sources */,
+				D8C4117AF8C74767B23F606F /* HazardLayerModel.swift in Sources */,
+				927052B87E054D3F80B4C6F1 /* HazardMapLayer.swift in Sources */,
+				D5296B7B6C2645BEA4448C54 /* CableLayerModel.swift in Sources */,
+				431EE9E36C1D4C1A8B710D06 /* CableMapLayer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -855,6 +968,13 @@
 				0BDD4EE90DA1E7972966A6A6 /* MainMapViewModelTests.swift in Sources */,
 				C2A9EB89E28CAE0C6D2AFC77 /* EmberElectricityTests.swift in Sources */,
 				8392162ABCE6EF7AA2952CCC /* GPSJAMTests.swift in Sources */,
+				C10AA9550E3F4299971B13D5 /* AuroraTests.swift in Sources */,
+				2DB578A82D324A5D89856ED3 /* EurostatPriceTests.swift in Sources */,
+				418DC012F92A44C0B260CE62 /* CountryGuideModelTests.swift in Sources */,
+				E9E7987E5C914FDEB3140EA9 /* FlightMarkerSamplingTests.swift in Sources */,
+				618040CF5E7A459B99FD08A1 /* HazardLayerModelTests.swift in Sources */,
+				BC96BD6E8E17498E93B0DD52 /* CableLayerModelTests.swift in Sources */,
+				4C0AF8A782D84BFD89E9CB23 /* TestFixtures.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

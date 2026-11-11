@@ -121,6 +121,7 @@ actor HazardService: HazardServiceProtocol {
         async let eruptions: GVPEruptionFeed? = fetch(.continuingEruptions, root: smithsonianRootURL)
 
         let (quakeFeed, eventList, alertList, eruptionFeed) = await (quakes, events, alerts, eruptions)
+        try Task.checkCancellation()
         guard quakeFeed != nil || eventList != nil || eruptionFeed != nil else {
             throw HTTPError.invalidResponse
         }
@@ -141,6 +142,7 @@ actor HazardService: HazardServiceProtocol {
             .gdacsGeometry(eventID: episode.eventID, episodeID: episode.episodeID),
             root: gdacsRootURL
         )
+        try Task.checkCancellation()
         let track = geometry?.track(for: cyclone)
         // `updateValue` so a cyclone without a track is remembered too.
         tracks.updateValue(track, forKey: key)

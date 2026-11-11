@@ -1,12 +1,16 @@
 import SwiftUI
 
 struct CountrySummaryView: View {
-    let viewModel: MainMapViewModel
+    let country: Country?
+    let passport: Country?
+    let model: CountryGuideModel
+    let neighbours: (Country) -> [Country]
+    let selectCountry: (Country) -> Void
     @State private var guideTopic: DestinationGuide.Topic?
 
     @ViewBuilder
     var body: some View {
-        if let name = viewModel.current?.name?.common, let flag = viewModel.current?.flagURL {
+        if let country, let name = country.name?.common, let flag = country.flagURL {
             VStack(spacing: 10) {
                 VStack(spacing: 2) {
                     HStack(alignment: .center, spacing: 8) {
@@ -15,7 +19,7 @@ struct CountrySummaryView: View {
                             .font(.headline)
                     }
                     // City-states such as Singapore would repeat their name.
-                    if let capital = viewModel.current?.capital?.first, capital != name {
+                    if let capital = country.capital?.first, capital != name {
                         Text(capital)
                             .font(.subheadline)
                             .foregroundStyle(.white.opacity(0.7))
@@ -28,29 +32,14 @@ struct CountrySummaryView: View {
                 countryGuideButton
             }
             .sheet(item: $guideTopic) { topic in
-                if let country = viewModel.current {
-                    DestinationGuideView(
-                        country: country,
-                        guide: viewModel.destinationGuide,
-                        isLoading: viewModel.isLoadingDestinationGuide,
-                        weather: viewModel.destinationWeather,
-                        exchangeRates: viewModel.exchangeRates,
-                        alerts: viewModel.disasterAlerts,
-                        outages: viewModel.internetOutages,
-                        outbreaks: viewModel.outbreakReports,
-                        recentEvents: viewModel.recentEvents,
-                        loadCountryProfile: viewModel.loadCountryProfile(countryCode:),
-                        loadElectricityProfile: viewModel.loadElectricityProfile(countryCode:),
-                        loadPriceLevels: viewModel.loadPriceLevels,
-                        initialTopic: topic,
-                        advisoryStatus: viewModel.advisoryStatus,
-                        admissoryStatus: viewModel.admissoryStatus,
-                        passport: viewModel.nationality,
-                        neighbours: viewModel.neighbours(of: country)
-                    ) { neighbour in
-                        viewModel.current = neighbour
-                    }
-                }
+                DestinationGuideView(
+                    country: country,
+                    model: model,
+                    initialTopic: topic,
+                    passport: passport,
+                    neighbours: neighbours(country),
+                    selectCountry: selectCountry
+                )
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 20)
@@ -87,12 +76,7 @@ struct CountrySummaryView: View {
     /// Advisory, visa, health and disaster statuses for the selected country,
     /// in the order the dots show them.
     private var travelStatuses: [TravelStatus] {
-        [
-            TravelStatus.advisory(viewModel.advisoryStatus),
-            TravelStatus.visa(viewModel.admissoryStatus, passport: viewModel.nationality),
-            TravelStatus.health(viewModel.outbreakReports),
-            TravelStatus.disasters(viewModel.disasterAlerts),
-        ].compactMap { $0 }
+        model.travelStatuses(passport: passport)
     }
 
     /// The statuses' colours as small dots in a dark pill.
@@ -126,13 +110,13 @@ struct CountrySummaryView: View {
     /// report from the last 30 days. Tapping it opens the guide, which lists
     /// them all.
     private var cardAlert: (title: String, symbol: String, color: Color, accessibility: String, topic: DestinationGuide.Topic)? {
-        if let alert = viewModel.disasterAlerts.first(where: \.isUrgent) {
+        if let alert = model.disasterAlerts.first(where: \.isUrgent) {
             return (alert.name, alert.kind.symbolName, alert.level == .red ? .red : .orange, "\(alert.level.rawValue) alert: \(alert.name)", .climate)
         }
-        if viewModel.internetOutages.contains(where: \.isOngoing) {
+        if model.internetOutages.contains(where: \.isOngoing) {
             return ("Internet disruption detected", "wifi.exclamationmark", .purple, "Internet disruption detected", .overview)
         }
-        if let report = viewModel.outbreakReports.first,
+        if let report = model.outbreakReports.first,
            report.published > Date().addingTimeInterval(-30 * 24 * 60 * 60) {
             return ("Outbreak: \(report.disease)", "cross.case.fill", .orange, "Recent outbreak report: \(report.disease)", .health)
         }
@@ -163,8 +147,8 @@ struct CountrySummaryView: View {
     /// home currency, in one line under the country name.
     @ViewBuilder
     private var liveInfoStrip: some View {
-        let weather = viewModel.destinationWeather
-        let rate = viewModel.exchangeRates.first
+        let weather = model.destinationWeather
+        let rate = model.exchangeRates.first
         if weather != nil || rate != nil {
             HStack(spacing: 14) {
                 if let weather {

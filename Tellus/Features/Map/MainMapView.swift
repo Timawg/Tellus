@@ -31,6 +31,8 @@ struct MainMapView: View {
 
     var body: some View {
         @Bindable var flights = viewModel.flights
+        @Bindable var hazards = viewModel.hazardLayer
+        let cables = viewModel.cableLayer
 
         MapRepresentable(
             region: $viewModel.region,
@@ -44,17 +46,17 @@ struct MainMapView: View {
             selectPowerAsset: { selectedPowerAsset = $0 },
             gpsJamOverlay: viewModel.showsGPSJAM ? gpsJam.overlay : nil,
             selectGPSJAMCell: { gpsJam.selectedCell = $0 },
-            cables: viewModel.cables,
-            landingPoints: viewModel.landingPoints,
-            selectedCableID: viewModel.selectedCableID,
-            selectCable: { viewModel.selectedCableID = $0 },
+            cables: cables.cables,
+            landingPoints: cables.landingPoints,
+            selectedCableID: cables.selectedCableID,
+            selectCable: cables.selectCable,
             tapCountry: { coordinate in
                 Task { await viewModel.selectCountry(at: coordinate) }
             },
             outline: viewModel.selectedBorder,
-            hazards: viewModel.hazards,
-            cycloneTracks: viewModel.cycloneTracks,
-            selectHazard: { viewModel.selectHazard(id: $0) }
+            hazards: hazards.hazards,
+            cycloneTracks: hazards.tracks,
+            selectHazard: hazards.selectHazard(id:)
         ) {
             flights.viewportWillChange()
         } regionDidChange: { rect in
@@ -62,7 +64,13 @@ struct MainMapView: View {
         }
         .edgesIgnoringSafeArea([.top,.bottom])
         .overlay(alignment: .top) {
-            CountrySummaryView(viewModel: viewModel)
+            CountrySummaryView(
+                country: viewModel.current,
+                passport: viewModel.nationality,
+                model: viewModel.countryGuide,
+                neighbours: viewModel.neighbours(of:),
+                selectCountry: { viewModel.current = $0 }
+            )
         }
         .overlay {
             countryListScrim
@@ -93,15 +101,14 @@ struct MainMapView: View {
             guard viewModel.showsEarthAtNight, scenePhase == .active else { return }
             await updateNightLightsDate()
         }
-        .task {
-            await viewModel.loadCablesIfNeeded()
+        .task(id: cables.activationID) { [activation = cables.activationID] in
+            await cables.load(for: activation)
         }
-        .task {
-            // Hazards change slowly; refresh every 15 minutes while open.
-            while !Task.isCancelled {
-                await viewModel.updateHazards()
-                try? await Task.sleep(for: .seconds(15 * 60))
-            }
+        .task(id: cables.selectedCableID) { [id = cables.selectedCableID] in
+            await cables.loadSelectedDetails(for: id)
+        }
+        .task(id: hazards.activationID) { [activation = hazards.activationID] in
+            await hazards.refreshWhileEnabled(for: activation)
         }
         .task {
             await viewModel.retrieveCountries()
@@ -109,8 +116,8 @@ struct MainMapView: View {
         .task(id: viewModel.current?.id) {
             await viewModel.refreshDestination()
         }
-        .task(id: viewModel.travelSelection) {
-            await viewModel.refreshPassportInformation()
+        .task(id: viewModel.countryGuide.travelSelection) { [destination = viewModel.current, passport = viewModel.nationality] in
+            await viewModel.countryGuide.refreshPassportInformation(destination: destination, passport: passport)
         }
         .task(id: flights.selectedFlightID) {
             await flights.loadFlightDetails()
@@ -125,14 +132,14 @@ struct MainMapView: View {
             flights.setMapActive(false)
         }
         .sheet(isPresented: .init(
-            get: { viewModel.selectedCableID != nil },
-            set: { if !$0 { viewModel.selectedCableID = nil } }
+            get: { cables.selectedCableID != nil },
+            set: { if !$0 { cables.selectCable(nil) } }
         )) {
-            if let cable = viewModel.selectedCable {
-                CableDetailsView(cable: cable, details: viewModel.selectedCableDetails)
+            if let cable = cables.selectedCable {
+                CableDetailsView(cable: cable, details: cables.selectedCableDetails)
             }
         }
-        .sheet(item: $viewModel.selectedHazard) { hazard in
+        .sheet(item: $hazards.selectedHazard) { hazard in
             HazardDetailsView(hazard: hazard)
         }
         .sheet(item: Binding(get: { gpsJam.selectedCell }, set: { gpsJam.selectedCell = $0 })) { cell in

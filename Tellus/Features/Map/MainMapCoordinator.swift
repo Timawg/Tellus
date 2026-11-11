@@ -5,16 +5,11 @@ import UIKit
 final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizerDelegate {
     private var parent: MapRepresentable
     private var lastKnownRegion: MKCoordinateRegion?
-    private var drawnFlightSnapshot: FlightMarkerSnapshot?
-    private var flightAnnotations: [String: FlightAnnotation] = [:]
-    private var cableOverlays: [String: CableOverlay] = [:]
-    private var landingPointAnnotations: [String: LandingPointAnnotation] = [:]
-    private var highlightedCableID: String?
-    private var hazardAnnotations: [String: HazardAnnotation] = [:]
-    private var trackOverlays: [CycloneTrackOverlay] = []
-    private var drawnTracks: [CycloneTrack] = []
     private var outlineOverlay: CountryOutlineOverlay?
     private let backdrop = MapBackdropLayers()
+    private let flights = FlightMapLayer()
+    private let cables = CableMapLayer()
+    private let hazards = HazardMapLayer()
 
     init(parent: MapRepresentable) {
         self.parent = parent
@@ -22,7 +17,7 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
 
     func update(_ mapView: MKMapView, parent: MapRepresentable) {
         self.parent = parent
-        updateFlights(on: mapView, snapshot: parent.flightMarkers)
+        flights.update(on: mapView, snapshot: parent.flightMarkers)
         if parent.selectedFlightID == nil,
            let selected = mapView.selectedAnnotations.first(where: { $0 is FlightAnnotation }) {
             mapView.deselectAnnotation(selected, animated: false)
@@ -36,8 +31,8 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
             gpsJam: parent.gpsJamOverlay,
             aurora: parent.auroraOverlay
         )
-        updateCables(on: mapView, cables: parent.cables, landingPoints: parent.landingPoints, selectedID: parent.selectedCableID)
-        updateHazards(on: mapView, hazards: parent.hazards, tracks: parent.cycloneTracks)
+        cables.update(on: mapView, cables: parent.cables, landingPoints: parent.landingPoints, selectedID: parent.selectedCableID)
+        hazards.update(on: mapView, hazards: parent.hazards, tracks: parent.cycloneTracks)
         updateOutline(on: mapView, border: parent.outline)
 
         if !MapRegionCalculator.matches(lastKnownRegion ?? mapView.region, parent.region) {
@@ -51,52 +46,6 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
         backdrop.stopEarthAtNight(on: mapView)
     }
 
-    private func updateFlights(on mapView: MKMapView, snapshot: FlightMarkerSnapshot) {
-        guard drawnFlightSnapshot !== snapshot else { return }
-        drawnFlightSnapshot = snapshot
-
-        let wantedIDs = Set(snapshot.markers.map(\.id))
-        let removed = flightAnnotations.values.filter { !wantedIDs.contains($0.id) }
-        if !removed.isEmpty {
-            removed.forEach { flightAnnotations[$0.id] = nil }
-            mapView.removeAnnotations(removed)
-        }
-
-        var added: [FlightAnnotation] = []
-        var changed: [(FlightAnnotation, FlightMarker)] = []
-        for marker in snapshot.markers {
-            if let annotation = flightAnnotations[marker.id] {
-                if annotation.coordinate.latitude != marker.latitude ||
-                    annotation.coordinate.longitude != marker.longitude ||
-                    annotation.track != marker.track || annotation.source != marker.source {
-                    changed.append((annotation, marker))
-                }
-            } else {
-                let annotation = FlightAnnotation(marker: marker)
-                flightAnnotations[marker.id] = annotation
-                added.append(annotation)
-            }
-        }
-
-        if !added.isEmpty { mapView.addAnnotations(added) }
-        guard !changed.isEmpty else { return }
-
-        UIView.animate(withDuration: 1) {
-            for (annotation, marker) in changed {
-                if annotation.coordinate.latitude != marker.latitude || annotation.coordinate.longitude != marker.longitude {
-                    annotation.coordinate = marker.coordinate
-                }
-                annotation.track = marker.track
-                let sourceChanged = annotation.source != marker.source
-                annotation.source = marker.source
-                if let view = mapView.view(for: annotation) as? FlightMarkerAnnotationView {
-                    FlightAnnotationAnimator.applyTransform(to: view, selected: view.isSelected)
-                    if sourceChanged { view.applySource() }
-                }
-            }
-        }
-    }
-
     func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
         if let renderer = backdrop.renderer(for: overlay) { return renderer }
         if let track = overlay as? CycloneTrackOverlay {
@@ -105,21 +54,7 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
         if let outline = overlay as? CountryOutlineOverlay {
             return outline.makeRenderer()
         }
-        guard let cable = overlay as? CableOverlay else {
-            return MKOverlayRenderer(overlay: overlay)
-        }
-        let renderer = MKMultiPolylineRenderer(multiPolyline: cable)
-        style(renderer, for: cable)
-        return renderer
-    }
-
-    // MARK: Cables
-
-    private func style(_ renderer: MKMultiPolylineRenderer, for cable: CableOverlay) {
-        let isSelected = cable.cableID == highlightedCableID
-        renderer.strokeColor = cable.color.withAlphaComponent(isSelected ? 1 : 0.75)
-        renderer.lineWidth = isSelected ? 4 : 1.5
-        renderer.lineCap = .round
+        return cables.renderer(for: overlay) ?? MKOverlayRenderer(overlay: overlay)
     }
 
     /// MapKit handles annotation taps. Other taps check the overlays
@@ -134,14 +69,8 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
         let coordinate = mapView.convert(location, toCoordinateFrom: mapView)
         let point = MKMapPoint(coordinate)
         let mapPointsPerScreenPoint = mapView.visibleMapRect.width / Double(mapView.bounds.width)
-        let tolerance = 22 * mapPointsPerScreenPoint
-        let nearest = cableOverlays.values
-            .filter { $0.boundingMapRect.insetBy(dx: -tolerance, dy: -tolerance).contains(point) }
-            .map { (id: $0.cableID, distance: $0.distance(to: point)) }
-            .filter { $0.distance <= tolerance }
-            .min { $0.distance < $1.distance }
-        if let nearest {
-            parent.selectCable(nearest.id)
+        if let cableID = cables.nearestCableID(to: point, tolerance: 22 * mapPointsPerScreenPoint) {
+            parent.selectCable(cableID)
         } else if let asset = backdrop.powerAsset(at: point, mapPointsPerScreenPoint: mapPointsPerScreenPoint) {
             parent.selectPowerAsset(asset)
         } else if let cell = parent.gpsJamOverlay?.cell(at: coordinate) {
@@ -161,38 +90,6 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
         (other as? UITapGestureRecognizer)?.numberOfTapsRequired == 2
     }
 
-    private func updateCables(on mapView: MKMapView, cables: [SubmarineCable], landingPoints: [CableLandingPoint], selectedID: String?) {
-        let wanted = Set(cables.map(\.id))
-        if wanted != Set(cableOverlays.keys) {
-            let removed = cableOverlays.filter { !wanted.contains($0.key) }
-            mapView.removeOverlays(Array(removed.values))
-            removed.keys.forEach { cableOverlays[$0] = nil }
-            let added = cables.filter { cableOverlays[$0.id] == nil }.map(CableOverlay.init(cable:))
-            added.forEach { cableOverlays[$0.cableID] = $0 }
-            mapView.addOverlays(added, level: .aboveRoads)
-        }
-
-        let wantedPoints = Set(landingPoints.map(\.id))
-        if wantedPoints != Set(landingPointAnnotations.keys) {
-            let removed = landingPointAnnotations.filter { !wantedPoints.contains($0.key) }
-            mapView.removeAnnotations(Array(removed.values))
-            removed.keys.forEach { landingPointAnnotations[$0] = nil }
-            let added = landingPoints.filter { landingPointAnnotations[$0.id] == nil }.map(LandingPointAnnotation.init(point:))
-            added.forEach { landingPointAnnotations[$0.id] = $0 }
-            mapView.addAnnotations(added)
-        }
-
-        guard selectedID != highlightedCableID else { return }
-        let previous = highlightedCableID
-        highlightedCableID = selectedID
-        for id in [previous, selectedID].compactMap({ $0 }) {
-            guard let overlay = cableOverlays[id],
-                  let renderer = mapView.renderer(for: overlay) as? MKMultiPolylineRenderer else { continue }
-            style(renderer, for: overlay)
-            renderer.setNeedsDisplay()
-        }
-    }
-
     // MARK: Country outline
 
     private func updateOutline(on mapView: MKMapView, border: CountryBorder?) {
@@ -209,34 +106,6 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
                 mapView.insertOverlay(outlineOverlay, at: 0, level: .aboveRoads)
             }
         }
-    }
-
-    // MARK: Hazards
-
-    private func updateHazards(on mapView: MKMapView, hazards: [NaturalHazard], tracks: [CycloneTrack]) {
-        let wanted = Dictionary(hazards.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        // Gone, or changed (a cyclone moves, an alert level rises).
-        let stale = hazardAnnotations.filter { id, annotation in wanted[id] != annotation.hazard }
-        if !stale.isEmpty {
-            mapView.removeAnnotations(Array(stale.values))
-            stale.keys.forEach { hazardAnnotations[$0] = nil }
-        }
-        let added = wanted.values.filter { hazardAnnotations[$0.id] == nil }.map(HazardAnnotation.init(hazard:))
-        if !added.isEmpty {
-            added.forEach { hazardAnnotations[$0.hazard.id] = $0 }
-            mapView.addAnnotations(added)
-        }
-
-        guard tracks != drawnTracks else { return }
-        mapView.removeOverlays(trackOverlays)
-        trackOverlays = tracks.flatMap { track in
-            [
-                track.observed.isEmpty ? nil : CycloneTrackOverlay(track: track, forecast: false),
-                track.forecast.isEmpty ? nil : CycloneTrackOverlay(track: track, forecast: true),
-            ].compactMap { $0 }
-        }
-        drawnTracks = tracks
-        mapView.addOverlays(trackOverlays, level: .aboveRoads)
     }
 
     func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
@@ -278,11 +147,7 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
         if annotation is HazardAnnotation {
             return mapView.dequeueReusableAnnotationView(withIdentifier: HazardAnnotationView.reuseIdentifier, for: annotation)
         }
-        guard annotation is FlightAnnotation,
-              let view = mapView.dequeueReusableAnnotationView(withIdentifier: "flight", for: annotation)
-                as? FlightMarkerAnnotationView else { return nil }
-        FlightAnnotationAnimator.applyTransform(to: view, selected: view.isSelected)
-        return view
+        return flights.annotationView(on: mapView, for: annotation)
     }
 }
 

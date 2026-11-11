@@ -55,6 +55,7 @@ actor CableService: CableServiceProtocol {
         async let routes: CableGeoJSON = fetch(.cableRoutes)
         async let points: CableGeoJSON = fetch(.landingPoints)
         let result = try await (cables: routes.cables, landingPoints: points.landingPoints)
+        try Task.checkCancellation()
         cables = result
         return result
     }
@@ -65,6 +66,7 @@ actor CableService: CableServiceProtocol {
         }
         if let cached = details[cableID] { return cached }
         let result: CableDetails = try await fetch(.cable(id: cableID))
+        try Task.checkCancellation()
         details[cableID] = result
         return result
     }

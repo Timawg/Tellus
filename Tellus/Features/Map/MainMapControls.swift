@@ -94,14 +94,16 @@ struct MainMapControls: View {
 
     /// Switches map layers on and off.
     private var layersButton: some View {
-        Menu {
+        @Bindable var hazards = viewModel.hazardLayer
+        @Bindable var cables = viewModel.cableLayer
+        return Menu {
             Toggle(isOn: $flights.showsFlights) {
                 Label("Live flights", systemImage: "airplane")
             }
-            Toggle(isOn: $viewModel.showsHazards) {
+            Toggle(isOn: $hazards.isEnabled) {
                 Label("Natural hazards", systemImage: "exclamationmark.triangle")
             }
-            Toggle(isOn: $viewModel.showsCables) {
+            Toggle(isOn: $cables.isEnabled) {
                 Label("Undersea cables", systemImage: "cable.connector")
             }
             Toggle(isOn: $viewModel.showsPowerGrid) {
