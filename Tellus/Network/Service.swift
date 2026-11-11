@@ -7,12 +7,12 @@
 
 import Foundation
 
-protocol Service {
+protocol Service: Sendable {
     var rootURL: String { get }
     init(networkService: NetworkServiceProtocol, requestFactory: URLRequestFactory)
 }
 
-protocol URLRequestFactory {
+protocol URLRequestFactory: Sendable {
         
     func createURL(root: String, endpoint: Endpoint) -> URL?
 

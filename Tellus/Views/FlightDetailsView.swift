@@ -6,15 +6,15 @@ import MapKit
 /// every poll) and its registration.
 struct FlightDetailsView: View {
 
-    var viewModel: MainMapViewModel
+    let flights: LiveFlightsModel
     /// Kept by the sheet, so the content stays put while it's dismissed and
     /// the selection has already been cleared.
     let flightID: String
 
     @Environment(\.dismiss) private var dismiss
 
-    private var flight: LiveFlight? { viewModel.flight(for: flightID) }
-    private var aircraft: AircraftInfo? { viewModel.selectedAircraft }
+    private var flight: LiveFlight? { flights.flight(for: flightID) }
+    private var aircraft: AircraftInfo? { flights.selectedAircraft }
 
     private var position: CLLocation? {
         flight.map { CLLocation(latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude) }
@@ -94,7 +94,7 @@ struct FlightDetailsView: View {
     @ViewBuilder
     private var routeSection: some View {
         Section("Route") {
-            if let route = viewModel.selectedRoute {
+            if let route = flights.selectedRoute {
                 VStack(spacing: 14) {
                     HStack(alignment: .center) {
                         airport(route.origin, alignment: .leading)
@@ -129,7 +129,7 @@ struct FlightDetailsView: View {
                 if let flightNumber = route.callsignIata, flightNumber != route.callsign {
                     LabeledContent("Flight number", value: flightNumber)
                 }
-            } else if viewModel.isLoadingFlightDetails {
+            } else if flights.isLoadingFlightDetails {
                 loadingRow
             } else {
                 Text("Route not available")
@@ -195,7 +195,7 @@ struct FlightDetailsView: View {
                 LabeledContent("Registered in", value: country)
             }
             LabeledContent("ICAO address", value: flightID.uppercased())
-            if aircraft == nil, viewModel.isLoadingFlightDetails {
+            if aircraft == nil, flights.isLoadingFlightDetails {
                 loadingRow
             }
         }

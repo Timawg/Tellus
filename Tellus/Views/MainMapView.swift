@@ -30,10 +30,12 @@ struct MainMapView: View {
     }
 
     var body: some View {
+        @Bindable var flights = viewModel.flights
+
         MapRepresentable(
             region: $viewModel.region,
-            selectedAnnotation: $viewModel.selectedFlight,
-            annotations: viewModel.flightAnnotations,
+            selectedFlightID: $flights.selectedFlightID,
+            flightMarkers: flights.markerSnapshot,
             showsEarthAtNight: viewModel.showsEarthAtNight,
             nightLightsDate: nightLightsDate,
             viirsImageryDate: viirsImageryDate,
@@ -54,7 +56,7 @@ struct MainMapView: View {
             cycloneTracks: viewModel.cycloneTracks,
             selectHazard: { viewModel.selectHazard(id: $0) }
         ) {
-            viewModel.stopUpdatingFlightData()
+            flights.viewportWillChange()
         } regionDidChange: { rect in
             viewModel.updateViewport(rect)
         }
@@ -68,6 +70,7 @@ struct MainMapView: View {
         .overlay(alignment: .bottom) {
             MainMapControls(
                 viewModel: viewModel,
+                flights: flights,
                 gpsJam: gpsJam,
                 aurora: aurora,
                 isPickingCountry: $isPickingCountry,
@@ -102,8 +105,6 @@ struct MainMapView: View {
         }
         .task {
             await viewModel.retrieveCountries()
-            guard !Task.isCancelled else { return }
-            viewModel.startUpdatingFlightData()
         }
         .task(id: viewModel.current?.id) {
             await viewModel.refreshDestination()
@@ -111,11 +112,17 @@ struct MainMapView: View {
         .task(id: viewModel.travelSelection) {
             await viewModel.refreshPassportInformation()
         }
-        .task(id: viewModel.selectedFlight?.id) {
-            await viewModel.loadFlightDetails()
+        .task(id: flights.selectedFlightID) {
+            await flights.loadFlightDetails()
+        }
+        .onAppear {
+            flights.setMapActive(scenePhase == .active)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            flights.setMapActive(phase == .active)
         }
         .onDisappear {
-            viewModel.stopUpdatingFlightData()
+            flights.setMapActive(false)
         }
         .sheet(isPresented: .init(
             get: { viewModel.selectedCableID != nil },
@@ -134,10 +141,8 @@ struct MainMapView: View {
         .sheet(item: $selectedPowerAsset) { asset in
             PowerAssetDetailsView(asset: asset)
         }
-        .sheet(item: $viewModel.selectedFlight) {
-            viewModel.selectedFlight = nil
-        } content: { flight in
-            FlightDetailsView(viewModel: viewModel, flightID: flight.id)
+        .sheet(item: $flights.selection) { selection in
+            FlightDetailsView(flights: flights, flightID: selection.id)
         }
         .alert("Unable to Load Countries", isPresented: .init(
             get: { viewModel.loadingError != nil },

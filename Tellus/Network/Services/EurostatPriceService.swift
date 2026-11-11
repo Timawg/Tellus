@@ -35,6 +35,7 @@ struct EurostatPriceLevels: Sendable {
 
     fileprivate let areas: [String: Area]
     let accessedAt: Date
+    let isStale: Bool
 
     func referenceAreas(for countryCode: String) -> [Area] {
         let code = Self.eurostatCode(for: countryCode)
@@ -72,21 +73,49 @@ actor EurostatPriceService: Service {
     nonisolated let rootURL = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0"
     private let networkService: NetworkServiceProtocol
     private let requestFactory: URLRequestFactory
+    private let now: @Sendable () -> Date
     private var cached: EurostatPriceLevels?
+    private var refreshTask: Task<EurostatPriceLevels, Error>?
 
     init(networkService: NetworkServiceProtocol, requestFactory: URLRequestFactory = .default) {
+        self.init(networkService: networkService, requestFactory: requestFactory, now: { .now })
+    }
+
+    init(
+        networkService: NetworkServiceProtocol,
+        requestFactory: URLRequestFactory = .default,
+        now: @escaping @Sendable () -> Date
+    ) {
         self.networkService = networkService
         self.requestFactory = requestFactory
+        self.now = now
     }
 
     func getPriceLevels() async throws -> EurostatPriceLevels {
-        if let cached, Date.now.timeIntervalSince(cached.accessedAt) < 24 * 60 * 60 { return cached }
-        let request = try requestFactory.createURLRequest(root: rootURL, endpoint: PriceLevelsEndpoint())
-        let response: PriceLevelsResponse = try await networkService.send(request: request)
         try Task.checkCancellation()
-        let prices = try response.priceLevels(accessedAt: .now)
-        cached = prices
-        return prices
+        if let cached, now().timeIntervalSince(cached.accessedAt) < 24 * 60 * 60 { return cached }
+
+        // The whole dataset serves every comparison. Let the refresh finish
+        // even when one country guide closes while another is waiting.
+        let task = refreshTask ?? Task { try await refresh() }
+        refreshTask = task
+        let result = await task.result
+        try Task.checkCancellation()
+        return try result.get()
+    }
+
+    private func refresh() async throws -> EurostatPriceLevels {
+        defer { refreshTask = nil }
+        do {
+            let request = try requestFactory.createURLRequest(root: rootURL, endpoint: PriceLevelsEndpoint())
+            let response: PriceLevelsResponse = try await networkService.send(request: request)
+            let prices = try response.priceLevels(accessedAt: now())
+            cached = prices
+            return prices
+        } catch {
+            guard let cached else { throw error }
+            return EurostatPriceLevels(areas: cached.areas, accessedAt: cached.accessedAt, isStale: true)
+        }
     }
 
     private struct PriceLevelsEndpoint: Endpoint {
@@ -166,7 +195,7 @@ actor EurostatPriceService: Service {
                 areas[code] = .init(id: code, name: name, prices: observations)
             }
             guard areas[EurostatPriceLevels.euAverageCode] != nil else { throw HTTPError.invalidResponse }
-            return EurostatPriceLevels(areas: areas, accessedAt: accessedAt)
+            return EurostatPriceLevels(areas: areas, accessedAt: accessedAt, isStale: false)
         }
     }
 }

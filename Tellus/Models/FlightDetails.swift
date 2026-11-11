@@ -10,7 +10,7 @@ import CoreLocation
 
 /// An aircraft's registration details from adsbdb.com, looked up by its
 /// ICAO 24-bit address.
-struct AircraftInfo: Decodable, Equatable {
+struct AircraftInfo: Decodable, Equatable, Sendable {
     let type: String?
     let icaoType: String?
     let manufacturer: String?
@@ -27,15 +27,15 @@ struct AircraftInfo: Decodable, Equatable {
 }
 
 /// A flight's scheduled route from adsbdb.com, looked up by callsign.
-struct FlightRoute: Decodable, Equatable {
+struct FlightRoute: Decodable, Equatable, Sendable {
 
-    struct Airline: Decodable, Equatable {
+    struct Airline: Decodable, Equatable, Sendable {
         let name: String?
         let iata: String?
         let icao: String?
     }
 
-    struct Airport: Decodable, Equatable {
+    struct Airport: Decodable, Equatable, Sendable {
         let name: String
         let municipality: String?
         let countryName: String?

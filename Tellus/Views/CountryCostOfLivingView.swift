@@ -21,7 +21,11 @@ struct CountryCostOfLivingView: View {
                 Section {
                     Link("Eurostat price level data", destination: EurostatPriceLevels.sourceURL)
                 } footer: {
-                    Text("Eurostat data accessed \(levels.accessedAt, format: .dateTime.day().month(.abbreviated).year()).")
+                    if levels.isStale {
+                        Text("Refresh unavailable. Showing Eurostat data accessed \(levels.accessedAt, format: .dateTime.day().month(.abbreviated).year()).")
+                    } else {
+                        Text("Eurostat data accessed \(levels.accessedAt, format: .dateTime.day().month(.abbreviated).year()).")
+                    }
                 }
             case .failure:
                 Section {

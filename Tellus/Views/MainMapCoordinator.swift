@@ -5,6 +5,8 @@ import UIKit
 final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizerDelegate {
     private var parent: MapRepresentable
     private var lastKnownRegion: MKCoordinateRegion?
+    private var drawnFlightSnapshot: FlightMarkerSnapshot?
+    private var flightAnnotations: [String: FlightAnnotation] = [:]
     private var cableOverlays: [String: CableOverlay] = [:]
     private var landingPointAnnotations: [String: LandingPointAnnotation] = [:]
     private var highlightedCableID: String?
@@ -20,7 +22,11 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
 
     func update(_ mapView: MKMapView, parent: MapRepresentable) {
         self.parent = parent
-        updateFlights(on: mapView)
+        updateFlights(on: mapView, snapshot: parent.flightMarkers)
+        if parent.selectedFlightID == nil,
+           let selected = mapView.selectedAnnotations.first(where: { $0 is FlightAnnotation }) {
+            mapView.deselectAnnotation(selected, animated: false)
+        }
         backdrop.update(
             on: mapView,
             viirsDate: parent.viirsImageryDate,
@@ -45,60 +51,49 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
         backdrop.stopEarthAtNight(on: mapView)
     }
 
-    private func updateFlights(on uiView: MKMapView) {
-        let currentAnnotations = uiView.annotations.compactMap { $0 as? FlightAnnotation }
-        let newAnnotations = parent.annotations
+    private func updateFlights(on mapView: MKMapView, snapshot: FlightMarkerSnapshot) {
+        guard drawnFlightSnapshot !== snapshot else { return }
+        drawnFlightSnapshot = snapshot
 
-        let currentAnnotationsDict = Dictionary(uniqueKeysWithValues: currentAnnotations.map { ($0.id, $0) })
-        let newAnnotationsDict = Dictionary(uniqueKeysWithValues: newAnnotations.map { ($0.id, $0) })
-
-        let annotationsToRemove = currentAnnotations.filter { annotation in
-            return newAnnotationsDict[annotation.id] == nil
+        let wantedIDs = Set(snapshot.markers.map(\.id))
+        let removed = flightAnnotations.values.filter { !wantedIDs.contains($0.id) }
+        if !removed.isEmpty {
+            removed.forEach { flightAnnotations[$0.id] = nil }
+            mapView.removeAnnotations(removed)
         }
 
-        let annotationsToAdd = newAnnotations.filter { annotation in
-            return currentAnnotationsDict[annotation.id] == nil
-        }
-
-        let annotationsToUpdate = newAnnotations.filter { annotation in
-            guard let existingAnnotation = currentAnnotationsDict[annotation.id] else {
-                return false
+        var added: [FlightAnnotation] = []
+        var changed: [(FlightAnnotation, FlightMarker)] = []
+        for marker in snapshot.markers {
+            if let annotation = flightAnnotations[marker.id] {
+                if annotation.coordinate.latitude != marker.latitude ||
+                    annotation.coordinate.longitude != marker.longitude ||
+                    annotation.track != marker.track || annotation.source != marker.source {
+                    changed.append((annotation, marker))
+                }
+            } else {
+                let annotation = FlightAnnotation(marker: marker)
+                flightAnnotations[marker.id] = annotation
+                added.append(annotation)
             }
-            return existingAnnotation.coordinate.latitude != annotation.coordinate.latitude ||
-                existingAnnotation.coordinate.longitude != annotation.coordinate.longitude ||
-                existingAnnotation.source != annotation.source
         }
 
-        uiView.removeAnnotations(annotationsToRemove)
-        uiView.addAnnotations(annotationsToAdd)
+        if !added.isEmpty { mapView.addAnnotations(added) }
+        guard !changed.isEmpty else { return }
 
-        // One animation for every moved aircraft, rather than one each.
-        if !annotationsToUpdate.isEmpty {
-            UIView.animate(withDuration: 1) {
-                annotationsToUpdate.forEach { newAnnotation in
-                    guard let existingAnnotation = currentAnnotationsDict[newAnnotation.id] else {
-                        return
-                    }
-                    existingAnnotation.coordinate = newAnnotation.coordinate
-                    let view = uiView.view(for: existingAnnotation)
-
-                    if let view, let degrees = newAnnotation.track {
-                        view.transform = .init(rotationDegrees: CGFloat(degrees))
-                    }
-                    // adsb.lol's military list can take over an aircraft
-                    // OpenSky reported, which recolours its marker.
-                    if existingAnnotation.source != newAnnotation.source {
-                        existingAnnotation.source = newAnnotation.source
-                        (view as? FlightMarkerAnnotationView)?.applySource()
-                    }
+        UIView.animate(withDuration: 1) {
+            for (annotation, marker) in changed {
+                if annotation.coordinate.latitude != marker.latitude || annotation.coordinate.longitude != marker.longitude {
+                    annotation.coordinate = marker.coordinate
+                }
+                annotation.track = marker.track
+                let sourceChanged = annotation.source != marker.source
+                annotation.source = marker.source
+                if let view = mapView.view(for: annotation) as? FlightMarkerAnnotationView {
+                    FlightAnnotationAnimator.applyTransform(to: view, selected: view.isSelected)
+                    if sourceChanged { view.applySource() }
                 }
             }
-        }
-
-        // Only flights are deselected from here; a landing point's callout
-        // stays open until the user dismisses it.
-        if parent.selectedAnnotation == nil, let previousSelected = uiView.selectedAnnotations.first(where: { $0 is FlightAnnotation }) {
-            uiView.deselectAnnotation(previousSelected, animated: false)
         }
     }
 
@@ -265,14 +260,14 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
             return
         }
         if let annotation = view.annotation as? FlightAnnotation {
-            parent.selectedAnnotation = annotation
+            parent.selectedFlightID = annotation.id
             FlightAnnotationAnimator.animateSelect(view: view as? FlightMarkerAnnotationView)
         }
     }
 
     func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
-        guard view.annotation is FlightAnnotation else { return }
-        parent.selectedAnnotation = nil
+        guard let annotation = view.annotation as? FlightAnnotation else { return }
+        if parent.selectedFlightID == annotation.id { parent.selectedFlightID = nil }
         FlightAnnotationAnimator.animateDeselect(view: view as? FlightMarkerAnnotationView)
     }
 
@@ -283,19 +278,11 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
         if annotation is HazardAnnotation {
             return mapView.dequeueReusableAnnotationView(withIdentifier: HazardAnnotationView.reuseIdentifier, for: annotation)
         }
-        guard let flight = annotation as? FlightAnnotation else { return nil }
-        let identifier = "flight"
-        let annotationView: FlightMarkerAnnotationView = {
-            if let view = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) as? FlightMarkerAnnotationView {
-                return view
-            } else {
-                return FlightMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
-            }
-        }()
-        if let degrees = flight.track {
-            annotationView.transform = annotationView.transform.rotate(to: CGFloat(degrees))
-        }
-        return annotationView
+        guard annotation is FlightAnnotation,
+              let view = mapView.dequeueReusableAnnotationView(withIdentifier: "flight", for: annotation)
+                as? FlightMarkerAnnotationView else { return nil }
+        FlightAnnotationAnimator.applyTransform(to: view, selected: view.isSelected)
+        return view
     }
 }
 

@@ -1,6 +1,8 @@
 import Foundation
 import MapKit
 import Observation
+import os
+import SwiftUI
 import Testing
 @testable import Tellus
 
@@ -53,7 +55,7 @@ struct MainMapViewModelTests {
         #expect(model.homeCurrency == "SEK")
         #expect(model.showsEarthAtNight)
         #expect(model.showsCables)
-        #expect(!model.showsFlights)
+        #expect(!model.flights.showsFlights)
         #expect(!model.showsHazards)
         #expect(!model.showsPowerGrid)
         #expect(!model.showsVIIRSImagery)
@@ -87,7 +89,7 @@ struct MainMapViewModelTests {
 
         #expect(model.nationality?.cca2 == "SE")
         #expect(model.showsEarthAtNight)
-        #expect(model.showsFlights)
+        #expect(model.flights.showsFlights)
         #expect(model.showsHazards)
         #expect(!model.showsCables)
         #expect(!model.showsAurora)
@@ -148,23 +150,7 @@ struct MainMapViewModelTests {
             #expect(query.contains(URLQueryItem(name: "indic_ppp", value: "PLI_EU27_2020")))
             let categories = Set(query.filter { $0.name == "ppp_cat18" }.compactMap(\.value))
             #expect(categories == ["E011", "A0101", "A0104", "A0107", "A0111"])
-            return Data("""
-                {
-                  "id": ["freq", "indic_ppp", "ppp_cat18", "geo", "time"],
-                  "size": [1, 1, 3, 4, 3],
-                  "dimension": {
-                    "freq": {"category": {"index": {"A": 0}}},
-                    "indic_ppp": {"category": {"index": {"PLI_EU27_2020": 0}}},
-                    "ppp_cat18": {"category": {"index": {"A0101": 0, "A0107": 1, "E011": 2}}},
-                    "geo": {"category": {"index": {"EU27_2020": 0, "SE": 1, "EL": 2, "UK": 3},
-                                         "label": {"SE": "Sweden", "EL": "Greece", "UK": "United Kingdom"}}},
-                    "time": {"category": {"index": {"2023": 0, "2024": 1, "2025": 2}}}
-                  },
-                  "value": {"4": 100, "7": 110, "16": 120, "18": 100,
-                            "24": 100, "25": 100, "26": 100, "28": 120, "29": 121,
-                            "30": 85, "31": 90, "35": 123}
-                }
-                """.utf8)
+            return Self.eurostatDataset
         }
 
         let prices = try await model.loadPriceLevels()
@@ -183,6 +169,52 @@ struct MainMapViewModelTests {
         #expect(abs(swedenOverall - 0.21) <= 0.0001)
         #expect(prices.comparison(for: "GB", against: EurostatPriceLevels.euAverageCode)?.year == 2025)
         #expect(prices.comparison(for: "CA", against: EurostatPriceLevels.euAverageCode) == nil)
+    }
+
+    @Test func eurostatRefreshSurvivesCancellationAndKeepsLastSuccessfulSnapshot() async throws {
+        let requested = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
+        let release = AsyncStream<Void>.makeStream()
+        let network = EurostatNetwork { requestNumber in
+            switch requestNumber {
+            case 1:
+                requested.continuation.yield(())
+                var iterator = release.stream.makeAsyncIterator()
+                _ = await iterator.next()
+            case 2:
+                throw URLError(.notConnectedToInternet)
+            default:
+                break
+            }
+            return Self.eurostatDataset
+        }
+        let firstAccess = Date(timeIntervalSince1970: 1_800_000_000)
+        let now = OSAllocatedUnfairLock(initialState: firstAccess)
+        let service = EurostatPriceService(networkService: network, now: { now.withLock { $0 } })
+
+        let cancelled = Task { try await service.getPriceLevels() }
+        defer { release.continuation.finish() }
+        try await requireSignal(from: requested.stream, "The first Eurostat refresh should start")
+        let remaining = Task { try await service.getPriceLevels() }
+        cancelled.cancel()
+        release.continuation.finish()
+
+        await #expect(throws: CancellationError.self) { try await cancelled.value }
+        let initial = try await remaining.value
+        #expect(!initial.isStale)
+        #expect(initial.accessedAt == firstAccess)
+        #expect(await network.requestCount == 1)
+
+        let nextDay = firstAccess.addingTimeInterval(24 * 60 * 60)
+        now.withLock { $0 = nextDay }
+        let stale = try await service.getPriceLevels()
+        #expect(stale.isStale)
+        #expect(stale.accessedAt == firstAccess)
+        #expect(stale.comparison(for: "SE", against: EurostatPriceLevels.euAverageCode)?.year == 2025)
+
+        let recovered = try await service.getPriceLevels()
+        #expect(!recovered.isStale)
+        #expect(recovered.accessedAt == nextDay)
+        #expect(await network.requestCount == 3)
     }
 
     @Test func passportRefreshPublishesVisaAndOnlyDestinationCurrencies() async throws {
@@ -271,32 +303,93 @@ struct MainMapViewModelTests {
                 throw URLError(.unsupportedURL)
             }
         }
-        defer { model.stopUpdatingFlightData() }
+        let flights = model.flights
+        defer { flights.setMapActive(false) }
 
         let publishedFlights = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
         withObservationTracking {
-            _ = model.flightAnnotations
+            _ = flights.markerSnapshot
         } onChange: {
             publishedFlights.continuation.yield(())
         }
-        model.startUpdatingFlightData()
+        model.updateViewport(.world)
+        flights.setMapActive(true)
         try await requireSignal(from: publishedFlights.stream, "Flight annotations should be published")
 
-        #expect(Set(model.flightAnnotations.map(\.id)) == ["abc123", "def456"])
-        #expect(model.totalFlightCount == 2)
-        #expect(model.flight(for: "ABC123")?.source == .openSky)
-        #expect(model.flight(for: "def456")?.source == .adsbLolMilitary)
+        #expect(Set(flights.markerSnapshot.markers.map(\.id)) == ["abc123", "def456"])
+        #expect(flights.totalFlightCount == 2)
+        #expect(flights.flight(for: "ABC123")?.source == .openSky)
+        #expect(flights.flight(for: "def456")?.source == .adsbLolMilitary)
 
-        let selectedFlight = try #require(model.flightAnnotations.first)
-        model.selectedFlight = selectedFlight
-        model.showsFlights = false
+        flights.selectedFlightID = "abc123"
+        #expect(flights.selection?.id == "abc123")
+        flights.showsFlights = false
 
         #expect(!preferences[.flights])
-        #expect(model.selectedFlight == nil)
-        #expect(model.flightAnnotations.isEmpty)
-        #expect(model.flight(for: "abc123") == nil)
-        #expect(model.totalFlightCount == 0)
+        #expect(flights.selection == nil)
+        #expect(flights.markerSnapshot.markers.isEmpty)
+        #expect(flights.flight(for: "abc123") == nil)
+        #expect(flights.totalFlightCount == 0)
     }
+
+    @Test func mapReusesAnnotationsWhenUpdatingFiveHundredFlightMarkers() throws {
+        let mapView = MKMapView()
+        let markers = (0..<500).map {
+            FlightMarker(id: "flight-\($0)", latitude: 50, longitude: Double($0) / 100,
+                         track: 90, source: .openSky)
+        }
+        func parent(_ snapshot: FlightMarkerSnapshot, selectedCableID: String? = nil) -> MapRepresentable {
+            MapRepresentable(
+                region: .constant(mapView.region),
+                selectedFlightID: .constant(nil),
+                flightMarkers: snapshot,
+                selectedCableID: selectedCableID,
+                regionWillChange: {},
+                regionDidChange: { _ in }
+            )
+        }
+
+        let original = FlightMarkerSnapshot(markers)
+        let coordinator = MainMapCoordinator(parent: parent(original))
+        coordinator.update(mapView, parent: parent(original))
+        #expect(mapView.annotations.count == 500)
+        let first = try #require(mapView.annotations.compactMap { $0 as? FlightAnnotation }
+            .first { $0.id == "flight-0" })
+
+        coordinator.update(mapView, parent: parent(original, selectedCableID: "unrelated-selection"))
+        #expect(mapView.annotations.count == 500)
+
+        let changed = FlightMarker(id: first.id, latitude: 50, longitude: 0, track: 120, source: .adsbLolMilitary)
+        let added = FlightMarker(id: "flight-new", latitude: 51, longitude: 0, track: nil, source: .openSky)
+        let next = FlightMarkerSnapshot([changed] + Array(markers.dropFirst(2)) + [added])
+        coordinator.update(mapView, parent: parent(next))
+
+        let current = mapView.annotations.compactMap { $0 as? FlightAnnotation }
+        #expect(current.count == 500)
+        #expect(current.first { $0.id == first.id } === first)
+        #expect(first.track == 120)
+        #expect(first.source == .adsbLolMilitary)
+        #expect(!current.contains { $0.id == "flight-1" })
+        #expect(current.contains { $0.id == added.id })
+    }
+
+    nonisolated private static let eurostatDataset = Data("""
+        {
+          "id": ["freq", "indic_ppp", "ppp_cat18", "geo", "time"],
+          "size": [1, 1, 3, 4, 3],
+          "dimension": {
+            "freq": {"category": {"index": {"A": 0}}},
+            "indic_ppp": {"category": {"index": {"PLI_EU27_2020": 0}}},
+            "ppp_cat18": {"category": {"index": {"A0101": 0, "A0107": 1, "E011": 2}}},
+            "geo": {"category": {"index": {"EU27_2020": 0, "SE": 1, "EL": 2, "UK": 3},
+                                 "label": {"SE": "Sweden", "EL": "Greece", "UK": "United Kingdom"}}},
+            "time": {"category": {"index": {"2023": 0, "2024": 1, "2025": 2}}}
+          },
+          "value": {"4": 100, "7": 110, "16": 120, "18": 100,
+                    "24": 100, "25": 100, "26": 100, "28": 120, "29": 121,
+                    "30": 85, "31": 90, "35": 123}
+        }
+        """.utf8)
 
     private func requireSignal(from stream: AsyncStream<Void>, _ comment: Comment) async throws {
         let signalled = await withTaskGroup(of: Bool.self) { group in
@@ -320,7 +413,7 @@ struct MainMapViewModelTests {
             throw URLError(.unsupportedURL)
         }
     ) -> MainMapViewModel {
-        MainMapViewModel(services: MainMapServices(networkService: StubNetwork(respond: respond)), preferences: preferences)
+        MainMapServices.makeViewModel(networkService: StubNetwork(respond: respond), preferences: preferences)
     }
 
     private func country(
@@ -384,5 +477,23 @@ private actor FailOnceNetwork {
             throw URLError(.notConnectedToInternet)
         }
         return response
+    }
+}
+
+private actor EurostatNetwork: NetworkServiceProtocol {
+    private let respond: @Sendable (Int) async throws -> Data
+    private(set) var requestCount = 0
+
+    init(respond: @escaping @Sendable (Int) async throws -> Data) {
+        self.respond = respond
+    }
+
+    func send(request: URLRequest) async throws -> Data {
+        requestCount += 1
+        return try await respond(requestCount)
+    }
+
+    nonisolated func send<T: Decodable>(request: URLRequest) async throws -> T {
+        try JSONDecoder().decode(T.self, from: await send(request: request))
     }
 }

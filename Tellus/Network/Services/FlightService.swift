@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct CoordinateSpan {
+struct CoordinateSpan: Sendable {
     let minimum: Double
     let maximum: Double
 

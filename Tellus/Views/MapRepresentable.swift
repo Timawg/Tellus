@@ -11,8 +11,8 @@ import SwiftUI
 
 struct MapRepresentable: UIViewRepresentable {
     @Binding var region: MKCoordinateRegion
-    @Binding var selectedAnnotation: FlightAnnotation?
-    var annotations: [FlightAnnotation]
+    @Binding var selectedFlightID: String?
+    let flightMarkers: FlightMarkerSnapshot
     var showsEarthAtNight = false
     var nightLightsDate: String?
     var viirsImageryDate: String?
@@ -54,7 +54,6 @@ struct MapRepresentable: UIViewRepresentable {
         let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(MainMapCoordinator.handleTap(_:)))
         tap.delegate = context.coordinator
         mapView.addGestureRecognizer(tap)
-        mapView.addAnnotations(annotations)
         mapView.showsCompass = true
         mapView.showsScale = true
         mapView.isZoomEnabled = true

@@ -10,8 +10,8 @@ import SwiftUI
 @main
 struct TellusApp: App {
 
-    @State private var mainMapViewModel = MainMapViewModel(
-        services: MainMapServices(networkService: NetworkService()),
+    @State private var mainMapViewModel = MainMapServices.makeViewModel(
+        networkService: NetworkService(),
         preferences: UserDefaultsMapPreferencesStore(defaults: .standard)
     )
 

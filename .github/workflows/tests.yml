@@ -41,7 +41,7 @@ jobs:
           xcodebuild -version
           simulator_id=
           for attempt in 1 2 3; do
-            if destinations=$(xcodebuild -project Tellus.xcodeproj -scheme Tellus -showdestinations 2>&1); then
+            if destinations=$(xcodebuild -project Tellus.xcodeproj -scheme Tellus -disableAutomaticPackageResolution -showdestinations 2>&1); then
               simulator_id=$(find_iphone "$destinations")
               if [[ -n "$simulator_id" ]]; then
                 break
@@ -72,7 +72,17 @@ jobs:
           -project Tellus.xcodeproj
           -scheme Tellus
           -destination "platform=iOS Simulator,id=$SIMULATOR_ID"
+          -disableAutomaticPackageResolution
           -parallel-testing-enabled NO
+          -resultBundlePath "$RUNNER_TEMP/TellusTests.xcresult"
           DEVELOPMENT_TEAM=
           CODE_SIGN_IDENTITY=-
           test
+
+      - name: Upload failed test results
+        if: failure()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: TellusTests
+          path: ${{ runner.temp }}/TellusTests.xcresult
+          if-no-files-found: ignore

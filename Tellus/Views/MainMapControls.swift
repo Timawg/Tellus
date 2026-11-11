@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MainMapControls: View {
     @Bindable var viewModel: MainMapViewModel
+    @Bindable var flights: LiveFlightsModel
     @Bindable var gpsJam: GPSJAMLayerState
     let aurora: AuroraLayerState
     @Binding var isPickingCountry: Bool
@@ -43,8 +44,8 @@ struct MainMapControls: View {
                     .offset(x: isPickingCountry ? 120 : 0)
                     .opacity(isPickingCountry ? 0 : 1)
                 }
-                .animation(.easeInOut, value: viewModel.flightsPausedUntil == nil)
-                .animation(.easeInOut, value: viewModel.isShowingSubsetOfFlights)
+                .animation(.easeInOut, value: flights.flightsPausedUntil == nil)
+                .animation(.easeInOut, value: flights.isShowingSubsetOfFlights)
                 .padding(.horizontal)
                 .padding(.top)
                 selectionButton
@@ -94,7 +95,7 @@ struct MainMapControls: View {
     /// Switches map layers on and off.
     private var layersButton: some View {
         Menu {
-            Toggle(isOn: $viewModel.showsFlights) {
+            Toggle(isOn: $flights.showsFlights) {
                 Label("Live flights", systemImage: "airplane")
             }
             Toggle(isOn: $viewModel.showsHazards) {
@@ -179,7 +180,7 @@ struct MainMapControls: View {
     /// rate limiting us, or there are more flights than we draw at once.
     @ViewBuilder
     private var flightsNotice: some View {
-        if let pausedUntil = viewModel.flightsPausedUntil {
+        if let pausedUntil = flights.flightsPausedUntil {
             noticeCapsule {
                 // OpenSky's daily quota can pause us until the next day.
                 if Calendar.current.isDateInToday(pausedUntil) {
@@ -188,9 +189,9 @@ struct MainMapControls: View {
                     Text("Live flights paused until \(pausedUntil, format: .dateTime.weekday(.wide).hour().minute())")
                 }
             }
-        } else if viewModel.isShowingSubsetOfFlights {
+        } else if flights.isShowingSubsetOfFlights {
             noticeCapsule {
-                Text("\(viewModel.flightAnnotations.count, format: .number) of \(viewModel.totalFlightCount, format: .number) flights\nZoom in for more")
+                Text("\(flights.markerSnapshot.markers.count, format: .number) of \(flights.totalFlightCount, format: .number) flights\nZoom in for more")
             }
         }
     }

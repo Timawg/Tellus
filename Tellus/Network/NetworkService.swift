@@ -6,9 +6,8 @@
 //
 
 import Foundation
-import Combine
 
-protocol NetworkServiceProtocol {
+protocol NetworkServiceProtocol: Sendable {
     func send(request: URLRequest) async throws -> Data
     func send<T: Decodable>(request: URLRequest) async throws -> T
 }

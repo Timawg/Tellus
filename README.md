@@ -77,9 +77,10 @@ xcodebuild -project Tellus.xcodeproj -scheme Tellus -destination 'generic/platfo
 
 - The app entry point wires up the network services. [TellusApp.swift](Tellus/TellusApp.swift)
 - The main view contains the map controls, country card, and detail sheets. The MapKit wrapper manages annotations and overlays. [MainMapView.swift](Tellus/Views/MainMapView.swift) · [MapRepresentable.swift](Tellus/Views/MapRepresentable.swift)
-- The view model coordinates country selection, live data, and map layer state. [MainMapViewModel.swift](Tellus/ViewModels/MainMapViewModel.swift)
+- The map model coordinates country selection and map layers. The live flights model owns aircraft polling and selection, and MapKit updates its markers when the visible aircraft change. [MainMapViewModel.swift](Tellus/ViewModels/MainMapViewModel.swift) · [LiveFlightsModel.swift](Tellus/ViewModels/LiveFlightsModel.swift)
 - Services fetch and parse the provider feeds. Models and annotations hold the data and map geometry. [Services](Tellus/Network/Services) · [Models](Tellus/Models) · [Annotations](Tellus/Annotations)
 - Run **Product → Test** on a simulator. [TellusTests](TellusTests) uses Swift Testing for unit tests, and [TellusUITests](TellusUITests) uses XCTest for UI automation and launch performance.
+- CI uses the Swift package versions recorded in `Package.resolved` and uploads the Xcode test result bundle when tests fail. [Test workflow](.github/workflows/tests.yml)
 
 ### Rebuild the country boundaries
 

@@ -12,9 +12,9 @@ import CoreLocation
 /// from. OpenSky covers civil and military traffic in the visible area;
 /// adsb.lol's military list replaces OpenSky's data for the aircraft it
 /// knows to be military, which are then drawn in a different colour.
-struct LiveFlight: Identifiable, Equatable {
+struct LiveFlight: Identifiable, Equatable, Sendable {
 
-    enum Source {
+    enum Source: Sendable {
         case openSky
         /// adsb.lol's list of aircraft flagged as military.
         case adsbLolMilitary
