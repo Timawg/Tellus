@@ -74,10 +74,41 @@ jobs:
           -destination "platform=iOS Simulator,id=$SIMULATOR_ID"
           -disableAutomaticPackageResolution
           -parallel-testing-enabled NO
+          -enableCodeCoverage YES
           -resultBundlePath "$RUNNER_TEMP/TellusTests.xcresult"
           DEVELOPMENT_TEAM=
           CODE_SIGN_IDENTITY=-
           test
+
+      - name: Report Tellus code coverage
+        shell: bash
+        run: |
+          report="$RUNNER_TEMP/TellusCoverage.json"
+          xcrun xccov view --report --json "$RUNNER_TEMP/TellusTests.xcresult" > "$report"
+
+          python3 - "$report" <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          import sys
+
+          with open(sys.argv[1], encoding="utf-8") as report:
+              targets = json.load(report)["targets"]
+
+          app = next((target for target in targets if target["name"] == "Tellus.app"), None)
+          if app is None or app["executableLines"] == 0:
+              sys.exit("No executable line coverage found for Tellus.app.")
+
+          print("## Tellus code coverage\n")
+          print(f'**{app["lineCoverage"]:.2%}** line coverage '
+                f'({app["coveredLines"]:,} of {app["executableLines"]:,} executable lines).\n')
+          print("Download the **TellusCoverage** artifact for the detailed Xcode coverage report.")
+          PY
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: TellusCoverage
+          path: ${{ runner.temp }}/TellusCoverage.json
+          if-no-files-found: error
 
       - name: Upload failed test results
         if: failure()
