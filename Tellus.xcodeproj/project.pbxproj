@@ -99,6 +99,9 @@
 		C803B24D0C536419D85950B2 /* MapPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5457701098F1EB11B430B96E /* MapPreferencesStore.swift */; };
 		92E272C2BCC6B645B56EFDE4 /* MapRegionCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D332016BC4365D63F4080C70 /* MapRegionCalculator.swift */; };
 		3CA84D7E029748238E0BC095 /* SwiftyH3 in Frameworks */ = {isa = PBXBuildFile; productRef = 3CA84D7E029748238E0BC096 /* SwiftyH3 */; };
+		41922FF0B3664956820DBE82 /* FlightAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 567F09A9FF444918B3CA9A46 /* FlightAssets.xcassets */; };
+		BA674B15FF0441E9BC51590B /* PassportAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CC57367C43014919BC27A3B8 /* PassportAssets.xcassets */; };
+		F18A030BAC1642438FD47E38 /* TravelStatusAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9E8DDAC1F86544D193395468 /* TravelStatusAssets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -142,7 +145,7 @@
 		F55BBEF12ABA9D1E005E32E1 /* AdvisoryStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvisoryStatus.swift; sourceTree = "<group>"; };
 		F5EC33F22AB274E4004A2F57 /* Tellus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tellus.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5EC33F52AB274E4004A2F57 /* TellusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TellusApp.swift; sourceTree = "<group>"; };
-		A7E1F0DF2EB9000100C0FFEE /* country-borders.geojson */ = {isa = PBXFileReference; lastKnownFileType = text; name = country-borders.geojson; path = Resources/country-borders.geojson; sourceTree = "<group>"; };
+		A7E1F0DF2EB9000100C0FFEE /* country-borders.geojson */ = {isa = PBXFileReference; lastKnownFileType = text; path = country-borders.geojson; sourceTree = "<group>"; };
 		E4E3AEB39488436297AF18A5 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		F5EC33F72AB274E4004A2F57 /* MainMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMapView.swift; sourceTree = "<group>"; };
 		F5EC33F92AB274E5004A2F57 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -213,6 +216,9 @@
 		CB49FFFCE3D3F0DAB895FED4 /* MainMapServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMapServices.swift; sourceTree = "<group>"; };
 		5457701098F1EB11B430B96E /* MapPreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapPreferencesStore.swift; sourceTree = "<group>"; };
 		D332016BC4365D63F4080C70 /* MapRegionCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapRegionCalculator.swift; sourceTree = "<group>"; };
+		567F09A9FF444918B3CA9A46 /* FlightAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = FlightAssets.xcassets; sourceTree = "<group>"; };
+		CC57367C43014919BC27A3B8 /* PassportAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = PassportAssets.xcassets; sourceTree = "<group>"; };
+		9E8DDAC1F86544D193395468 /* TravelStatusAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = TravelStatusAssets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -241,30 +247,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		F54422BD2C53C23A00CF1A1C /* Annotations */ = {
-			isa = PBXGroup;
-			children = (
-				F54422BE2C53C2E000CF1A1C /* FlightAnnotation.swift */,
-				A7E1F0C72EB9000100C0FFEE /* CableOverlay.swift */,
-				A7E1F0DD2EB9000100C0FFEE /* CountryOutlineOverlay.swift */,
-				A7E1F0E32EB9000100C0FFEE /* NightOverlay.swift */,
-				1C21F409D3FB4975A7CA5FCC /* PowerGridOverlay.swift */,
-				E5BBE7C5D835D9FB185D2C08 /* GPSJAMOverlay.swift */,
-				FF194D67CEAD4FC297CC79BC /* AuroraOverlay.swift */,
-				2999EEBC0C7D4835BC99731F /* PowerGridTile.swift */,
-				A7E1F0CF2EB9000100C0FFEE /* HazardAnnotation.swift */,
-			);
-			path = Annotations;
-			sourceTree = "<group>";
-		};
-		F54422C02C59770D00CF1A1C /* Animator */ = {
-			isa = PBXGroup;
-			children = (
-				F54422C12C59774800CF1A1C /* FlightAnnotationAnimator.swift */,
-			);
-			path = Animator;
-			sourceTree = "<group>";
-		};
 		F5EC33E92AB274E4004A2F57 = {
 			isa = PBXGroup;
 			children = (
@@ -288,21 +270,260 @@
 		F5EC33F42AB274E4004A2F57 /* Tellus */ = {
 			isa = PBXGroup;
 			children = (
-				F54422C02C59770D00CF1A1C /* Animator */,
-				F54422BD2C53C23A00CF1A1C /* Annotations */,
-				F5FCC8472C504CB200569DC5 /* Extensions */,
-				F5FCC8442C504BFA00569DC5 /* Models */,
-				F5FCC8432C504BE800569DC5 /* Persistence */,
-				F5FCC8422C504BDD00569DC5 /* Network */,
-				F5FCC8412C504BBF00569DC5 /* Views */,
-				F5FCC8402C504BB700569DC5 /* ViewModels */,
-				F5EC33F52AB274E4004A2F57 /* TellusApp.swift */,
-				A7E1F0DF2EB9000100C0FFEE /* country-borders.geojson */,
-				E4E3AEB39488436297AF18A5 /* LaunchScreen.storyboard */,
-				F5EC33F92AB274E5004A2F57 /* Assets.xcassets */,
+				3F38D2EA1C1B4DA9925BDF92 /* Features */,
 				F5EC33FB2AB274E5004A2F57 /* Preview Content */,
+				E0308160D08D4F29B12E1197 /* Shared */,
+				F5EC33F92AB274E5004A2F57 /* Assets.xcassets */,
+				E4E3AEB39488436297AF18A5 /* LaunchScreen.storyboard */,
+				F5EC33F52AB274E4004A2F57 /* TellusApp.swift */,
 			);
 			path = Tellus;
+			sourceTree = "<group>";
+		};
+		3F38D2EA1C1B4DA9925BDF92 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				4A953E765B3B485E86961F5C /* Aurora */,
+				8A4F31CE8B8E43FCA66EDBB7 /* Countries */,
+				4EBB3481A1E24694B7BD0110 /* CountryGuide */,
+				F2E35883C3274781B82E704A /* Flights */,
+				11BAFD26F43E436386AF266D /* GPSJAM */,
+				3C3FA6113FCB4A5AA7326D52 /* Hazards */,
+				B440E1D140EB46F0852DAA81 /* Map */,
+				C1DD2D0AAA2A46A48EEF9473 /* PowerGrid */,
+				323FBFAFE2864FA3A5E260E6 /* SatelliteImagery */,
+				CFAE9C3C37844B1995DA9E15 /* SubmarineCables */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		4A953E765B3B485E86961F5C /* Aurora */ = {
+			isa = PBXGroup;
+			children = (
+				2F42F28716764C239DD62783 /* AuroraLayerView.swift */,
+				FF194D67CEAD4FC297CC79BC /* AuroraOverlay.swift */,
+				A57CB046E9814F9D8465A35E /* AuroraService.swift */,
+			);
+			path = Aurora;
+			sourceTree = "<group>";
+		};
+		8A4F31CE8B8E43FCA66EDBB7 /* Countries */ = {
+			isa = PBXGroup;
+			children = (
+				DF5C3DCFEC254EC1933565FC /* Resources */,
+				F5FCC8502C50520300569DC5 /* AsyncFlagView.swift */,
+				F5FCC8612C50610F00569DC5 /* CountriesService.swift */,
+				F5EC341F2AB29704004A2F57 /* Country.swift */,
+				A7E1F0DB2EB9000100C0FFEE /* CountryBorders.swift */,
+				A7E1F0DD2EB9000100C0FFEE /* CountryOutlineOverlay.swift */,
+				24A86F5B2B81524E00B3D94E /* ExpandableSelectionButton.swift */,
+			);
+			path = Countries;
+			sourceTree = "<group>";
+		};
+		DF5C3DCFEC254EC1933565FC /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A7E1F0DF2EB9000100C0FFEE /* country-borders.geojson */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		4EBB3481A1E24694B7BD0110 /* CountryGuide */ = {
+			isa = PBXGroup;
+			children = (
+				9C9D9AD6E4F041E4ADE3583C /* Advisories */,
+				AA08D0987A1D43368A67FEB8 /* Connectivity */,
+				426876AA09FD432FAF4E52F7 /* CostOfLiving */,
+				4A791AEE20874DE498A9D876 /* Electricity */,
+				C681D6DC32584E39A55D4A07 /* ExchangeRates */,
+				D40E039BBC764E09B9B24576 /* Outbreaks */,
+				A053DDB68AC642CBB5B38D58 /* Passport */,
+				CA7C48996FA74B7189F288EC /* RecentEvents */,
+				E8FBB133C1F244EAA6E7AEB4 /* Weather */,
+				F5FCC84E2C5051E200569DC5 /* CircularStatusView.swift */,
+				F5FCC84C2C5051AC00569DC5 /* Color.swift */,
+				A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */,
+				8C2CE51F435BA7A627606311 /* CountrySummaryView.swift */,
+				A7E1F0A72EB9000100C0FFEE /* DestinationGuide.swift */,
+				A7E1F0A92EB9000100C0FFEE /* DestinationGuideView.swift */,
+				A7E1F0E12EB9000100C0FFEE /* TravelStatus.swift */,
+				9E8DDAC1F86544D193395468 /* TravelStatusAssets.xcassets */,
+			);
+			path = CountryGuide;
+			sourceTree = "<group>";
+		};
+		9C9D9AD6E4F041E4ADE3583C /* Advisories */ = {
+			isa = PBXGroup;
+			children = (
+				F5FCC8552C50534E00569DC5 /* AdvisoryService.swift */,
+				F5FCC84A2C504D9A00569DC5 /* AdvisoryStatus + Color.swift */,
+				F55BBEF12ABA9D1E005E32E1 /* AdvisoryStatus.swift */,
+			);
+			path = Advisories;
+			sourceTree = "<group>";
+		};
+		AA08D0987A1D43368A67FEB8 /* Connectivity */ = {
+			isa = PBXGroup;
+			children = (
+				A7E1F0BB2EB9000100C0FFEE /* InternetOutages.swift */,
+				A7E1F0BF2EB9000100C0FFEE /* InternetOutageService.swift */,
+			);
+			path = Connectivity;
+			sourceTree = "<group>";
+		};
+		426876AA09FD432FAF4E52F7 /* CostOfLiving */ = {
+			isa = PBXGroup;
+			children = (
+				198D852A5A26482BB27058E6 /* CountryCostOfLivingView.swift */,
+				0B93D6FD41594BAFAB3E47AD /* EurostatPriceService.swift */,
+			);
+			path = CostOfLiving;
+			sourceTree = "<group>";
+		};
+		4A791AEE20874DE498A9D876 /* Electricity */ = {
+			isa = PBXGroup;
+			children = (
+				1D5BEF787C2452DB3CCB8E5E /* CountryElectricityView.swift */,
+				201886237B14648E52E05586 /* EmberElectricityService.swift */,
+			);
+			path = Electricity;
+			sourceTree = "<group>";
+		};
+		C681D6DC32584E39A55D4A07 /* ExchangeRates */ = {
+			isa = PBXGroup;
+			children = (
+				A7E1F0AD2EB9000100C0FFEE /* ExchangeRates.swift */,
+				A7E1F0B12EB9000100C0FFEE /* ExchangeRateService.swift */,
+			);
+			path = ExchangeRates;
+			sourceTree = "<group>";
+		};
+		D40E039BBC764E09B9B24576 /* Outbreaks */ = {
+			isa = PBXGroup;
+			children = (
+				A7E1F0BD2EB9000100C0FFEE /* OutbreakNews.swift */,
+				A7E1F0C12EB9000100C0FFEE /* OutbreakService.swift */,
+			);
+			path = Outbreaks;
+			sourceTree = "<group>";
+		};
+		A053DDB68AC642CBB5B38D58 /* Passport */ = {
+			isa = PBXGroup;
+			children = (
+				F5FCC85E2C505F9D00569DC5 /* AdmissoryService.swift */,
+				F5FCC8482C504D8D00569DC5 /* AdmissoryStatus + Color.swift */,
+				F5EC34252AB96F1F004A2F57 /* AdmissoryStatus.swift */,
+				3789458953881C171E8D2B6B /* NationalityPickerView.swift */,
+				CC57367C43014919BC27A3B8 /* PassportAssets.xcassets */,
+			);
+			path = Passport;
+			sourceTree = "<group>";
+		};
+		CA7C48996FA74B7189F288EC /* RecentEvents */ = {
+			isa = PBXGroup;
+			children = (
+				A7E1F0B32EB9000100C0FFEE /* RecentEvents.swift */,
+				A7E1F0B72EB9000100C0FFEE /* RecentEventsService.swift */,
+			);
+			path = RecentEvents;
+			sourceTree = "<group>";
+		};
+		E8FBB133C1F244EAA6E7AEB4 /* Weather */ = {
+			isa = PBXGroup;
+			children = (
+				A7E1F0AB2EB9000100C0FFEE /* Weather.swift */,
+				A7E1F0AF2EB9000100C0FFEE /* WeatherService.swift */,
+			);
+			path = Weather;
+			sourceTree = "<group>";
+		};
+		F2E35883C3274781B82E704A /* Flights */ = {
+			isa = PBXGroup;
+			children = (
+				F54422C32C599F7300CF1A1C /* CGAffineTransform.swift */,
+				F54422BE2C53C2E000CF1A1C /* FlightAnnotation.swift */,
+				F54422C12C59774800CF1A1C /* FlightAnnotationAnimator.swift */,
+				567F09A9FF444918B3CA9A46 /* FlightAssets.xcassets */,
+				F5FCC8652C5066FB00569DC5 /* FlightData.swift */,
+				A7E1F0A12EB9000100C0FFEE /* FlightDetails.swift */,
+				A7E1F0A32EB9000100C0FFEE /* FlightDetailsService.swift */,
+				218BAA0A1D86C88205F502AD /* FlightDetailsView.swift */,
+				F54422B72C526D2800CF1A1C /* FlightMarkerAnnotationView.swift */,
+				F5FCC8632C5063C500569DC5 /* FlightService.swift */,
+				A7E1F0D32EB9000100C0FFEE /* LiveFlight.swift */,
+				B411570F0100000000000002 /* LiveFlightsModel.swift */,
+			);
+			path = Flights;
+			sourceTree = "<group>";
+		};
+		11BAFD26F43E436386AF266D /* GPSJAM */ = {
+			isa = PBXGroup;
+			children = (
+				F1BEB3EA3B0BE54B9E24F1D7 /* GPSJAMLayerView.swift */,
+				E5BBE7C5D835D9FB185D2C08 /* GPSJAMOverlay.swift */,
+				7ED72D67BC46F05B7A3AB508 /* GPSJAMService.swift */,
+			);
+			path = GPSJAM;
+			sourceTree = "<group>";
+		};
+		3C3FA6113FCB4A5AA7326D52 /* Hazards */ = {
+			isa = PBXGroup;
+			children = (
+				A7E1F0B52EB9000100C0FFEE /* DisasterAlerts.swift */,
+				A7E1F0B92EB9000100C0FFEE /* DisasterAlertService.swift */,
+				A7E1F0CF2EB9000100C0FFEE /* HazardAnnotation.swift */,
+				A7E1F0D12EB9000100C0FFEE /* HazardDetailsView.swift */,
+				A7E1F0CD2EB9000100C0FFEE /* HazardService.swift */,
+				A7E1F0CB2EB9000100C0FFEE /* NaturalHazards.swift */,
+			);
+			path = Hazards;
+			sourceTree = "<group>";
+		};
+		B440E1D140EB46F0852DAA81 /* Map */ = {
+			isa = PBXGroup;
+			children = (
+				2985B005ABE01B7AC39AF206 /* MainMapControls.swift */,
+				164A8E929F377BCF79487487 /* MainMapCoordinator.swift */,
+				CB49FFFCE3D3F0DAB895FED4 /* MainMapServices.swift */,
+				F5EC33F72AB274E4004A2F57 /* MainMapView.swift */,
+				F5FCC8452C504C4800569DC5 /* MainMapViewModel.swift */,
+				7FFE5CB3C71A1DF981C10A30 /* MapBackdropLayers.swift */,
+				5457701098F1EB11B430B96E /* MapPreferencesStore.swift */,
+				D332016BC4365D63F4080C70 /* MapRegionCalculator.swift */,
+				F54422B92C526D8E00CF1A1C /* MapRepresentable.swift */,
+			);
+			path = Map;
+			sourceTree = "<group>";
+		};
+		C1DD2D0AAA2A46A48EEF9473 /* PowerGrid */ = {
+			isa = PBXGroup;
+			children = (
+				3E548B4245B41AC99E9E66D7 /* PowerAssetDetailsView.swift */,
+				1C21F409D3FB4975A7CA5FCC /* PowerGridOverlay.swift */,
+				2999EEBC0C7D4835BC99731F /* PowerGridTile.swift */,
+			);
+			path = PowerGrid;
+			sourceTree = "<group>";
+		};
+		323FBFAFE2864FA3A5E260E6 /* SatelliteImagery */ = {
+			isa = PBXGroup;
+			children = (
+				A7E1F0E32EB9000100C0FFEE /* NightOverlay.swift */,
+				2CBDDC1A4F484CE1B64BF918 /* VIIRSImageryService.swift */,
+			);
+			path = SatelliteImagery;
+			sourceTree = "<group>";
+		};
+		CFAE9C3C37844B1995DA9E15 /* SubmarineCables */ = {
+			isa = PBXGroup;
+			children = (
+				A7E1F0C92EB9000100C0FFEE /* CableDetailsView.swift */,
+				A7E1F0C72EB9000100C0FFEE /* CableOverlay.swift */,
+				A7E1F0C52EB9000100C0FFEE /* CableService.swift */,
+				A7E1F0C32EB9000100C0FFEE /* SubmarineCables.swift */,
+			);
+			path = SubmarineCables;
 			sourceTree = "<group>";
 		};
 		F5EC33FB2AB274E5004A2F57 /* Preview Content */ = {
@@ -313,14 +534,83 @@
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
+		E0308160D08D4F29B12E1197 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				F5FCC8422C504BDD00569DC5 /* Networking */,
+				F5FCC8472C504CB200569DC5 /* UI */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		F5FCC8422C504BDD00569DC5 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				F5FCC8572C50534E00569DC5 /* Endpoint.swift */,
+				F5FCC8542C50534E00569DC5 /* HTTPError.swift */,
+				F5FCC8532C50534E00569DC5 /* HTTPMethod.swift */,
+				F5FCC8562C50534E00569DC5 /* NetworkService.swift */,
+				F5FCC8522C50534E00569DC5 /* Service.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		F5FCC8472C504CB200569DC5 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				A7E1F0A52EB9000100C0FFEE /* View+FloatingGlass.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
 		F5EC34052AB274E5004A2F57 /* TellusTests */ = {
 			isa = PBXGroup;
 			children = (
-				810E2ADA3671E6CBAEDCACB6 /* MainMapViewModelTests.swift */,
-				52F68695A2CBBA596F4FC1E7 /* EmberElectricityTests.swift */,
-				A4929D018F22D436E173CDCF /* GPSJAMTests.swift */,
+				BF0991CE88F440969C8F5581 /* Features */,
 			);
 			path = TellusTests;
+			sourceTree = "<group>";
+		};
+		BF0991CE88F440969C8F5581 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				D9541756EF48476082E086FD /* CountryGuide */,
+				42093500C78C47CC882D0E19 /* GPSJAM */,
+				50ACA190DC40486080597263 /* Map */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		D9541756EF48476082E086FD /* CountryGuide */ = {
+			isa = PBXGroup;
+			children = (
+				82E9D30EC5D0451F9A55D716 /* Electricity */,
+			);
+			path = CountryGuide;
+			sourceTree = "<group>";
+		};
+		82E9D30EC5D0451F9A55D716 /* Electricity */ = {
+			isa = PBXGroup;
+			children = (
+				52F68695A2CBBA596F4FC1E7 /* EmberElectricityTests.swift */,
+			);
+			path = Electricity;
+			sourceTree = "<group>";
+		};
+		42093500C78C47CC882D0E19 /* GPSJAM */ = {
+			isa = PBXGroup;
+			children = (
+				A4929D018F22D436E173CDCF /* GPSJAMTests.swift */,
+			);
+			path = GPSJAM;
+			sourceTree = "<group>";
+		};
+		50ACA190DC40486080597263 /* Map */ = {
+			isa = PBXGroup;
+			children = (
+				810E2ADA3671E6CBAEDCACB6 /* MainMapViewModelTests.swift */,
+			);
+			path = Map;
 			sourceTree = "<group>";
 		};
 		F5EC340F2AB274E5004A2F57 /* TellusUITests */ = {
@@ -330,127 +620,6 @@
 				F5EC34122AB274E5004A2F57 /* TellusUITestsLaunchTests.swift */,
 			);
 			path = TellusUITests;
-			sourceTree = "<group>";
-		};
-		F5FCC8402C504BB700569DC5 /* ViewModels */ = {
-			isa = PBXGroup;
-			children = (
-				F5FCC8452C504C4800569DC5 /* MainMapViewModel.swift */,
-				B411570F0100000000000002 /* LiveFlightsModel.swift */,
-				CB49FFFCE3D3F0DAB895FED4 /* MainMapServices.swift */,
-			);
-			path = ViewModels;
-			sourceTree = "<group>";
-		};
-		F5FCC8412C504BBF00569DC5 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				F5EC33F72AB274E4004A2F57 /* MainMapView.swift */,
-				24A86F5B2B81524E00B3D94E /* ExpandableSelectionButton.swift */,
-				F5FCC84E2C5051E200569DC5 /* CircularStatusView.swift */,
-				F5FCC8502C50520300569DC5 /* AsyncFlagView.swift */,
-				F54422B72C526D2800CF1A1C /* FlightMarkerAnnotationView.swift */,
-				A7E1F0C92EB9000100C0FFEE /* CableDetailsView.swift */,
-				A7E1F0D12EB9000100C0FFEE /* HazardDetailsView.swift */,
-				A7E1F0A92EB9000100C0FFEE /* DestinationGuideView.swift */,
-				1D5BEF787C2452DB3CCB8E5E /* CountryElectricityView.swift */,
-				198D852A5A26482BB27058E6 /* CountryCostOfLivingView.swift */,
-				F54422B92C526D8E00CF1A1C /* MapRepresentable.swift */,
-				8C2CE51F435BA7A627606311 /* CountrySummaryView.swift */,
-				2985B005ABE01B7AC39AF206 /* MainMapControls.swift */,
-				F1BEB3EA3B0BE54B9E24F1D7 /* GPSJAMLayerView.swift */,
-				2F42F28716764C239DD62783 /* AuroraLayerView.swift */,
-				218BAA0A1D86C88205F502AD /* FlightDetailsView.swift */,
-				3789458953881C171E8D2B6B /* NationalityPickerView.swift */,
-				3E548B4245B41AC99E9E66D7 /* PowerAssetDetailsView.swift */,
-				164A8E929F377BCF79487487 /* MainMapCoordinator.swift */,
-				7FFE5CB3C71A1DF981C10A30 /* MapBackdropLayers.swift */,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
-		F5FCC8422C504BDD00569DC5 /* Network */ = {
-			isa = PBXGroup;
-			children = (
-				F5FCC8602C5060B100569DC5 /* Services */,
-				F5FCC8572C50534E00569DC5 /* Endpoint.swift */,
-				F5FCC8542C50534E00569DC5 /* HTTPError.swift */,
-				F5FCC8532C50534E00569DC5 /* HTTPMethod.swift */,
-				F5FCC8562C50534E00569DC5 /* NetworkService.swift */,
-				F5FCC8522C50534E00569DC5 /* Service.swift */,
-			);
-			path = Network;
-			sourceTree = "<group>";
-		};
-		F5FCC8432C504BE800569DC5 /* Persistence */ = {
-			isa = PBXGroup;
-			children = (
-				5457701098F1EB11B430B96E /* MapPreferencesStore.swift */,
-			);
-			path = Persistence;
-			sourceTree = "<group>";
-		};
-		F5FCC8442C504BFA00569DC5 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				F5EC34252AB96F1F004A2F57 /* AdmissoryStatus.swift */,
-				F5EC341F2AB29704004A2F57 /* Country.swift */,
-				F55BBEF12ABA9D1E005E32E1 /* AdvisoryStatus.swift */,
-				F5FCC8652C5066FB00569DC5 /* FlightData.swift */,
-				A7E1F0C32EB9000100C0FFEE /* SubmarineCables.swift */,
-				A7E1F0CB2EB9000100C0FFEE /* NaturalHazards.swift */,
-				A7E1F0D32EB9000100C0FFEE /* LiveFlight.swift */,
-				A7E1F0DB2EB9000100C0FFEE /* CountryBorders.swift */,
-				A7E1F0BD2EB9000100C0FFEE /* OutbreakNews.swift */,
-				A7E1F0BB2EB9000100C0FFEE /* InternetOutages.swift */,
-				A7E1F0B52EB9000100C0FFEE /* DisasterAlerts.swift */,
-				A7E1F0B32EB9000100C0FFEE /* RecentEvents.swift */,
-				A7E1F0AD2EB9000100C0FFEE /* ExchangeRates.swift */,
-				A7E1F0AB2EB9000100C0FFEE /* Weather.swift */,
-				A7E1F0A72EB9000100C0FFEE /* DestinationGuide.swift */,
-				A7E1F0A12EB9000100C0FFEE /* FlightDetails.swift */,
-				D332016BC4365D63F4080C70 /* MapRegionCalculator.swift */,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
-		F5FCC8472C504CB200569DC5 /* Extensions */ = {
-			isa = PBXGroup;
-			children = (
-				F5FCC8482C504D8D00569DC5 /* AdmissoryStatus + Color.swift */,
-				F5FCC84A2C504D9A00569DC5 /* AdvisoryStatus + Color.swift */,
-				F5FCC84C2C5051AC00569DC5 /* Color.swift */,
-				A7E1F0E12EB9000100C0FFEE /* TravelStatus.swift */,
-				F54422C32C599F7300CF1A1C /* CGAffineTransform.swift */,
-				A7E1F0A52EB9000100C0FFEE /* View+FloatingGlass.swift */,
-			);
-			path = Extensions;
-			sourceTree = "<group>";
-		};
-		F5FCC8602C5060B100569DC5 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				F5FCC8552C50534E00569DC5 /* AdvisoryService.swift */,
-				A7E1F0C52EB9000100C0FFEE /* CableService.swift */,
-				A7E1F0CD2EB9000100C0FFEE /* HazardService.swift */,
-				A7E1F0C12EB9000100C0FFEE /* OutbreakService.swift */,
-				A7E1F0BF2EB9000100C0FFEE /* InternetOutageService.swift */,
-				A7E1F0B92EB9000100C0FFEE /* DisasterAlertService.swift */,
-				A7E1F0B72EB9000100C0FFEE /* RecentEventsService.swift */,
-				A7E1F0B12EB9000100C0FFEE /* ExchangeRateService.swift */,
-				A7E1F0E52EB9000100C0FFEE /* CountryProfileService.swift */,
-				0B93D6FD41594BAFAB3E47AD /* EurostatPriceService.swift */,
-				201886237B14648E52E05586 /* EmberElectricityService.swift */,
-				7ED72D67BC46F05B7A3AB508 /* GPSJAMService.swift */,
-				A57CB046E9814F9D8465A35E /* AuroraService.swift */,
-				A7E1F0AF2EB9000100C0FFEE /* WeatherService.swift */,
-				2CBDDC1A4F484CE1B64BF918 /* VIIRSImageryService.swift */,
-				A7E1F0A32EB9000100C0FFEE /* FlightDetailsService.swift */,
-				F5FCC85E2C505F9D00569DC5 /* AdmissoryService.swift */,
-				F5FCC8612C50610F00569DC5 /* CountriesService.swift */,
-				F5FCC8632C5063C500569DC5 /* FlightService.swift */,
-			);
-			path = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -565,6 +734,9 @@
 			files = (
 				F5EC33FD2AB274E5004A2F57 /* Preview Assets.xcassets in Resources */,
 				F5EC33FA2AB274E5004A2F57 /* Assets.xcassets in Resources */,
+				41922FF0B3664956820DBE82 /* FlightAssets.xcassets in Resources */,
+				BA674B15FF0441E9BC51590B /* PassportAssets.xcassets in Resources */,
+				F18A030BAC1642438FD47E38 /* TravelStatusAssets.xcassets in Resources */,
 				A7E1F0E02EB9000100C0FFEE /* country-borders.geojson in Resources */,
 				63485538B62549CFBE52F735 /* LaunchScreen.storyboard in Resources */,
 			);

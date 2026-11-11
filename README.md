@@ -75,18 +75,16 @@ xcodebuild -project Tellus.xcodeproj -scheme Tellus -destination 'generic/platfo
 
 ## Project layout
 
-- The app entry point wires up the network services. [TellusApp.swift](Tellus/TellusApp.swift)
-- The main view contains the map controls, country card, and detail sheets. The MapKit wrapper manages annotations and overlays. [MainMapView.swift](Tellus/Views/MainMapView.swift) · [MapRepresentable.swift](Tellus/Views/MapRepresentable.swift)
-- The map model coordinates country selection and map layers. The live flights model owns aircraft polling and selection, and MapKit updates its markers when the visible aircraft change. [MainMapViewModel.swift](Tellus/ViewModels/MainMapViewModel.swift) · [LiveFlightsModel.swift](Tellus/ViewModels/LiveFlightsModel.swift)
-- Services fetch and parse the provider feeds. Models and annotations hold the data and map geometry. [Services](Tellus/Network/Services) · [Models](Tellus/Models) · [Annotations](Tellus/Annotations)
-- Run **Product → Test** on a simulator. [TellusTests](TellusTests) uses Swift Testing for unit tests, and [TellusUITests](TellusUITests) uses XCTest for UI automation and launch performance.
+- Each feature keeps its views, state, services, models, and resources together. The main map brings the country picker, country guide, and map layers together. [Features](Tellus/Features) · [Map](Tellus/Features/Map) · [Country guide](Tellus/Features/CountryGuide) · [Flights](Tellus/Features/Flights)
+- The app entry point wires up dependencies. Shared networking and UI code lives under `Shared`. [TellusApp.swift](Tellus/TellusApp.swift) · [Shared](Tellus/Shared)
+- Run **Product → Test** on a simulator. Swift Testing unit tests are grouped by feature, and UI automation and launch performance tests use XCTest. [Unit tests](TellusTests/Features) · [UI tests](TellusUITests)
 - CI uses the Swift package versions recorded in `Package.resolved` and uploads the Xcode test result bundle when tests fail. [Test workflow](.github/workflows/tests.yml)
 
 ### Rebuild the country boundaries
 
 Download the two inputs. [Natural Earth 1:50m country GeoJSON](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_50m_admin_0_countries.geojson) · [Country metadata JSON](https://cdn.jsdelivr.net/gh/mledoze/countries@master/countries.json)
 
-Run the script from the repository root with Python 3. It matches boundaries to the app's three-letter country codes and regenerates the bundled resource. [country-borders.geojson](Tellus/Resources/country-borders.geojson)
+Run the script from the repository root with Python 3. It matches boundaries to the app's three-letter country codes and regenerates the bundled resource. [country-borders.geojson](Tellus/Features/Countries/Resources/country-borders.geojson)
 
 ```sh
 python3 scripts/build_country_borders.py ne_50m_admin_0_countries.geojson countries.json

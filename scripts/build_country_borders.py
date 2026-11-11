@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Builds Tellus/Resources/country-borders.geojson, the country outlines drawn
+"""Builds Tellus/Features/Countries/Resources/country-borders.geojson, the country outlines drawn
 when a country is selected.
 
 Source: Natural Earth 1:50m Admin 0 - Countries (public domain),
@@ -120,7 +120,7 @@ def main(natural_earth_path, countries_path):
     }
     missing = sorted(set(countries) - set(by_code))
     print(f"{len(by_code)} countries with borders; none for {', '.join(missing)}", file=sys.stderr)
-    json.dump(output, open("Tellus/Resources/country-borders.geojson", "w"), separators=(",", ":"))
+    json.dump(output, open("Tellus/Features/Countries/Resources/country-borders.geojson", "w"), separators=(",", ":"))
 
 
 if __name__ == "__main__":
