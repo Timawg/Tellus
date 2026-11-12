@@ -12,6 +12,15 @@ struct FlightDetailsView: View {
     let flightID: String
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
+    private var detents: Set<PresentationDetent> {
+        if horizontalSizeClass == .compact || verticalSizeClass == .compact {
+            return [.fraction(0.34), .medium, .large]
+        }
+        return [.medium, .large]
+    }
 
     private var flight: LiveFlight? { flights.flight(for: flightID) }
     private var aircraft: AircraftInfo? { flights.selectedAircraft }
@@ -32,10 +41,10 @@ struct FlightDetailsView: View {
     var body: some View {
         NavigationStack {
             List {
+                routeSection
                 if let photo = aircraft?.urlPhoto.flatMap(URL.init(string:)) {
                     photoSection(photo)
                 }
-                routeSection
                 liveSection
                 aircraftSection
                 Section {
@@ -64,7 +73,8 @@ struct FlightDetailsView: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents(detents)
+        .presentationCompactAdaptation(.sheet)
         .presentationDragIndicator(.visible)
         .presentationBackground(Color(uiColor: .systemGroupedBackground))
         .preferredColorScheme(.dark)

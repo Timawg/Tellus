@@ -8,6 +8,7 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
     private var outlineOverlay: CountryOutlineOverlay?
     private let backdrop = MapBackdropLayers()
     private let flights = FlightMapLayer()
+    private let flightRoute = FlightRouteMapLayer()
     private let cables = CableMapLayer()
     private let hazards = HazardMapLayer()
 
@@ -17,7 +18,8 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
 
     func update(_ mapView: MKMapView, parent: MapRepresentable) {
         self.parent = parent
-        flights.update(on: mapView, snapshot: parent.flightMarkers)
+        let routeFlightID = parent.flightRoute == nil ? nil : parent.selectedFlightID
+        flights.update(on: mapView, snapshot: parent.flightMarkers, routeFlightID: routeFlightID)
         if parent.selectedFlightID == nil,
            let selected = mapView.selectedAnnotations.first(where: { $0 is FlightAnnotation }) {
             mapView.deselectAnnotation(selected, animated: false)
@@ -34,6 +36,9 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
         cables.update(on: mapView, cables: parent.cables, landingPoints: parent.landingPoints, selectedID: parent.selectedCableID)
         hazards.update(on: mapView, hazards: parent.hazards, tracks: parent.cycloneTracks)
         updateOutline(on: mapView, border: parent.outline)
+        flightRoute.update(
+            on: mapView, route: parent.flightRoute, aircraftCoordinate: flights.coordinate(for: routeFlightID)
+        )
 
         if !MapRegionCalculator.matches(lastKnownRegion ?? mapView.region, parent.region) {
             lastKnownRegion = parent.region
@@ -43,10 +48,12 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
 
     func dismantle(_ mapView: MKMapView) {
         mapView.delegate = nil
+        flightRoute.update(on: mapView, route: nil, aircraftCoordinate: nil)
         backdrop.stopEarthAtNight(on: mapView)
     }
 
     func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+        if let renderer = flightRoute.renderer(for: overlay) { return renderer }
         if let renderer = backdrop.renderer(for: overlay) { return renderer }
         if let track = overlay as? CycloneTrackOverlay {
             return track.makeRenderer()

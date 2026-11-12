@@ -38,6 +38,7 @@ struct MainMapView: View {
             region: $viewModel.region,
             selectedFlightID: $flights.selectedFlightID,
             flightMarkers: flights.markerSnapshot,
+            flightRoute: flights.selectedMapRoute,
             showsEarthAtNight: viewModel.showsEarthAtNight,
             nightLightsDate: nightLightsDate,
             viirsImageryDate: viirsImageryDate,
@@ -119,8 +120,8 @@ struct MainMapView: View {
         .task(id: viewModel.countryGuide.travelSelection) { [destination = viewModel.current, passport = viewModel.nationality] in
             await viewModel.countryGuide.refreshPassportInformation(destination: destination, passport: passport)
         }
-        .task(id: flights.selectedFlightID) {
-            await flights.loadFlightDetails()
+        .task(id: flights.selection?.requestID) { [selection = flights.selection] in
+            await flights.loadFlightDetails(for: selection)
         }
         .onAppear {
             flights.setMapActive(scenePhase == .active)

@@ -3,8 +3,9 @@ import MapKit
 @MainActor
 @Observable
 final class LiveFlightsModel {
-    struct Selection: Identifiable {
+    struct Selection: Identifiable, Equatable {
         let id: String
+        let requestID = UUID()
     }
 
     private let flightService: FlightServiceProtocol
@@ -23,7 +24,19 @@ final class LiveFlightsModel {
     private(set) var selectedAircraft: AircraftInfo?
     private(set) var selectedRoute: FlightRoute?
     private(set) var isLoadingFlightDetails = false
-    var selection: Selection?
+    var selection: Selection? {
+        didSet {
+            guard let selection, selection != oldValue else { return }
+            selectedAircraft = nil
+            selectedRoute = nil
+            isLoadingFlightDetails = true
+        }
+    }
+
+    var selectedMapRoute: FlightRoute? {
+        // The sheet keeps its details during dismissal. The map clears the route immediately.
+        selection == nil ? nil : selectedRoute
+    }
 
     /// MapKit selects by ICAO address. The details sheet binds to the identifiable selection.
     var selectedFlightID: String? {
@@ -74,25 +87,24 @@ final class LiveFlightsModel {
         liveFlights[icao24.lowercased()]
     }
 
-    func loadFlightDetails() async {
-        // Keep the details during sheet dismissal. A new selection replaces them.
-        guard !Task.isCancelled, let id = selectedFlightID else { return }
-        selectedAircraft = nil
-        selectedRoute = nil
-        isLoadingFlightDetails = true
-
+    func loadFlightDetails(for request: Selection?) async {
+        guard !Task.isCancelled, let request, selection == request else { return }
+        let id = request.id
         let callsign = flight(for: id)?.callsign ?? ""
         async let aircraft = try? detailsService.getAircraft(icao24: id)
         async let route = callsign.isEmpty ? nil : try? detailsService.getRoute(callsign: callsign)
-        let (loadedAircraft, loadedRoute) = await (aircraft, route)
+        let loadedRoute = await route
 
-        guard !Task.isCancelled, selectedFlightID == id else { return }
-        isLoadingFlightDetails = false
-        selectedAircraft = loadedAircraft
+        guard !Task.isCancelled, selection == request else { return }
         if let loadedRoute, let coordinate = flight(for: id)?.coordinate,
            loadedRoute.isPlausible(forAircraftAt: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)) {
             selectedRoute = loadedRoute
         }
+
+        let loadedAircraft = await aircraft
+        guard !Task.isCancelled, selection == request else { return }
+        selectedAircraft = loadedAircraft
+        isLoadingFlightDetails = false
     }
 
     func setMapActive(_ isActive: Bool) {
