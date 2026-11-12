@@ -82,6 +82,7 @@ xcodebuild -project Tellus.xcodeproj -scheme Tellus -destination 'generic/platfo
 - Run **Product → Test** on a simulator. Swift Testing unit tests are grouped by feature, and UI automation and launch performance tests use XCTest. [Unit tests](TellusTests/Features) · [UI tests](TellusUITests)
 - CI runs SwiftLint on the app and test targets and fails on new violations. To run the same check locally, install SwiftLint 0.65.1 and run `swiftlint lint --strict` from the repository root. The checked-in baseline records existing violations. [SwiftLint release](https://github.com/realm/SwiftLint/releases/tag/0.65.1) · [Lint configuration](.swiftlint.yml)
 - CI uses the Swift package versions recorded in `Package.resolved`. On pull requests and pushes to `main`, the GitHub Actions run summary shows app line coverage and provides a downloadable JSON report. Failed runs include the Xcode test result bundle when available. [Test workflow](.github/workflows/tests.yml)
+- The **Bundled data** job checks the country boundaries and V-Dem extract on pull requests and pushes to `main`. Run `python3 scripts/validate_bundled_data.py` locally to validate either rebuild before committing.
 
 ### Rebuild the country boundaries
 

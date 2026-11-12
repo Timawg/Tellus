@@ -10,6 +10,19 @@ permissions:
   contents: read
 
 jobs:
+  bundled-data:
+    name: Bundled data
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate country boundaries and democracy data
+        run: python3 scripts/validate_bundled_data.py
+
   swiftlint:
     name: SwiftLint
     runs-on: xcode-27
