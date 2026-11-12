@@ -65,9 +65,10 @@ struct FlightRoute: Decodable, Equatable, Sendable {
     let origin: Airport
     let destination: Airport
 
-    var mapCoordinates: [CLLocationCoordinate2D]? {
-        guard hasValidAirportCoordinates, origin.location.distance(from: destination.location) > 0 else { return nil }
-        return [origin.coordinate, destination.coordinate]
+    func mapCoordinates(through aircraft: CLLocationCoordinate2D) -> [CLLocationCoordinate2D]? {
+        guard hasValidAirportCoordinates, CLLocationCoordinate2DIsValid(aircraft),
+              origin.location.distance(from: destination.location) > 0 else { return nil }
+        return [origin.coordinate, aircraft, destination.coordinate]
     }
 
     private var hasValidAirportCoordinates: Bool {

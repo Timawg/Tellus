@@ -4,6 +4,7 @@ import UIKit
 @MainActor
 final class FlightRouteMapLayer {
     private var route: FlightRoute?
+    private var aircraftCoordinate: CLLocationCoordinate2D?
     private var overlay: MKGeodesicPolyline?
     private var renderer: MKPolylineRenderer?
     private var strokeEnd: CGFloat = 1
@@ -13,20 +14,27 @@ final class FlightRouteMapLayer {
         animation?.cancel()
     }
 
-    func update(on mapView: MKMapView, route: FlightRoute?) {
-        guard route != self.route else { return }
-        animation?.cancel()
-        animation = nil
+    func update(on mapView: MKMapView, route: FlightRoute?, aircraftCoordinate: CLLocationCoordinate2D?) {
+        guard route != self.route || aircraftCoordinate?.latitude != self.aircraftCoordinate?.latitude
+                || aircraftCoordinate?.longitude != self.aircraftCoordinate?.longitude else { return }
+        let startsRoute = route != self.route || overlay == nil
+        if startsRoute {
+            animation?.cancel()
+            animation = nil
+            strokeEnd = 1
+        }
         if let overlay { mapView.removeOverlay(overlay) }
         self.route = route
+        self.aircraftCoordinate = aircraftCoordinate
         overlay = nil
         renderer = nil
 
-        guard let coordinates = route?.mapCoordinates else { return }
+        guard let aircraftCoordinate,
+              let coordinates = route?.mapCoordinates(through: aircraftCoordinate) else { return }
         let overlay = MKGeodesicPolyline(coordinates: coordinates, count: coordinates.count)
         self.overlay = overlay
-        let shouldAnimate = !UIAccessibility.isReduceMotionEnabled
-        strokeEnd = shouldAnimate ? 0 : 1
+        let shouldAnimate = startsRoute && !UIAccessibility.isReduceMotionEnabled
+        if shouldAnimate { strokeEnd = 0 }
         mapView.addOverlay(overlay, level: .aboveLabels)
         if shouldAnimate { animateStroke() }
     }

@@ -18,7 +18,8 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
 
     func update(_ mapView: MKMapView, parent: MapRepresentable) {
         self.parent = parent
-        flights.update(on: mapView, snapshot: parent.flightMarkers)
+        let routeFlightID = parent.flightRoute == nil ? nil : parent.selectedFlightID
+        flights.update(on: mapView, snapshot: parent.flightMarkers, routeFlightID: routeFlightID)
         if parent.selectedFlightID == nil,
            let selected = mapView.selectedAnnotations.first(where: { $0 is FlightAnnotation }) {
             mapView.deselectAnnotation(selected, animated: false)
@@ -35,7 +36,9 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
         cables.update(on: mapView, cables: parent.cables, landingPoints: parent.landingPoints, selectedID: parent.selectedCableID)
         hazards.update(on: mapView, hazards: parent.hazards, tracks: parent.cycloneTracks)
         updateOutline(on: mapView, border: parent.outline)
-        flightRoute.update(on: mapView, route: parent.flightRoute)
+        flightRoute.update(
+            on: mapView, route: parent.flightRoute, aircraftCoordinate: flights.coordinate(for: routeFlightID)
+        )
 
         if !MapRegionCalculator.matches(lastKnownRegion ?? mapView.region, parent.region) {
             lastKnownRegion = parent.region
@@ -45,7 +48,7 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
 
     func dismantle(_ mapView: MKMapView) {
         mapView.delegate = nil
-        flightRoute.update(on: mapView, route: nil)
+        flightRoute.update(on: mapView, route: nil, aircraftCoordinate: nil)
         backdrop.stopEarthAtNight(on: mapView)
     }
 

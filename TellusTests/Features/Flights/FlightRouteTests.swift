@@ -9,13 +9,16 @@ import Testing
 struct FlightRouteTests {
     @Test func mapSkipsInvalidAndZeroLengthRoutes() throws {
         let route = makeRoute(destinationLongitude: 15)
-        let endpoints = try #require(route.mapCoordinates)
-        #expect(endpoints.map(\.longitude) == [5, 15])
-        #expect(makeRoute(destinationLongitude: 5).mapCoordinates == nil)
-        #expect(makeRoute(destinationLongitude: 181).mapCoordinates == nil)
+        let aircraft = CLLocationCoordinate2D(latitude: 22, longitude: 10)
+        let coordinates = try #require(route.mapCoordinates(through: aircraft))
+        #expect(coordinates.map(\.latitude) == [20, 22, 20])
+        #expect(coordinates.map(\.longitude) == [5, 10, 15])
+        #expect(makeRoute(destinationLongitude: 5).mapCoordinates(through: aircraft) == nil)
+        #expect(makeRoute(destinationLongitude: 181).mapCoordinates(through: aircraft) == nil)
+        #expect(route.mapCoordinates(through: .init(latitude: 91, longitude: 10)) == nil)
     }
 
-    @Test func mapKeepsOneRouteAcrossMarkerUpdatesAndClearsItOnDismissal() throws {
+    @Test func routeFollowsSelectedMarkerAndClearsOnDismissal() throws {
         let map = MKMapView()
         let route = makeRoute(destinationLongitude: 15)
         func parent(route: FlightRoute?, markers: [FlightMarker]) -> MapRepresentable {
@@ -29,21 +32,37 @@ struct FlightRouteTests {
             )
         }
 
-        let initial = parent(route: route, markers: [])
+        let marker = FlightMarker(id: "abc123", latitude: 22, longitude: 10, track: 90, source: .openSky)
+        let initial = parent(route: route, markers: [marker])
         let coordinator = MainMapCoordinator(parent: initial)
         coordinator.update(map, parent: initial)
         let overlay = try #require(map.overlays(in: .aboveLabels).first as? MKGeodesicPolyline)
         let renderer = try #require(coordinator.mapView(map, rendererFor: overlay) as? MKPolylineRenderer)
         #expect(renderer.polyline === overlay)
+        #expect(contains(marker.coordinate, in: overlay))
 
-        let marker = FlightMarker(id: "abc123", latitude: 20, longitude: 10, track: 90, source: .openSky)
-        coordinator.update(map, parent: parent(route: route, markers: [marker]))
+        let otherMarker = FlightMarker(id: "def456", latitude: 25, longitude: 12, track: 90, source: .openSky)
+        coordinator.update(map, parent: parent(route: route, markers: [marker, otherMarker]))
         #expect(map.overlays.count == 1)
         #expect(map.overlays.first === overlay)
 
-        coordinator.update(map, parent: parent(route: nil, markers: [marker]))
+        let movedMarker = FlightMarker(id: marker.id, latitude: 21, longitude: 12, track: 90, source: .openSky)
+        coordinator.update(map, parent: parent(route: route, markers: [movedMarker]))
+        let movedOverlay = try #require(map.overlays(in: .aboveLabels).first as? MKGeodesicPolyline)
+        #expect(map.overlays.count == 1)
+        #expect(movedOverlay !== overlay)
+        #expect(contains(movedMarker.coordinate, in: movedOverlay))
+        #expect(!contains(marker.coordinate, in: movedOverlay))
+
+        coordinator.update(map, parent: parent(route: nil, markers: [movedMarker]))
         #expect(map.overlays.isEmpty)
         #expect(map.annotations.count == 1)
+    }
+
+    private func contains(_ coordinate: CLLocationCoordinate2D, in overlay: MKGeodesicPolyline) -> Bool {
+        let point = MKMapPoint(coordinate)
+        let points = UnsafeBufferPointer(start: overlay.points(), count: overlay.pointCount)
+        return points.contains { abs($0.x - point.x) < 1 && abs($0.y - point.y) < 1 }
     }
 
     @Test func routeAppearsBeforeAircraftDetailsAndClearsWhenSelectionChanges() async throws {
