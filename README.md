@@ -84,6 +84,12 @@ xcodebuild -project Tellus.xcodeproj -scheme Tellus -destination 'generic/platfo
 - CI uses the Swift package versions recorded in `Package.resolved`. On pull requests and pushes to `main`, the GitHub Actions run summary shows app line coverage and provides a downloadable JSON report. Failed runs include the Xcode test result bundle when available. [Test workflow](.github/workflows/tests.yml)
 - The **Bundled data** job checks the country boundaries and V-Dem extract on pull requests and pushes to `main`. Run `python3 scripts/validate_bundled_data.py` locally to validate either rebuild before committing.
 
+### Deliver a feature with Codex
+
+Start a Codex chat in Tellus and ask: “Use `$tellus-feature-delivery` to take a feature from discovery through PR. Start with ideas, then ask me about the one I pick.” Once your answers settle the scope, Codex files the GitHub issue, delegates independent work, verifies the implementation, and opens the PR. You review and merge it after CI and Codex Code Review. [Tellus feature delivery skill](.agents/skills/tellus-feature-delivery/SKILL.md)
+
+If automatic review does not start, post `@codex review` as a new PR comment. To have Codex do that for you, add “If automatic review does not start, post `@codex review` on the feature PR” to your request.
+
 ### Rebuild the country boundaries
 
 Download the two inputs. [Natural Earth 1:50m country GeoJSON](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_50m_admin_0_countries.geojson) · [Country metadata JSON](https://cdn.jsdelivr.net/gh/mledoze/countries@master/countries.json)
