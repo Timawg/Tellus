@@ -49,6 +49,10 @@ struct FlightRoute: Decodable, Equatable, Sendable {
             iataCode ?? icaoCode ?? "—"
         }
 
+        var coordinate: CLLocationCoordinate2D {
+            CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        }
+
         var location: CLLocation {
             CLLocation(latitude: latitude, longitude: longitude)
         }
@@ -60,6 +64,15 @@ struct FlightRoute: Decodable, Equatable, Sendable {
     let airline: Airline?
     let origin: Airport
     let destination: Airport
+
+    var mapCoordinates: [CLLocationCoordinate2D]? {
+        guard hasValidAirportCoordinates, origin.location.distance(from: destination.location) > 0 else { return nil }
+        return [origin.coordinate, destination.coordinate]
+    }
+
+    private var hasValidAirportCoordinates: Bool {
+        CLLocationCoordinate2DIsValid(origin.coordinate) && CLLocationCoordinate2DIsValid(destination.coordinate)
+    }
 
     /// How far along the route the aircraft is, measured via its position.
     func progress(forAircraftAt position: CLLocation) -> (flown: CLLocationDistance, remaining: CLLocationDistance, fraction: Double) {
@@ -75,6 +88,7 @@ struct FlightRoute: Decodable, Equatable, Sendable {
     /// detour via the aircraft's position may be at most 25% (plus 300 km for
     /// departures, arrivals and holding patterns) longer than the direct route.
     func isPlausible(forAircraftAt position: CLLocation) -> Bool {
+        guard hasValidAirportCoordinates, CLLocationCoordinate2DIsValid(position.coordinate) else { return false }
         let direct = origin.location.distance(from: destination.location)
         let viaAircraft = origin.location.distance(from: position) + position.distance(from: destination.location)
         return viaAircraft <= direct * 1.25 + 300_000

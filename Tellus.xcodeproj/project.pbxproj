@@ -111,6 +111,7 @@
 		6A26C484991E4B6AAE26BCA4 /* RecentEventsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25B1274C2EC84685883C1EBA /* RecentEventsSection.swift */; };
 		6436DDA489D44367995878AA /* DestinationWeatherSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89DFAA4554F94B8A9D4FB26A /* DestinationWeatherSection.swift */; };
 		D2978CB3E9CA477EA0F4A3BC /* FlightMapLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92D3D2033D1B4271A130137F /* FlightMapLayer.swift */; };
+		1FC5B8FE1032413C8B3261D9 /* FlightRouteMapLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 341D71A675E64C6F99E55630 /* FlightRouteMapLayer.swift */; };
 		D8C4117AF8C74767B23F606F /* HazardLayerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6069696D72AB43BDA9E22888 /* HazardLayerModel.swift */; };
 		927052B87E054D3F80B4C6F1 /* HazardMapLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F86EC792DE974A7F8E7DD85D /* HazardMapLayer.swift */; };
 		D5296B7B6C2645BEA4448C54 /* CableLayerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C53391EAB8074DD69D9F926B /* CableLayerModel.swift */; };
@@ -120,6 +121,7 @@
 		418DC012F92A44C0B260CE62 /* CountryGuideModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20F500BECB2435BA76890FD /* CountryGuideModelTests.swift */; };
 		4F2A79D6FAFA496CA5F9887D /* TravelAdviceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6FB0DFBD03440488C8F7CA2 /* TravelAdviceTests.swift */; };
 		E9E7987E5C914FDEB3140EA9 /* FlightMarkerSamplingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B1DE992B9847F8AF4F444B /* FlightMarkerSamplingTests.swift */; };
+		41534A0A0D6247D1812809C7 /* FlightRouteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BF12CF5A964C7BB5412430 /* FlightRouteTests.swift */; };
 		618040CF5E7A459B99FD08A1 /* HazardLayerModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71D548E861E7417889CF2A3C /* HazardLayerModelTests.swift */; };
 		BC96BD6E8E17498E93B0DD52 /* CableLayerModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C96CE77261E44CD931FA8C6 /* CableLayerModelTests.swift */; };
 		4C0AF8A782D84BFD89E9CB23 /* TestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC204AAE6C134A8CA7F60560 /* TestFixtures.swift */; };
@@ -252,6 +254,7 @@
 		25B1274C2EC84685883C1EBA /* RecentEventsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentEventsSection.swift; sourceTree = "<group>"; };
 		89DFAA4554F94B8A9D4FB26A /* DestinationWeatherSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationWeatherSection.swift; sourceTree = "<group>"; };
 		92D3D2033D1B4271A130137F /* FlightMapLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightMapLayer.swift; sourceTree = "<group>"; };
+		341D71A675E64C6F99E55630 /* FlightRouteMapLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightRouteMapLayer.swift; sourceTree = "<group>"; };
 		6069696D72AB43BDA9E22888 /* HazardLayerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HazardLayerModel.swift; sourceTree = "<group>"; };
 		F86EC792DE974A7F8E7DD85D /* HazardMapLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HazardMapLayer.swift; sourceTree = "<group>"; };
 		C53391EAB8074DD69D9F926B /* CableLayerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CableLayerModel.swift; sourceTree = "<group>"; };
@@ -261,6 +264,7 @@
 		F20F500BECB2435BA76890FD /* CountryGuideModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryGuideModelTests.swift; sourceTree = "<group>"; };
 		C6FB0DFBD03440488C8F7CA2 /* TravelAdviceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelAdviceTests.swift; sourceTree = "<group>"; };
 		31B1DE992B9847F8AF4F444B /* FlightMarkerSamplingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightMarkerSamplingTests.swift; sourceTree = "<group>"; };
+		55BF12CF5A964C7BB5412430 /* FlightRouteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightRouteTests.swift; sourceTree = "<group>"; };
 		71D548E861E7417889CF2A3C /* HazardLayerModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HazardLayerModelTests.swift; sourceTree = "<group>"; };
 		6C96CE77261E44CD931FA8C6 /* CableLayerModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CableLayerModelTests.swift; sourceTree = "<group>"; };
 		DC204AAE6C134A8CA7F60560 /* TestFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFixtures.swift; sourceTree = "<group>"; };
@@ -510,6 +514,7 @@
 				A7E1F0D32EB9000100C0FFEE /* LiveFlight.swift */,
 				B411570F0100000000000002 /* LiveFlightsModel.swift */,
 				92D3D2033D1B4271A130137F /* FlightMapLayer.swift */,
+				341D71A675E64C6F99E55630 /* FlightRouteMapLayer.swift */,
 			);
 			path = Flights;
 			sourceTree = "<group>";
@@ -712,6 +717,7 @@
 			isa = PBXGroup;
 			children = (
 				31B1DE992B9847F8AF4F444B /* FlightMarkerSamplingTests.swift */,
+				55BF12CF5A964C7BB5412430 /* FlightRouteTests.swift */,
 			);
 			path = Flights;
 			sourceTree = "<group>";
@@ -990,6 +996,7 @@
 				6A26C484991E4B6AAE26BCA4 /* RecentEventsSection.swift in Sources */,
 				6436DDA489D44367995878AA /* DestinationWeatherSection.swift in Sources */,
 				D2978CB3E9CA477EA0F4A3BC /* FlightMapLayer.swift in Sources */,
+				1FC5B8FE1032413C8B3261D9 /* FlightRouteMapLayer.swift in Sources */,
 				D8C4117AF8C74767B23F606F /* HazardLayerModel.swift in Sources */,
 				927052B87E054D3F80B4C6F1 /* HazardMapLayer.swift in Sources */,
 				D5296B7B6C2645BEA4448C54 /* CableLayerModel.swift in Sources */,
@@ -1011,6 +1018,7 @@
 				418DC012F92A44C0B260CE62 /* CountryGuideModelTests.swift in Sources */,
 				4F2A79D6FAFA496CA5F9887D /* TravelAdviceTests.swift in Sources */,
 				E9E7987E5C914FDEB3140EA9 /* FlightMarkerSamplingTests.swift in Sources */,
+				41534A0A0D6247D1812809C7 /* FlightRouteTests.swift in Sources */,
 				618040CF5E7A459B99FD08A1 /* HazardLayerModelTests.swift in Sources */,
 				BC96BD6E8E17498E93B0DD52 /* CableLayerModelTests.swift in Sources */,
 				4C0AF8A782D84BFD89E9CB23 /* TestFixtures.swift in Sources */,

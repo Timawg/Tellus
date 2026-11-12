@@ -35,7 +35,7 @@ Open **Map layers** to enable or disable each layer. Tellus remembers the settin
 
 | Layer | What it shows | Default |
 | --- | --- | --- |
-| **Live flights** | Aircraft in the visible map area, including military traffic. Tap an aircraft for available flight telemetry, registration, aircraft photo, and route details. | On |
+| **Live flights** | Aircraft in the visible map area, including military traffic. Tap an aircraft for available flight telemetry, registration, and photos, plus an animated origin-to-destination line when its scheduled route is known. | On |
 | **Natural hazards** | Earthquakes, tropical cyclones and their tracks, floods, wildfires, droughts, and volcanic eruptions. Tap a marker for details. | On |
 | **Undersea cables** | Submarine cable routes and landing points. Tap a cable to see its details and source link. | Off |
 | **Power grid** | Mapped power lines, substations, and power plants. Zoom in and tap a feature to see available details and open its OpenStreetMap record. | Off |

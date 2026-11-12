@@ -13,6 +13,7 @@ struct MapRepresentable: UIViewRepresentable {
     @Binding var region: MKCoordinateRegion
     @Binding var selectedFlightID: String?
     let flightMarkers: FlightMarkerSnapshot
+    var flightRoute: FlightRoute?
     var showsEarthAtNight = false
     var nightLightsDate: String?
     var viirsImageryDate: String?

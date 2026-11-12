@@ -8,6 +8,7 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
     private var outlineOverlay: CountryOutlineOverlay?
     private let backdrop = MapBackdropLayers()
     private let flights = FlightMapLayer()
+    private let flightRoute = FlightRouteMapLayer()
     private let cables = CableMapLayer()
     private let hazards = HazardMapLayer()
 
@@ -34,6 +35,7 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
         cables.update(on: mapView, cables: parent.cables, landingPoints: parent.landingPoints, selectedID: parent.selectedCableID)
         hazards.update(on: mapView, hazards: parent.hazards, tracks: parent.cycloneTracks)
         updateOutline(on: mapView, border: parent.outline)
+        flightRoute.update(on: mapView, route: parent.flightRoute)
 
         if !MapRegionCalculator.matches(lastKnownRegion ?? mapView.region, parent.region) {
             lastKnownRegion = parent.region
@@ -43,10 +45,12 @@ final class MainMapCoordinator: NSObject, MKMapViewDelegate, UIGestureRecognizer
 
     func dismantle(_ mapView: MKMapView) {
         mapView.delegate = nil
+        flightRoute.update(on: mapView, route: nil)
         backdrop.stopEarthAtNight(on: mapView)
     }
 
     func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+        if let renderer = flightRoute.renderer(for: overlay) { return renderer }
         if let renderer = backdrop.renderer(for: overlay) { return renderer }
         if let track = overlay as? CycloneTrackOverlay {
             return track.makeRenderer()
