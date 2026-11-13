@@ -97,6 +97,12 @@ class MainMapViewModel @Inject constructor(
         }
     }
 
+    /** Countries sharing a border with [country], in list order. */
+    fun neighbours(of: Country): List<Country> {
+        val codes = of.borders.orEmpty().toSet()
+        return _state.value.countries.filter { it.cca3 in codes }
+    }
+
     fun dismissLoadError() {
         _state.update { it.copy(loadFailed = false) }
     }

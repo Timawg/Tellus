@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -55,15 +56,23 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import com.pathos.tellus.R
 import com.pathos.tellus.countries.CountryBorder
 import com.pathos.tellus.countries.CountrySelectionBar
+import com.pathos.tellus.guide.CountryGuideSheet
+import com.pathos.tellus.guide.CountryGuideViewModel
+import com.pathos.tellus.guide.CountrySummaryCard
+import com.pathos.tellus.guide.GuideTopic
 
 /** The world map with country selection. Layers are added on top of this. */
 @Composable
 fun MainMapScreen(
     modifier: Modifier = Modifier,
     viewModel: MainMapViewModel = hiltViewModel(),
+    guideViewModel: CountryGuideViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val guideState by guideViewModel.state.collectAsStateWithLifecycle()
     var isPickingCountry by rememberSaveable { mutableStateOf(false) }
+    var guideTopic by rememberSaveable { mutableStateOf<GuideTopic?>(null) }
+    LaunchedEffect(state.current) { guideViewModel.setDestination(state.current) }
     val haptics = LocalHapticFeedback.current
     // Zoomed out to the whole world, like iOS's `MKCoordinateRegion(.world)`.
     val cameraPositionState = rememberCameraPositionState {
@@ -74,7 +83,11 @@ fun MainMapScreen(
     BoxWithConstraints(modifier.fillMaxSize()) {
         val aspectRatio = (maxWidth / maxHeight).toDouble()
         val heightDp = maxHeight.value
-        LaunchedEffect(state.cameraRequest) {
+        // A camera move before the map has loaded is dropped, which lost the
+        // first country's zoom at a cold start, so wait for the map.
+        var isMapLoaded by remember { mutableStateOf(false) }
+        LaunchedEffect(state.cameraRequest, isMapLoaded) {
+            if (!isMapLoaded) return@LaunchedEffect
             val fit = state.cameraRequest?.target?.fit(aspectRatio) ?: return@LaunchedEffect
             cameraPositionState.animateTo(fit, heightDp)
         }
@@ -86,6 +99,7 @@ fun MainMapScreen(
             cameraPositionState = cameraPositionState,
             mapColorScheme = if (isSystemInDarkTheme()) ComposeMapColorScheme.DARK else ComposeMapColorScheme.LIGHT,
             uiSettings = remember { MapUiSettings(zoomControlsEnabled = false, mapToolbarEnabled = false) },
+            onMapLoaded = { isMapLoaded = true },
             // Marker taps don't reach here, so they never change the country.
             onMapClick = { latLng ->
                 viewModel.selectCountryAt(Coordinate(latLng.latitude, latLng.longitude)) {
@@ -94,6 +108,18 @@ fun MainMapScreen(
             },
         ) {
             state.selectedBorder?.let { CountryOutline(it) }
+        }
+
+        state.current?.let { country ->
+            CountrySummaryCard(
+                country = country,
+                weather = guideState.weather,
+                exchangeRate = guideState.exchangeRates.firstOrNull(),
+                onOpenGuide = { guideTopic = GuideTopic.OVERVIEW },
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding(),
+            )
         }
 
         // Dims the map while the country list is open; tapping it closes the list.
@@ -141,6 +167,20 @@ fun MainMapScreen(
                 },
             )
         }
+    }
+
+    val guideCountry = state.current
+    val topic = guideTopic
+    if (guideCountry != null && topic != null) {
+        CountryGuideSheet(
+            country = guideCountry,
+            initialTopic = topic,
+            state = guideState,
+            neighbours = viewModel.neighbours(guideCountry),
+            viewModel = guideViewModel,
+            onSelectCountry = viewModel::select,
+            onDismiss = { guideTopic = null },
+        )
     }
 
     if (state.loadFailed) {

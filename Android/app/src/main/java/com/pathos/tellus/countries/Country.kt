@@ -52,6 +52,28 @@ data class Country(
     val flagUrl: String?
         get() = flags?.png ?: cca2?.let { "https://flagcdn.com/w320/${it.lowercase()}.png" }
 
+    /** "Swedish krona (kr)", one per currency. */
+    val currencyDescriptions: List<String>
+        get() = currencies.orEmpty().toSortedMap().map { (code, currency) ->
+            val name = currency.name ?: code
+            val symbol = currency.symbol
+            if (symbol != null && symbol != code) "$name ($symbol)" else "$name ($code)"
+        }
+
+    val languageNames: List<String>
+        get() = languages.orEmpty().values.sorted()
+
+    /**
+     * International dialling code, e.g. "+46". Countries sharing a root with
+     * many suffixes (like +1 for North America) show just the root.
+     */
+    val callingCode: String?
+        get() {
+            val root = idd?.root?.takeIf { it.isNotEmpty() } ?: return null
+            val suffixes = idd.suffixes
+            return if (suffixes?.size == 1) root + suffixes[0] else root
+        }
+
     @Serializable
     data class Name(val common: String? = null, val official: String? = null)
 

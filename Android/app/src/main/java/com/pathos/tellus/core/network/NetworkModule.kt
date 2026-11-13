@@ -11,6 +11,7 @@ import kotlinx.serialization.json.Json
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import java.io.File
+import java.time.Duration
 import javax.inject.Singleton
 
 @Module
@@ -23,6 +24,7 @@ abstract class NetworkModule {
     companion object {
         // Matches the iOS URLCache disk capacity.
         private const val CACHE_SIZE_BYTES = 100L * 1024 * 1024
+        private val IOS_TIMEOUT = Duration.ofSeconds(60)
 
         // One client for the whole app, so every request shares the same
         // connection pool and on-disk cache.
@@ -31,6 +33,12 @@ abstract class NetworkModule {
         fun provideOkHttpClient(@ApplicationContext context: Context): OkHttpClient =
             OkHttpClient.Builder()
                 .cache(Cache(File(context.cacheDir, "http"), CACHE_SIZE_BYTES))
+                // URLSession's default request timeout on iOS. OkHttp's 10 s
+                // gave up on slow providers (the World Bank API can take 30 s)
+                // that iOS still loads.
+                .connectTimeout(IOS_TIMEOUT)
+                .readTimeout(IOS_TIMEOUT)
+                .writeTimeout(IOS_TIMEOUT)
                 .build()
 
         // Provider payloads carry fields we don't model, so ignore them rather than fail.
