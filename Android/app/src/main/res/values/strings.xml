@@ -1,4 +1,14 @@
 <resources>
     <string name="app_name">Tellus</string>
     <string name="map_description">World map</string>
+    <string name="random_country">Random country</string>
+    <string name="search_countries">Search countries</string>
+    <string name="clear_search">Clear search</string>
+    <string name="no_matches">No matches</string>
+    <string name="show_country_list">Show country list</string>
+    <string name="close_country_list">Close country list</string>
+    <string name="countries_load_failed_title">Unable to Load Countries</string>
+    <string name="countries_load_failed_message">Could not load countries. Please check your connection and try again.</string>
+    <string name="retry">Retry</string>
+    <string name="ok">OK</string>
 </resources>
