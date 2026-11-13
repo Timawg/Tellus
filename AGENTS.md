@@ -37,3 +37,17 @@ Tellus keeps its platform code in `iOS/` and `Android/`. The iOS app uses SwiftU
 - Run the tests relevant to the change. Use **Product → Test** or run the `Tellus` scheme with `xcodebuild` and an available simulator. For unit-only work, use `-only-testing:TellusTests`. Run the full scheme for changes that affect UI automation or the CI test workflow. Discover simulator IDs with `xcodebuild -project iOS/Tellus.xcodeproj -scheme Tellus -showdestinations`, then use `-destination 'platform=iOS Simulator,id=<UUID>'`.
 - When changing CI, keep the hosted test command reproducible locally. Preserve simulator setup diagnostics and retain an `.xcresult` bundle when a test run fails so failures can be inspected after the runner exits.
 - Check `git diff --check`, review target and resource changes, and report what you verified and any checks that could not run. Keep unrelated workspace edits out of the change.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues on `Timawg/Tellus` via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Uses the default triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
