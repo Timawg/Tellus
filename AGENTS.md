@@ -1,6 +1,6 @@
 # Tellus development instructions
 
-Tellus keeps its platform code in `iOS/` and `Android/`. The iOS app uses SwiftUI with a MapKit bridge. Build the `Tellus` scheme in `iOS/Tellus.xcodeproj`. The app supports iOS and iPadOS 17.5 and later. Local development uses Xcode 26 or later, CI uses the `xcode-27` runner, and the project currently builds in Swift 5 language mode. Treat changes to language mode, default actor isolation, deployment targets, and CI toolchains as separate migrations. Apply the Swift and Xcode guidance below to the iOS app.
+Tellus keeps its platform code in `iOS/` and `Android/`. The iOS app uses SwiftUI with a MapKit bridge. Build the `Tellus` scheme in `iOS/Tellus.xcodeproj`. The app supports iOS and iPadOS 17.5 and later. Local development uses Xcode 26 or later, CI uses the `xcode-27` runner, and the project currently builds in Swift 5 language mode. Treat changes to language mode, default actor isolation, deployment targets, and CI toolchains as separate migrations. Apply the Swift and Xcode guidance below to the iOS app, and the Android section to the Android app.
 
 ## Design and architecture
 
@@ -37,6 +37,21 @@ Tellus keeps its platform code in `iOS/` and `Android/`. The iOS app uses SwiftU
 - Run the tests relevant to the change. Use **Product → Test** or run the `Tellus` scheme with `xcodebuild` and an available simulator. For unit-only work, use `-only-testing:TellusTests`. Run the full scheme for changes that affect UI automation or the CI test workflow. Discover simulator IDs with `xcodebuild -project iOS/Tellus.xcodeproj -scheme Tellus -showdestinations`, then use `-destination 'platform=iOS Simulator,id=<UUID>'`.
 - When changing CI, keep the hosted test command reproducible locally. Preserve simulator setup diagnostics and retain an `.xcresult` bundle when a test run fails so failures can be inspected after the runner exits.
 - Check `git diff --check`, review target and resource changes, and report what you verified and any checks that could not run. Keep unrelated workspace edits out of the change.
+
+## Android
+
+The Android app in `Android/` is a native port of the iOS app, tracked in GitHub issue #5. Apply this section to it; the Swift and Xcode guidance above applies only to `iOS/`, except where this section points back to it.
+
+- Use Kotlin, Jetpack Compose and Material 3. The app has one `:app` module with package `com.pathos.tellus`, split into feature packages (`map`, `countries`, `guide`, `flights`, `hazards`) plus `core/network` and `core/preferences`. It supports phones and tablets on `minSdk 26`.
+- Use Hilt (with KSP) for dependency injection, `ViewModel` with `StateFlow` for screen state, coroutines for asynchronous work, OkHttp through `NetworkService` for HTTP, kotlinx.serialization for decoding, and `maps-compose` on the Google Maps SDK. Declare dependency versions in `gradle/libs.versions.toml`.
+- Treat the iOS Swift code as the spec for each feature: port polling rates, backoff, cache lifetimes, payload validation and handling of missing fields as they are. Note any intentional difference in a code comment.
+- Run polling only while the app is on screen and its layer is on, and cancel it when its owner goes away.
+- Persist settings through `MapPreferencesStore`, keeping the iOS key names.
+- Gradle copies the bundled datasets from their `iOS/` paths into the app's assets at build time. Don't commit copies under `Android/`.
+- Keep the Google Maps key in the git-ignored `Android/local.properties` as `MAPS_API_KEY`. `local.defaults.properties` holds a placeholder so the project builds without a key.
+- Follow the system theme, support font scaling, and give map controls and legends TalkBack labels.
+- Write JVM unit tests with JUnit 4 and `kotlinx-coroutines-test` for services, view models and stores. Use fixtures and injected dependencies instead of live network access.
+- Verify with `./gradlew test assembleDebug` from `Android/`, using JDK 17 or later. CI runs the same command.
 
 ## Agent skills
 

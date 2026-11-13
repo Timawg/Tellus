@@ -154,3 +154,36 @@ jobs:
           name: TellusTests
           path: ${{ runner.temp }}/TellusTests.xcresult
           if-no-files-found: ignore
+
+  android-tests:
+    name: Android tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@v6.2.0
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v4.0.4
+
+      # Also validates the checked-in Gradle wrapper.
+      - uses: gradle/actions/setup-gradle@v6.4.1
+
+      # Builds with the placeholder Maps key from local.defaults.properties.
+      - name: Run unit tests and build the debug APK
+        working-directory: Android
+        run: ./gradlew test assembleDebug --console=plain
+
+      - name: Upload failed test reports
+        if: failure()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: AndroidTestReports
+          path: Android/app/build/reports/tests
+          if-no-files-found: ignore

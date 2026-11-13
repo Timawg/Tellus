@@ -1,0 +1,4 @@
+<resources>
+    <!-- Window theme only; Compose draws the UI with TellusTheme. -->
+    <style name="Theme.Tellus" parent="android:Theme.Material.NoActionBar" />
+</resources>

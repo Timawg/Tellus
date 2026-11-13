@@ -77,7 +77,7 @@ xcodebuild -project iOS/Tellus.xcodeproj -scheme Tellus -destination 'generic/pl
 
 ## Project layout
 
-- [iOS](iOS) contains the Xcode project, Swift app, tests, and lint configuration. [Android](Android) is reserved for the Android app. GitHub Actions, repository documentation, and data tools live at the repository root.
+- [iOS](iOS) contains the Xcode project, Swift app, tests, and lint configuration. [Android](Android) contains the Android app, a native port in progress. GitHub Actions, repository documentation, and data tools live at the repository root.
 - Each feature keeps its views, state, services, models, and resources together. The main map brings the country picker, country guide, and map layers together. [Features](iOS/Tellus/Features) · [Map](iOS/Tellus/Features/Map) · [Country guide](iOS/Tellus/Features/CountryGuide) · [Flights](iOS/Tellus/Features/Flights)
 - The app entry point wires up dependencies. Shared networking and UI code lives under `Shared`. [TellusApp.swift](iOS/Tellus/TellusApp.swift) · [Shared](iOS/Tellus/Shared)
 - Run **Product → Test** on a simulator. Swift Testing unit tests are grouped by feature, and UI automation and launch performance tests use XCTest. [Unit tests](iOS/TellusTests/Features) · [UI tests](iOS/TellusUITests)
@@ -113,7 +113,7 @@ python3 scripts/build_vdem_democracy.py V-Dem-CY-Core-v16_csv.zip
 
 | Data | Provider |
 | --- | --- |
-| Basemap | Apple MapKit |
+| Basemap | Apple MapKit (iOS), Google Maps SDK for Android (Android) |
 | Country metadata, boundaries, and flags | [mledoze/countries](https://github.com/mledoze/countries), [Natural Earth](https://www.naturalearthdata.com/), and [Flagcdn](https://flagcdn.com/) |
 | Country profile figures | [World Bank World Development Indicators](https://datatopics.worldbank.org/world-development-indicators/) |
 | Electoral Democracy Index | Coppedge et al. (2026), [V-Dem Country-Year Dataset v16](https://doi.org/10.23696/vdemds26), Varieties of Democracy Project. The bundled extract selects one indicator and ten years under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). |
