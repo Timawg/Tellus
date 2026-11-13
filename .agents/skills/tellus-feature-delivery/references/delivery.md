@@ -24,7 +24,7 @@ Spawn subagents for useful independent work when running the requested feature w
 
 - **Research** checks feasibility and cites primary sources. For a new or changed provider, use the requirements in `AGENTS.md` and the current `DATA-LICENSE-AUDIT.md` to identify decisions that affect the feature.
 - **Prototype** verifies an uncertain interaction or technical approach with a small fixture, spike, or simulator run. Record what it proves and what still needs verification.
-- **Implementation** delivers an owned slice through the app's normal entry point. Give concurrent writers separate worktrees or disjoint files. Assign a single writer to shared integration files such as `Tellus.xcodeproj/project.pbxproj`.
+- **Implementation** delivers an owned slice through the app's normal entry point. Give concurrent writers separate worktrees or disjoint files. Assign a single writer to shared integration files such as `iOS/Tellus.xcodeproj/project.pbxproj`.
 - **Verification** derives checks from acceptance criteria and reports commands, outcomes, and gaps. Coordinate simulator access when agents would contend for the same device or build directory.
 
 Research and unrelated exploration can overlap. When a prototype or provider result determines the implementation, collect it before starting dependent code. The primary agent reviews and integrates each result, resolves conflicts, and owns GitHub writes. If delegation is unavailable, keep moving on the work the primary agent can do and report the constraint.

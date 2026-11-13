@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Builds Tellus/Features/Countries/Resources/country-borders.geojson, the country outlines drawn
+"""Builds iOS/Tellus/Features/Countries/Resources/country-borders.geojson, the country outlines drawn
 when a country is selected.
 
 Source: Natural Earth 1:50m Admin 0 - Countries (public domain),
@@ -17,6 +17,10 @@ country zoom and keeps the file small.
 
 import json
 import sys
+from pathlib import Path
+
+
+OUTPUT = Path(__file__).resolve().parents[1] / "iOS/Tellus/Features/Countries/Resources/country-borders.geojson"
 
 # Natural Earth codes that differ from the app's country list.
 CODE_OVERRIDES = {
@@ -120,7 +124,8 @@ def main(natural_earth_path, countries_path):
     }
     missing = sorted(set(countries) - set(by_code))
     print(f"{len(by_code)} countries with borders; none for {', '.join(missing)}", file=sys.stderr)
-    json.dump(output, open("Tellus/Features/Countries/Resources/country-borders.geojson", "w"), separators=(",", ":"))
+    with OUTPUT.open("w", encoding="utf-8") as destination:
+        json.dump(output, destination, separators=(",", ":"))
 
 
 if __name__ == "__main__":

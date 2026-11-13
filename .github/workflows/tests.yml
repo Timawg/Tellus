@@ -34,6 +34,7 @@ jobs:
           persist-credentials: false
 
       - name: Run SwiftLint
+        working-directory: iOS
         shell: bash
         run: |
           lint_dir="$RUNNER_TEMP/swiftlint"
@@ -77,7 +78,7 @@ jobs:
           xcodebuild -version
           simulator_id=
           for attempt in 1 2 3; do
-            if destinations=$(xcodebuild -project Tellus.xcodeproj -scheme Tellus -disableAutomaticPackageResolution -showdestinations 2>&1); then
+            if destinations=$(xcodebuild -project iOS/Tellus.xcodeproj -scheme Tellus -disableAutomaticPackageResolution -showdestinations 2>&1); then
               simulator_id=$(find_iphone "$destinations")
               if [[ -n "$simulator_id" ]]; then
                 break
@@ -105,7 +106,7 @@ jobs:
           SIMULATOR_ID: ${{ steps.simulator.outputs.id }}
         run: >
           xcodebuild
-          -project Tellus.xcodeproj
+          -project iOS/Tellus.xcodeproj
           -scheme Tellus
           -destination "platform=iOS Simulator,id=$SIMULATOR_ID"
           -disableAutomaticPackageResolution

@@ -108,8 +108,8 @@ def validate_democracy(data):
 
 def main():
     datasets = (
-        ("Tellus/Features/Countries/Resources/country-borders.geojson", validate_boundaries),
-        ("Tellus/Features/CountryGuide/DemocracySafety/vdem-democracy.json", validate_democracy),
+        ("iOS/Tellus/Features/Countries/Resources/country-borders.geojson", validate_boundaries),
+        ("iOS/Tellus/Features/CountryGuide/DemocracySafety/vdem-democracy.json", validate_democracy),
     )
     for path, validate in datasets:
         try:

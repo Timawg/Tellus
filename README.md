@@ -1,10 +1,10 @@
 # Tellus
 
-<img align="right" src="Tellus/Assets.xcassets/AppIcon.appiconset/TellusIcon.png" alt="Tellus app icon" width="88" height="88">
+<img align="right" src="iOS/Tellus/Assets.xcassets/AppIcon.appiconset/TellusIcon.png" alt="Tellus app icon" width="88" height="88">
 
 Tellus is a world map and travel guide for iPhone and iPad, built with SwiftUI and Apple MapKit. Explore countries, follow aircraft, trace submarine cables, and see which side of Earth is in darkness.
 
-**Quick start.** Install Xcode 26 or later with the iOS SDK. Open `Tellus.xcodeproj`, select the **Tellus** scheme and an iPhone or iPad simulator, then choose **Product → Run**. Tellus supports iOS and iPadOS 17.5 or later.
+**Quick start.** Install Xcode 26 or later with the iOS SDK. Open `iOS/Tellus.xcodeproj`, select the **Tellus** scheme and an iPhone or iPad simulator, then choose **Product → Run**. Tellus supports iOS and iPadOS 17.5 or later.
 
 <p>
   <img src="docs/screenshots/map.png" alt="Tellus map with Sweden selected" width="250">
@@ -72,15 +72,16 @@ Tellus fetches the latest OVATION forecast from NOAA when the layer is enabled a
 To compile from the repository root without signing:
 
 ```sh
-xcodebuild -project Tellus.xcodeproj -scheme Tellus -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build
+xcodebuild -project iOS/Tellus.xcodeproj -scheme Tellus -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build
 ```
 
 ## Project layout
 
-- Each feature keeps its views, state, services, models, and resources together. The main map brings the country picker, country guide, and map layers together. [Features](Tellus/Features) · [Map](Tellus/Features/Map) · [Country guide](Tellus/Features/CountryGuide) · [Flights](Tellus/Features/Flights)
-- The app entry point wires up dependencies. Shared networking and UI code lives under `Shared`. [TellusApp.swift](Tellus/TellusApp.swift) · [Shared](Tellus/Shared)
-- Run **Product → Test** on a simulator. Swift Testing unit tests are grouped by feature, and UI automation and launch performance tests use XCTest. [Unit tests](TellusTests/Features) · [UI tests](TellusUITests)
-- CI runs SwiftLint on the app and test targets and fails on new violations. To run the same check locally, install SwiftLint 0.65.1 and run `swiftlint lint --strict` from the repository root. The checked-in baseline records existing violations. [SwiftLint release](https://github.com/realm/SwiftLint/releases/tag/0.65.1) · [Lint configuration](.swiftlint.yml)
+- [iOS](iOS) contains the Xcode project, Swift app, tests, and lint configuration. [Android](Android) is reserved for the Android app. GitHub Actions, repository documentation, and data tools live at the repository root.
+- Each feature keeps its views, state, services, models, and resources together. The main map brings the country picker, country guide, and map layers together. [Features](iOS/Tellus/Features) · [Map](iOS/Tellus/Features/Map) · [Country guide](iOS/Tellus/Features/CountryGuide) · [Flights](iOS/Tellus/Features/Flights)
+- The app entry point wires up dependencies. Shared networking and UI code lives under `Shared`. [TellusApp.swift](iOS/Tellus/TellusApp.swift) · [Shared](iOS/Tellus/Shared)
+- Run **Product → Test** on a simulator. Swift Testing unit tests are grouped by feature, and UI automation and launch performance tests use XCTest. [Unit tests](iOS/TellusTests/Features) · [UI tests](iOS/TellusUITests)
+- CI runs SwiftLint on the app and test targets and fails on new violations. To run the same check locally, install SwiftLint 0.65.1 and run `swiftlint lint --strict` from `iOS/`. The checked-in baseline records existing violations. [SwiftLint release](https://github.com/realm/SwiftLint/releases/tag/0.65.1) · [Lint configuration](iOS/.swiftlint.yml)
 - CI uses the Swift package versions recorded in `Package.resolved`. On pull requests and pushes to `main`, the GitHub Actions run summary shows app line coverage and provides a downloadable JSON report. Failed runs include the Xcode test result bundle when available. [Test workflow](.github/workflows/tests.yml)
 - The **Bundled data** job checks the country boundaries and V-Dem extract on pull requests and pushes to `main`. Run `python3 scripts/validate_bundled_data.py` locally to validate either rebuild before committing.
 
@@ -94,7 +95,7 @@ If automatic review does not start, post `@codex review` as a new PR comment. To
 
 Download the two inputs. [Natural Earth 1:50m country GeoJSON](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_50m_admin_0_countries.geojson) · [Country metadata JSON](https://cdn.jsdelivr.net/gh/mledoze/countries@master/countries.json)
 
-Run the script from the repository root with Python 3. It matches boundaries to the app's three-letter country codes and regenerates the bundled resource. [country-borders.geojson](Tellus/Features/Countries/Resources/country-borders.geojson)
+Run the script from the repository root with Python 3. It matches boundaries to the app's three-letter country codes and regenerates the bundled resource. [country-borders.geojson](iOS/Tellus/Features/Countries/Resources/country-borders.geojson)
 
 ```sh
 python3 scripts/build_country_borders.py ne_50m_admin_0_countries.geojson countries.json
@@ -102,7 +103,7 @@ python3 scripts/build_country_borders.py ne_50m_admin_0_countries.geojson countr
 
 ### Update the democracy dataset
 
-Download a V-Dem Country-Year Core CSV archive and run the command below from the repository root. The script keeps the Electoral Democracy Index and the ten most recent years in the release. The bundled extract uses version 16 and is distributed under CC BY-SA 4.0. [V-Dem archive](https://v-dem.net/data/dataset-archive/) · [Bundled data](Tellus/Features/CountryGuide/DemocracySafety/vdem-democracy.json) · [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
+Download a V-Dem Country-Year Core CSV archive and run the command below from the repository root. The script keeps the Electoral Democracy Index and the ten most recent years in the release. The bundled extract uses version 16 and is distributed under CC BY-SA 4.0. [V-Dem archive](https://v-dem.net/data/dataset-archive/) · [Bundled data](iOS/Tellus/Features/CountryGuide/DemocracySafety/vdem-democracy.json) · [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 
 ```sh
 python3 scripts/build_vdem_democracy.py V-Dem-CY-Core-v16_csv.zip

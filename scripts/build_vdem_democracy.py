@@ -12,7 +12,7 @@ from pathlib import Path
 
 OUTPUT = (
     Path(__file__).resolve().parents[1]
-    / "Tellus/Features/CountryGuide/DemocracySafety/vdem-democracy.json"
+    / "iOS/Tellus/Features/CountryGuide/DemocracySafety/vdem-democracy.json"
 )
 
 
