@@ -1,0 +1,13 @@
+<!-- A seismograph trace, standing in for iOS's waveform.path.ecg earthquake symbol. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M2,12H6.5L8.5,7L11,18L13.5,4L15.5,15L17,12H22"
+        android:strokeWidth="2.2"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

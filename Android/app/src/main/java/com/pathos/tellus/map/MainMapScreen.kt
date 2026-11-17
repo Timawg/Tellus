@@ -85,6 +85,9 @@ import com.pathos.tellus.guide.GuideTopic
 import com.pathos.tellus.guide.passport.NationalityPicker
 import com.pathos.tellus.guide.rememberDayFormatter
 import com.pathos.tellus.guide.weather.rememberMinuteTicker
+import com.pathos.tellus.hazards.HazardDetailsSheet
+import com.pathos.tellus.hazards.HazardLayerViewModel
+import com.pathos.tellus.hazards.HazardsLayer
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.ZoneId
@@ -98,14 +101,20 @@ fun MainMapScreen(
     viewModel: MainMapViewModel = hiltViewModel(),
     guideViewModel: CountryGuideViewModel = hiltViewModel(),
     flightsViewModel: LiveFlightsViewModel = hiltViewModel(),
+    hazardsViewModel: HazardLayerViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val guideState by guideViewModel.state.collectAsStateWithLifecycle()
     val flightsState by flightsViewModel.state.collectAsStateWithLifecycle()
-    // Flights poll only while the map is on screen.
-    LifecycleStartEffect(flightsViewModel) {
+    val hazardsState by hazardsViewModel.state.collectAsStateWithLifecycle()
+    // Flights and hazards refresh only while the map is on screen.
+    LifecycleStartEffect(flightsViewModel, hazardsViewModel) {
         flightsViewModel.setMapActive(true)
-        onStopOrDispose { flightsViewModel.setMapActive(false) }
+        hazardsViewModel.setMapActive(true)
+        onStopOrDispose {
+            flightsViewModel.setMapActive(false)
+            hazardsViewModel.setMapActive(false)
+        }
     }
     var isPickingCountry by rememberSaveable { mutableStateOf(false) }
     var guideTopic by rememberSaveable { mutableStateOf<GuideTopic?>(null) }
@@ -159,6 +168,9 @@ fun MainMapScreen(
             },
         ) {
             state.selectedBorder?.let { CountryOutline(it) }
+            if (hazardsState.isEnabled) {
+                HazardsLayer(hazardsState.hazards, hazardsState.tracks, onSelect = hazardsViewModel::select)
+            }
             if (flightsState.showsFlights) {
                 FlightsLayer(
                     markers = flightsState.markers,
@@ -224,6 +236,8 @@ fun MainMapScreen(
                         LayersButton(
                             showsFlights = flightsState.showsFlights,
                             onShowsFlightsChange = flightsViewModel::setShowsFlights,
+                            showsHazards = hazardsState.isEnabled,
+                            onShowsHazardsChange = hazardsViewModel::setEnabled,
                         )
                         PassportButton(passport = guideState.passport, onClick = { isPickingPassport = true })
                     }
@@ -254,6 +268,10 @@ fun MainMapScreen(
             onSelectCountry = viewModel::select,
             onDismiss = { guideTopic = null },
         )
+    }
+
+    hazardsState.selected?.let { hazard ->
+        HazardDetailsSheet(hazard, onDismiss = { hazardsViewModel.select(null) })
     }
 
     flightsState.selection?.let { selection ->
@@ -293,22 +311,33 @@ fun MainMapScreen(
 
 /** Switches map layers on and off, like iOS's layers menu. */
 @Composable
-private fun LayersButton(showsFlights: Boolean, onShowsFlightsChange: (Boolean) -> Unit) {
+private fun LayersButton(
+    showsFlights: Boolean,
+    onShowsFlightsChange: (Boolean) -> Unit,
+    showsHazards: Boolean,
+    onShowsHazardsChange: (Boolean) -> Unit,
+) {
     var expanded by remember { mutableStateOf(false) }
     Box {
         FilledTonalIconButton(onClick = { expanded = true }, modifier = Modifier.size(56.dp)) {
             Icon(painterResource(R.drawable.ic_layers), contentDescription = stringResource(R.string.map_layers))
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.live_flights)) },
-                leadingIcon = { Text("✈️") },
-                trailingIcon = { Checkbox(checked = showsFlights, onCheckedChange = null) },
-                onClick = { onShowsFlightsChange(!showsFlights) },
-                modifier = Modifier.semantics { stateDescription = if (showsFlights) "On" else "Off" },
-            )
+            LayerItem(stringResource(R.string.live_flights), "✈️", showsFlights, onShowsFlightsChange)
+            LayerItem(stringResource(R.string.natural_hazards), "⚠️", showsHazards, onShowsHazardsChange)
         }
     }
+}
+
+@Composable
+private fun LayerItem(title: String, symbol: String, isOn: Boolean, onChange: (Boolean) -> Unit) {
+    DropdownMenuItem(
+        text = { Text(title) },
+        leadingIcon = { Text(symbol) },
+        trailingIcon = { Checkbox(checked = isOn, onCheckedChange = null) },
+        onClick = { onChange(!isOn) },
+        modifier = Modifier.semantics { stateDescription = if (isOn) "On" else "Off" },
+    )
 }
 
 /**

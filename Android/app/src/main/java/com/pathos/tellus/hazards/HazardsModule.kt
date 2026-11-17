@@ -10,4 +10,7 @@ import dagger.hilt.components.SingletonComponent
 abstract class HazardsModule {
     @Binds
     abstract fun bindDisasterAlertService(service: GdacsDisasterAlertService): DisasterAlertService
+
+    @Binds
+    abstract fun bindHazardService(service: LiveHazardService): HazardService
 }
