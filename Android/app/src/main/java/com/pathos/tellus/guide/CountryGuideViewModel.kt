@@ -6,8 +6,16 @@ import com.pathos.tellus.core.preferences.MapPreferencesStore
 import com.pathos.tellus.countries.Country
 import com.pathos.tellus.guide.democracy.DemocracyProfile
 import com.pathos.tellus.guide.democracy.DemocracyProfiles
+import com.pathos.tellus.guide.electricity.CountryElectricityProfile
+import com.pathos.tellus.guide.electricity.ElectricityService
+import com.pathos.tellus.guide.events.RecentEvents
+import com.pathos.tellus.guide.events.RecentEventsService
 import com.pathos.tellus.guide.exchangerates.ExchangeRate
 import com.pathos.tellus.guide.exchangerates.ExchangeRateService
+import com.pathos.tellus.guide.outages.InternetOutage
+import com.pathos.tellus.guide.outages.InternetOutageService
+import com.pathos.tellus.guide.prices.EurostatPriceLevels
+import com.pathos.tellus.guide.prices.PriceLevelService
 import com.pathos.tellus.guide.profile.AnnualObservation
 import com.pathos.tellus.guide.profile.CountryIndicatorObservation
 import com.pathos.tellus.guide.profile.CountryProfileService
@@ -34,6 +42,10 @@ data class CountryGuideUiState(
     val weather: DestinationWeather? = null,
     /** What one unit of the home currency buys in each of the destination's currencies. Empty when they share one. */
     val exchangeRates: List<ExchangeRate> = emptyList(),
+    /** Dated events from Wikipedia's "<year> in <country>" article. */
+    val recentEvents: RecentEvents? = null,
+    /** Internet outages in the destination over the last week, seen by at least two independent signals. */
+    val internetOutages: List<InternetOutage> = emptyList(),
 )
 
 /**
@@ -46,6 +58,10 @@ class CountryGuideViewModel @Inject constructor(
     private val weatherService: WeatherService,
     private val exchangeRateService: ExchangeRateService,
     private val profileService: CountryProfileService,
+    private val recentEventsService: RecentEventsService,
+    private val outageService: InternetOutageService,
+    private val priceLevelService: PriceLevelService,
+    private val electricityService: ElectricityService,
     private val democracyProfiles: DemocracyProfiles,
     private val preferences: MapPreferencesStore,
     private val json: Json,
@@ -77,16 +93,33 @@ class CountryGuideViewModel @Inject constructor(
 
     fun setDestination(country: Country?) {
         if (country?.cca3 == _state.value.destination?.cca3) return
-        _state.update { it.copy(destination = country, weather = null) }
+        _state.update {
+            it.copy(destination = country, weather = null, recentEvents = null, internetOutages = emptyList())
+        }
         destinationJob?.cancel()
         destinationJob = country?.let { destination ->
             viewModelScope.launch {
-                val weather = loadOrNull { weatherService.getWeather(destination) }
-                // Another country may have been chosen while loading; its job cancels this one too.
-                if (_state.value.destination?.cca3 == destination.cca3) _state.update { it.copy(weather = weather) }
+                launch {
+                    val weather = loadOrNull { weatherService.getWeather(destination) }
+                    updateDestination(destination) { it.copy(weather = weather) }
+                }
+                launch {
+                    val events = loadOrNull { recentEventsService.getRecentEvents(destination) }
+                    updateDestination(destination) { it.copy(recentEvents = events) }
+                }
+                launch {
+                    val code = destination.cca2 ?: return@launch
+                    val outages = loadOrNull { outageService.getOutages(code) }.orEmpty()
+                    updateDestination(destination) { it.copy(internetOutages = outages) }
+                }
             }
         }
         refreshPassportInformation()
+    }
+
+    /** Applies a loaded result only if [destination] is still selected; a newer selection cancels this one too. */
+    private fun updateDestination(destination: Country, change: (CountryGuideUiState) -> CountryGuideUiState) {
+        if (_state.value.destination?.cca3 == destination.cca3) _state.update(change)
     }
 
     private fun refreshPassportInformation() {
@@ -123,6 +156,11 @@ class CountryGuideViewModel @Inject constructor(
 
     suspend fun loadHomicideTrend(countryCode: String): List<AnnualObservation> =
         profileService.getHomicideTrend(countryCode)
+
+    suspend fun loadPriceLevels(): EurostatPriceLevels = priceLevelService.getPriceLevels()
+
+    suspend fun loadElectricityProfile(countryCode: String): CountryElectricityProfile? =
+        electricityService.getProfile(countryCode)
 
     suspend fun loadDemocracyProfile(countryCode: String?): DemocracyProfile =
         democracyProfiles.profile(countryCode)

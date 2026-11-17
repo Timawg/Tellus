@@ -5,9 +5,17 @@ import com.pathos.tellus.core.preferences.MapPreferencesStore
 import com.pathos.tellus.countries.Country
 import com.pathos.tellus.guide.democracy.DemocracyProfile
 import com.pathos.tellus.guide.democracy.DemocracyProfiles
+import com.pathos.tellus.guide.electricity.CountryElectricityProfile
+import com.pathos.tellus.guide.electricity.ElectricityService
+import com.pathos.tellus.guide.events.RecentEvents
+import com.pathos.tellus.guide.events.RecentEventsService
 import com.pathos.tellus.guide.exchangerates.ExchangeRate
 import com.pathos.tellus.guide.exchangerates.ExchangeRateService
 import com.pathos.tellus.guide.exchangerates.ExchangeRates
+import com.pathos.tellus.guide.outages.InternetOutage
+import com.pathos.tellus.guide.outages.InternetOutageService
+import com.pathos.tellus.guide.prices.EurostatPriceLevels
+import com.pathos.tellus.guide.prices.PriceLevelService
 import com.pathos.tellus.guide.profile.AnnualObservation
 import com.pathos.tellus.guide.profile.CountryIndicatorObservation
 import com.pathos.tellus.guide.profile.CountryProfileService
@@ -32,6 +40,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.IOException
+import java.time.Instant
 import java.time.ZoneOffset
 import java.util.Locale
 
@@ -79,6 +88,21 @@ class CountryGuideViewModelTest {
         }
     }
 
+    /** Events and outages that wait until the test completes them, per country. */
+    private class FakeEvents : RecentEventsService, InternetOutageService {
+        val events = mutableMapOf<String, CompletableDeferred<RecentEvents?>>()
+        override suspend fun getRecentEvents(country: Country) =
+            events.getOrPut(country.cca3!!) { CompletableDeferred() }.await()
+        override suspend fun getOutages(countryCode: String) = listOf(
+            InternetOutage(Instant.EPOCH, Instant.EPOCH, isOngoing = true, signals = listOf("Routing (BGP)", countryCode)),
+        )
+    }
+
+    private object NoPrices : PriceLevelService, ElectricityService {
+        override suspend fun getPriceLevels(): EurostatPriceLevels = throw IOException("unused")
+        override suspend fun getProfile(countryCode: String): CountryElectricityProfile? = null
+    }
+
     private object NoProfiles : CountryProfileService, DemocracyProfiles {
         override suspend fun getProfile(countryCode: String) = emptyList<CountryIndicatorObservation>()
         override suspend fun getHomicideTrend(countryCode: String) = emptyList<AnnualObservation>()
@@ -95,7 +119,8 @@ class CountryGuideViewModelTest {
         rates: FakeRates = FakeRates(),
         preferences: MapPreferencesStore = preferences(),
         locale: Locale = Locale.GERMANY,
-    ) = CountryGuideViewModel(weather, rates, NoProfiles, NoProfiles, preferences, json, locale)
+        events: FakeEvents = FakeEvents(),
+    ) = CountryGuideViewModel(weather, rates, NoProfiles, events, events, NoPrices, NoPrices, NoProfiles, preferences, json, locale)
 
     @Test
     fun loadsWeatherForDestination() = runTest(dispatcher) {
@@ -118,6 +143,22 @@ class CountryGuideViewModelTest {
 
         weather.pending.getValue("NOR").complete(weather("Oslo"))
         assertEquals("Oslo", viewModel.state.value.weather?.placeName)
+    }
+
+    @Test
+    fun loadsEventsAndOutagesAndDropsOlderEvents() = runTest(dispatcher) {
+        val events = FakeEvents()
+        val viewModel = viewModel(events = events)
+        viewModel.setDestination(sweden)
+        assertEquals("SW", viewModel.state.value.internetOutages.single().signals.last())
+
+        viewModel.setDestination(norway)
+        events.events.getValue("SWE").complete(RecentEvents(emptyList(), "2026 in Sweden"))
+        assertNull(viewModel.state.value.recentEvents)
+        assertEquals("NO", viewModel.state.value.internetOutages.single().signals.last())
+
+        events.events.getValue("NOR").complete(RecentEvents(emptyList(), "2026 in Norway"))
+        assertEquals("2026 in Norway", viewModel.state.value.recentEvents?.articleTitle)
     }
 
     @Test
