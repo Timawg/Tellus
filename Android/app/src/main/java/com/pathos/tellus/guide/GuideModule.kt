@@ -9,6 +9,8 @@ import com.pathos.tellus.guide.profile.WorldBankCountryProfileService
 import com.pathos.tellus.guide.weather.OpenMeteoWeatherService
 import com.pathos.tellus.guide.weather.WeatherService
 import android.content.Context
+import com.pathos.tellus.guide.advisories.AdvisoryService
+import com.pathos.tellus.guide.advisories.GacAdvisoryService
 import com.pathos.tellus.guide.electricity.ElectricityService
 import com.pathos.tellus.guide.electricity.EmberCacheFile
 import com.pathos.tellus.guide.electricity.EmberElectricityService
@@ -16,6 +18,8 @@ import com.pathos.tellus.guide.events.RecentEventsService
 import com.pathos.tellus.guide.events.WikipediaRecentEventsService
 import com.pathos.tellus.guide.outages.InternetOutageService
 import com.pathos.tellus.guide.outages.IodaInternetOutageService
+import com.pathos.tellus.guide.passport.AdmissoryService
+import com.pathos.tellus.guide.passport.PassportIndexAdmissoryService
 import com.pathos.tellus.guide.prices.EurostatPriceService
 import com.pathos.tellus.guide.prices.PriceLevelService
 import dagger.Binds
@@ -40,6 +44,12 @@ abstract class GuideModule {
 
     @Binds
     abstract fun bindDemocracyProfiles(store: AssetDemocracyDatasetStore): DemocracyProfiles
+
+    @Binds
+    abstract fun bindAdvisoryService(service: GacAdvisoryService): AdvisoryService
+
+    @Binds
+    abstract fun bindAdmissoryService(service: PassportIndexAdmissoryService): AdmissoryService
 
     @Binds
     abstract fun bindInternetOutageService(service: IodaInternetOutageService): InternetOutageService

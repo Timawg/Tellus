@@ -2,7 +2,11 @@ package com.pathos.tellus.guide
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.pathos.tellus.core.preferences.MapPreferencesStore
+import com.pathos.tellus.core.network.HttpError
 import com.pathos.tellus.countries.Country
+import com.pathos.tellus.guide.advisories.AdviceSection
+import com.pathos.tellus.guide.advisories.AdvisoryService
+import com.pathos.tellus.guide.advisories.AdvisoryStatus
 import com.pathos.tellus.guide.democracy.DemocracyProfile
 import com.pathos.tellus.guide.democracy.DemocracyProfiles
 import com.pathos.tellus.guide.electricity.CountryElectricityProfile
@@ -14,6 +18,8 @@ import com.pathos.tellus.guide.exchangerates.ExchangeRateService
 import com.pathos.tellus.guide.exchangerates.ExchangeRates
 import com.pathos.tellus.guide.outages.InternetOutage
 import com.pathos.tellus.guide.outages.InternetOutageService
+import com.pathos.tellus.guide.passport.AdmissoryService
+import com.pathos.tellus.guide.passport.AdmissoryStatus
 import com.pathos.tellus.guide.prices.EurostatPriceLevels
 import com.pathos.tellus.guide.prices.PriceLevelService
 import com.pathos.tellus.guide.profile.AnnualObservation
@@ -22,9 +28,11 @@ import com.pathos.tellus.guide.profile.CountryProfileService
 import com.pathos.tellus.guide.weather.DestinationWeather
 import com.pathos.tellus.guide.weather.WeatherCondition
 import com.pathos.tellus.guide.weather.WeatherService
+import com.pathos.tellus.ui.theme.StatusColors
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -103,6 +111,25 @@ class CountryGuideViewModelTest {
         override suspend fun getProfile(countryCode: String): CountryElectricityProfile? = null
     }
 
+    /** Advisories answer with the given result per country code; visas are visa-free for 30 days. */
+    private class FakeAdvisories : AdvisoryService, AdmissoryService {
+        var advisory: (String) -> AdvisoryStatus = { throw HttpError.InvalidStatus(404, ByteArray(0)) }
+        override suspend fun getAdvisoryStatus(destination: String) = advisory(destination)
+        override suspend fun getAdmissoryStatus(passport: String, destination: String) =
+            AdmissoryStatus.from(passport, destination, "30")
+    }
+
+    private fun advisory(state: Int) = AdvisoryStatus(
+        AdvisoryStatus.Data(
+            "SE", state,
+            AdvisoryStatus.Information(
+                "Sweden", "sweden", "Today", "Exercise normal security precautions",
+                "<p>Normal.</p>", "<p>Bring a passport.</p>", "", "", "",
+                "<h3>Local services</h3><p>Dial 112.</p>",
+            ),
+        ),
+    )
+
     private object NoProfiles : CountryProfileService, DemocracyProfiles {
         override suspend fun getProfile(countryCode: String) = emptyList<CountryIndicatorObservation>()
         override suspend fun getHomicideTrend(countryCode: String) = emptyList<AnnualObservation>()
@@ -120,7 +147,11 @@ class CountryGuideViewModelTest {
         preferences: MapPreferencesStore = preferences(),
         locale: Locale = Locale.GERMANY,
         events: FakeEvents = FakeEvents(),
-    ) = CountryGuideViewModel(weather, rates, NoProfiles, events, events, NoPrices, NoPrices, NoProfiles, preferences, json, locale)
+        advisories: FakeAdvisories = FakeAdvisories(),
+    ) = CountryGuideViewModel(
+        weather, rates, NoProfiles, advisories, advisories, events, events, NoPrices, NoPrices, NoProfiles,
+        preferences, json, locale, dispatcher,
+    )
 
     @Test
     fun loadsWeatherForDestination() = runTest(dispatcher) {
@@ -159,6 +190,52 @@ class CountryGuideViewModelTest {
 
         events.events.getValue("NOR").complete(RecentEvents(emptyList(), "2026 in Norway"))
         assertEquals("2026 in Norway", viewModel.state.value.recentEvents?.articleTitle)
+    }
+
+    @Test
+    fun missingAdvisoryIsNotAFailure() = runTest(dispatcher) {
+        val viewModel = viewModel()
+        viewModel.setDestination(sweden)
+        val state = viewModel.state.value
+        assertEquals(false, state.advisoryLoadFailed)
+        assertEquals(false, state.isLoadingDestinationGuide)
+        assertNull(state.destinationGuide)
+    }
+
+    @Test
+    fun otherAdvisoryErrorsAreFailures() = runTest(dispatcher) {
+        val advisories = FakeAdvisories().apply { advisory = { throw HttpError.InvalidStatus(500, ByteArray(0)) } }
+        val viewModel = viewModel(advisories = advisories)
+        viewModel.setDestination(sweden)
+        assertEquals(true, viewModel.state.value.advisoryLoadFailed)
+    }
+
+    @Test
+    fun advisoryIsParsedIntoGuideAndStatus() = runTest(dispatcher) {
+        val advisories = FakeAdvisories().apply { advisory = { advisory(state = 0) } }
+        val viewModel = viewModel(advisories = advisories)
+        viewModel.setDestination(sweden)
+        val state = viewModel.state.value
+
+        assertEquals("tel:112", (state.destinationGuide!!.emergency.single() as AdviceSection.Block.Paragraph).text.links.single().url)
+        assertEquals(listOf(TravelStatus.Kind.ADVISORY), state.travelStatuses.map { it.kind })
+        assertEquals(StatusColors.SECURE, state.travelStatuses.single().colors)
+    }
+
+    @Test
+    fun choosingPassportSavesItAndLoadsVisaRules() = runTest(dispatcher) {
+        val preferences = preferences()
+        val viewModel = viewModel(preferences = preferences)
+        viewModel.setDestination(sweden)
+        assertNull(viewModel.state.value.admissoryStatus)
+
+        viewModel.setPassport(norway)
+        advanceUntilIdle()
+
+        assertEquals("NOR", viewModel.state.value.passport?.cca3)
+        assertEquals("visa-free", viewModel.state.value.admissoryStatus?.category)
+        assertEquals(TravelStatus.Kind.VISA, viewModel.state.value.travelStatuses.single().kind)
+        assertEquals("NOR", json.decodeFromString<Country>(preferences.nationalityJson.first()!!).cca3)
     }
 
     @Test

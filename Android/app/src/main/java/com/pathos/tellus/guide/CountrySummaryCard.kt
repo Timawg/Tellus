@@ -1,9 +1,12 @@
 package com.pathos.tellus.guide
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +25,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -52,6 +56,7 @@ fun CountrySummaryCard(
     onOpenGuide: () -> Unit,
     modifier: Modifier = Modifier,
     hasOngoingOutage: Boolean = false,
+    statuses: List<TravelStatus> = emptyList(),
 ) {
     val name = country.name?.common ?: return
     Surface(
@@ -86,9 +91,37 @@ fun CountrySummaryCard(
             }
             LiveInfoStrip(weather, exchangeRate)
             if (hasOngoingOutage) AlertBanner("Internet disruption detected", onClick = onOpenGuide)
-            FilledTonalButton(onClick = onOpenGuide) {
-                Icon(Icons.Filled.Info, contentDescription = null)
-                Text("Country guide", Modifier.padding(start = 8.dp))
+            GuideButton(statuses, onOpenGuide)
+        }
+    }
+}
+
+/**
+ * Opens the country guide. Small dots on it show the travel statuses the
+ * guide explains, and TalkBack reads them as its value.
+ */
+@Composable
+private fun GuideButton(statuses: List<TravelStatus>, onClick: () -> Unit) {
+    val summary = statuses.joinToString(". ") { "${it.title}: ${it.value}" }
+    Box {
+        FilledTonalButton(
+            onClick = onClick,
+            modifier = Modifier.semantics { if (summary.isNotEmpty()) stateDescription = summary },
+        ) {
+            Icon(Icons.Filled.Info, contentDescription = null)
+            Text("Country guide", Modifier.padding(start = 8.dp))
+        }
+        if (statuses.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 6.dp, y = (-6).dp)
+                    .background(Color.Black.copy(alpha = 0.55f), CircleShape)
+                    .padding(3.dp)
+                    .clearAndSetSemantics { },
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                statuses.forEach { StatusDot(it.colors, 10.dp) }
             }
         }
     }

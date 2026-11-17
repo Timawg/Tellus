@@ -7,10 +7,11 @@ import java.util.Locale
 object CountrySearch {
 
     /** Whether the common or official name contains [query], ignoring case and accents. */
-    fun matches(country: Country, query: String): Boolean {
-        val folded = fold(query)
-        return listOfNotNull(country.name?.common, country.name?.official).any { fold(it).contains(folded) }
-    }
+    fun matches(country: Country, query: String): Boolean =
+        listOfNotNull(country.name?.common, country.name?.official).any { contains(it, query) }
+
+    /** Whether [text] contains [query], ignoring case and accents. */
+    fun contains(text: String, query: String): Boolean = fold(text).contains(fold(query))
 
     /** Whether the common name is exactly [query], ignoring case and accents. */
     fun isExactMatch(country: Country, query: String): Boolean =

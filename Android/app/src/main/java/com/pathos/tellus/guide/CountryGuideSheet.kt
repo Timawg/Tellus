@@ -44,6 +44,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.pathos.tellus.countries.Country
 import com.pathos.tellus.countries.FlagImage
+import com.pathos.tellus.guide.advisories.AdviceBlocks
+import com.pathos.tellus.guide.advisories.GuideAdviceSource
+import com.pathos.tellus.guide.advisories.TravelAdviceContent
 import com.pathos.tellus.guide.democracy.DemocracySafetyContent
 import com.pathos.tellus.guide.electricity.ElectricityContent
 import com.pathos.tellus.guide.events.RecentEventsSection
@@ -56,8 +59,8 @@ import com.pathos.tellus.guide.weather.rememberWeatherFormat
 
 /**
  * The country guide: a sheet with a tab per topic, ported from iOS
- * `DestinationGuideView`. Only Overview is filled in so far; the other tabs
- * arrive with their own issues.
+ * `DestinationGuideView`. Overview and Entry are filled in so far; the other
+ * tabs arrive with their own issues.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -137,11 +140,13 @@ fun CountryGuideSheet(
                         neighbours = neighbours,
                         viewModel = viewModel,
                         onOpenDetail = { detail = it },
+                        onOpenTopic = { topic = it },
                         onSelectNeighbour = {
                             onSelectCountry(it)
                             onDismiss()
                         },
                     )
+                    GuideTopic.ENTRY -> Entry(state)
                     else -> Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.TopCenter) {
                         SecondaryText("${topic.title} isn’t available on Android yet.")
                     }
@@ -168,9 +173,12 @@ private fun Overview(
     neighbours: List<Country>,
     viewModel: CountryGuideViewModel,
     onOpenDetail: (GuideDetail) -> Unit,
+    onOpenTopic: (GuideTopic) -> Unit,
     onSelectNeighbour: (Country) -> Unit,
 ) {
     LazyColumn(contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp)) {
+        val statuses = state.travelStatuses
+        if (statuses.isNotEmpty()) item { StatusOverviewSection(statuses, onOpenTopic) }
         item { GuideSection(header = null) { DetailRow(GuideDetail.DEMOCRACY_SAFETY, onOpenDetail) } }
         item(key = "profile-${country.cca2}") {
             CountryProfileSections(country.cca2, viewModel::loadCountryProfile)
@@ -186,7 +194,74 @@ private fun Overview(
         state.weather?.let { weather -> item { WeatherSection(weather) } }
         if (state.exchangeRates.isNotEmpty()) item { MoneySection(state.exchangeRates) }
         item { AtAGlanceSection(country) }
+        item { EmergencySection(state) }
         if (neighbours.isNotEmpty()) item { NeighboursSection(neighbours, onSelectNeighbour) }
+    }
+}
+
+/** The Entry tab: visa status for the passport, then the advisory and entry advice. */
+@Composable
+private fun Entry(state: CountryGuideUiState) {
+    LazyColumn(contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp)) {
+        item {
+            val visa = state.travelStatuses.filter { it.kind == TravelStatus.Kind.VISA }
+            GuideSection(
+                header = "Status",
+                footer = if (state.admissoryStatus == null) {
+                    { Text("Choose your passport on the map to see visa rules.") }
+                } else null,
+            ) {
+                if (visa.isEmpty()) SecondaryText("No visa information") else visa.forEach { TravelStatusRow(it) }
+            }
+        }
+        item {
+            Column {
+                TravelAdviceContent(
+                    topic = GuideTopic.ENTRY,
+                    guide = state.destinationGuide,
+                    advisoryStatus = state.advisoryStatus,
+                    isLoading = state.isLoadingDestinationGuide,
+                    loadFailed = state.advisoryLoadFailed,
+                )
+            }
+        }
+        state.destinationGuide?.let { guide -> item { GuideAdviceSource(guide) } }
+    }
+}
+
+/** Every status, each opening the tab that explains it. These are the dots on the map card's guide button. */
+@Composable
+private fun StatusOverviewSection(statuses: List<TravelStatus>, onOpenTopic: (GuideTopic) -> Unit) {
+    GuideSection("Status") {
+        statuses.forEach { status ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(role = Role.Button, onClickLabel = "Show ${status.kind.topic.title}") {
+                        onOpenTopic(status.kind.topic)
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TravelStatusRow(status, Modifier.weight(1f))
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+            }
+        }
+    }
+}
+
+/** Emergency numbers from the advisory's "Local services", with short numbers tappable. */
+@Composable
+private fun EmergencySection(state: CountryGuideUiState) {
+    val emergency = state.destinationGuide?.emergency.orEmpty()
+    when {
+        emergency.isNotEmpty() -> GuideSection(
+            header = "Emergency numbers",
+            // Some places have no central number, only advice.
+            footer = if (emergency.any { it.hasPhoneLink }) {
+                { Text("Tap a number to call it.") }
+            } else null,
+        ) { AdviceBlocks(emergency) }
+        state.isLoadingDestinationGuide -> GuideSection("Emergency numbers") { LoadingRow("Loading advice…") }
     }
 }
 
