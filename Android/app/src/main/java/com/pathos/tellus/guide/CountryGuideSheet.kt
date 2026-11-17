@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -61,8 +62,8 @@ import com.pathos.tellus.guide.weather.rememberWeatherFormat
 
 /**
  * The country guide: a sheet with a tab per topic, ported from iOS
- * `DestinationGuideView`. Overview, Entry and Health are filled in so far;
- * the other tabs arrive with their own issues.
+ * `DestinationGuideView`. Every tab but Climate is filled in so far; Climate
+ * arrives with its own issue.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -150,6 +151,7 @@ fun CountryGuideSheet(
                     )
                     GuideTopic.ENTRY -> Entry(state)
                     GuideTopic.HEALTH -> Health(state)
+                    GuideTopic.LAWS -> Laws(state)
                     else -> Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.TopCenter) {
                         SecondaryText("${topic.title} isn’t available on Android yet.")
                     }
@@ -204,6 +206,30 @@ private fun Overview(
     }
 }
 
+/** The topic's travel advice and where it comes from, shared by the advice tabs. */
+private fun LazyListScope.travelAdvice(topic: GuideTopic, state: CountryGuideUiState) {
+    item {
+        Column {
+            TravelAdviceContent(
+                topic = topic,
+                guide = state.destinationGuide,
+                advisoryStatus = state.advisoryStatus,
+                isLoading = state.isLoadingDestinationGuide,
+                loadFailed = state.advisoryLoadFailed,
+            )
+        }
+    }
+    state.destinationGuide?.let { guide -> item { GuideAdviceSource(guide) } }
+}
+
+/** The Laws tab: only the laws and culture advice, as on iOS. */
+@Composable
+private fun Laws(state: CountryGuideUiState) {
+    LazyColumn(contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp)) {
+        travelAdvice(GuideTopic.LAWS, state)
+    }
+}
+
 /** The Health tab: the outbreak status, WHO's reports, then health advice. */
 @Composable
 private fun Health(state: CountryGuideUiState) {
@@ -215,18 +241,7 @@ private fun Health(state: CountryGuideUiState) {
             GuideSection("Status") { health.forEach { TravelStatusRow(it) } }
         }
         if (state.outbreakReports.isNotEmpty()) item { OutbreaksSection(state.outbreakReports) }
-        item {
-            Column {
-                TravelAdviceContent(
-                    topic = GuideTopic.HEALTH,
-                    guide = state.destinationGuide,
-                    advisoryStatus = state.advisoryStatus,
-                    isLoading = state.isLoadingDestinationGuide,
-                    loadFailed = state.advisoryLoadFailed,
-                )
-            }
-        }
-        state.destinationGuide?.let { guide -> item { GuideAdviceSource(guide) } }
+        travelAdvice(GuideTopic.HEALTH, state)
     }
 }
 
@@ -247,18 +262,7 @@ private fun Entry(state: CountryGuideUiState) {
                 if (visa.isEmpty()) SecondaryText("No visa information") else visa.forEach { TravelStatusRow(it) }
             }
         }
-        item {
-            Column {
-                TravelAdviceContent(
-                    topic = GuideTopic.ENTRY,
-                    guide = state.destinationGuide,
-                    advisoryStatus = state.advisoryStatus,
-                    isLoading = state.isLoadingDestinationGuide,
-                    loadFailed = state.advisoryLoadFailed,
-                )
-            }
-        }
-        state.destinationGuide?.let { guide -> item { GuideAdviceSource(guide) } }
+        travelAdvice(GuideTopic.ENTRY, state)
     }
 }
 
