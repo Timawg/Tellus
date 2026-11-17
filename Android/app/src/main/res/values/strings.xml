@@ -11,4 +11,6 @@
     <string name="countries_load_failed_message">Could not load countries. Please check your connection and try again.</string>
     <string name="retry">Retry</string>
     <string name="ok">OK</string>
+    <string name="your_passport">Your passport</string>
+    <string name="not_set">Not set</string>
 </resources>

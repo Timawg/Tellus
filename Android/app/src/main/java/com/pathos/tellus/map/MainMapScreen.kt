@@ -6,9 +6,15 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -30,6 +36,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
@@ -40,6 +47,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -54,12 +62,15 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Polygon
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.pathos.tellus.R
+import coil3.compose.AsyncImage
+import com.pathos.tellus.countries.Country
 import com.pathos.tellus.countries.CountryBorder
 import com.pathos.tellus.countries.CountrySelectionBar
 import com.pathos.tellus.guide.CountryGuideSheet
 import com.pathos.tellus.guide.CountryGuideViewModel
 import com.pathos.tellus.guide.CountrySummaryCard
 import com.pathos.tellus.guide.GuideTopic
+import com.pathos.tellus.guide.passport.NationalityPicker
 
 /** The world map with country selection. Layers are added on top of this. */
 @Composable
@@ -72,6 +83,7 @@ fun MainMapScreen(
     val guideState by guideViewModel.state.collectAsStateWithLifecycle()
     var isPickingCountry by rememberSaveable { mutableStateOf(false) }
     var guideTopic by rememberSaveable { mutableStateOf<GuideTopic?>(null) }
+    var isPickingPassport by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(state.current) { guideViewModel.setDestination(state.current) }
     val haptics = LocalHapticFeedback.current
     // Zoomed out to the whole world, like iOS's `MKCoordinateRegion(.world)`.
@@ -89,7 +101,7 @@ fun MainMapScreen(
         LaunchedEffect(state.cameraRequest, isMapLoaded) {
             if (!isMapLoaded) return@LaunchedEffect
             val fit = state.cameraRequest?.target?.fit(aspectRatio) ?: return@LaunchedEffect
-            cameraPositionState.animateTo(fit, heightDp)
+            cameraPositionState.moveTo(fit, heightDp)
         }
 
         GoogleMap(
@@ -117,6 +129,7 @@ fun MainMapScreen(
                 exchangeRate = guideState.exchangeRates.firstOrNull(),
                 onOpenGuide = { guideTopic = GuideTopic.OVERVIEW },
                 hasOngoingOutage = guideState.internetOutages.any { it.isOngoing },
+                statuses = guideState.travelStatuses,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .statusBarsPadding(),
@@ -145,16 +158,15 @@ fun MainMapScreen(
                 .imePadding(),
         ) {
             AnimatedVisibility(visible = !isPickingCountry, enter = fadeIn(), exit = fadeOut()) {
-                FilledTonalIconButton(
-                    onClick = viewModel::selectRandomCountry,
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .size(56.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_globe),
-                        contentDescription = stringResource(R.string.random_country),
-                    )
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                    FilledTonalIconButton(onClick = viewModel::selectRandomCountry, modifier = Modifier.size(56.dp)) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_globe),
+                            contentDescription = stringResource(R.string.random_country),
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    PassportButton(passport = guideState.passport, onClick = { isPickingPassport = true })
                 }
             }
             CountrySelectionBar(
@@ -184,6 +196,15 @@ fun MainMapScreen(
         )
     }
 
+    if (isPickingPassport) {
+        NationalityPicker(
+            countries = state.countries,
+            selection = guideState.passport,
+            onSelect = guideViewModel::setPassport,
+            onDismiss = { isPickingPassport = false },
+        )
+    }
+
     if (state.loadFailed) {
         AlertDialog(
             onDismissRequest = viewModel::dismissLoadError,
@@ -199,6 +220,37 @@ fun MainMapScreen(
                 TextButton(onClick = viewModel::dismissLoadError) { Text(stringResource(R.string.ok)) }
             },
         )
+    }
+}
+
+/** Opens the passport picker, with the chosen passport's flag as a badge, like iOS's passport button. */
+@Composable
+private fun PassportButton(passport: Country?, onClick: () -> Unit) {
+    val label = stringResource(R.string.your_passport)
+    val value = passport?.name?.common ?: stringResource(R.string.not_set)
+    FilledTonalIconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .size(56.dp)
+            .semantics(mergeDescendants = true) {
+                contentDescription = label
+                stateDescription = value
+            },
+    ) {
+        Box {
+            Image(painterResource(R.drawable.passport_icon), contentDescription = null, modifier = Modifier.size(28.dp))
+            passport?.flagUrl?.let { flag ->
+                AsyncImage(
+                    model = flag,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .offset(x = 6.dp, y = 4.dp)
+                        .size(width = 18.dp, height = 12.dp)
+                        .clip(RoundedCornerShape(2.dp)),
+                )
+            }
+        }
     }
 }
 
@@ -229,10 +281,13 @@ private fun CountryOutline(border: CountryBorder) {
     }
 }
 
-private suspend fun CameraPositionState.animateTo(fit: MapFit, viewportHeightDp: Float) {
+private fun CameraPositionState.moveTo(fit: MapFit, viewportHeightDp: Float) {
     val target = CameraPosition.fromLatLngZoom(
         LatLng(fit.center.latitude, fit.center.longitude),
         fit.zoom(viewportHeightDp),
     )
-    animate(CameraUpdateFactory.newCameraPosition(target), durationMs = 1_000)
+    // Instant, like iOS's `setRegion(_:animated: false)`. An animation could
+    // also be cancelled when the map is stopped and started at launch, which
+    // left the first country unzoomed.
+    move(CameraUpdateFactory.newCameraPosition(target))
 }
