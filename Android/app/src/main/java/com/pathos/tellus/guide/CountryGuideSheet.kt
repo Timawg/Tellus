@@ -52,15 +52,17 @@ import com.pathos.tellus.guide.electricity.ElectricityContent
 import com.pathos.tellus.guide.events.RecentEventsSection
 import com.pathos.tellus.guide.exchangerates.ExchangeRate
 import com.pathos.tellus.guide.outages.OutagesSection
+import com.pathos.tellus.guide.outbreaks.OutbreaksSection
 import com.pathos.tellus.guide.prices.CostOfLivingContent
 import com.pathos.tellus.guide.profile.CountryProfileSections
 import com.pathos.tellus.guide.weather.WeatherSection
+import com.pathos.tellus.guide.weather.rememberMinuteTicker
 import com.pathos.tellus.guide.weather.rememberWeatherFormat
 
 /**
  * The country guide: a sheet with a tab per topic, ported from iOS
- * `DestinationGuideView`. Overview and Entry are filled in so far; the other
- * tabs arrive with their own issues.
+ * `DestinationGuideView`. Overview, Entry and Health are filled in so far;
+ * the other tabs arrive with their own issues.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -147,6 +149,7 @@ fun CountryGuideSheet(
                         },
                     )
                     GuideTopic.ENTRY -> Entry(state)
+                    GuideTopic.HEALTH -> Health(state)
                     else -> Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.TopCenter) {
                         SecondaryText("${topic.title} isn’t available on Android yet.")
                     }
@@ -176,8 +179,10 @@ private fun Overview(
     onOpenTopic: (GuideTopic) -> Unit,
     onSelectNeighbour: (Country) -> Unit,
 ) {
+    val now = rememberMinuteTicker()
+    val formatDay = rememberDayFormatter()
     LazyColumn(contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp)) {
-        val statuses = state.travelStatuses
+        val statuses = state.travelStatuses(now, formatDay)
         if (statuses.isNotEmpty()) item { StatusOverviewSection(statuses, onOpenTopic) }
         item { GuideSection(header = null) { DetailRow(GuideDetail.DEMOCRACY_SAFETY, onOpenDetail) } }
         item(key = "profile-${country.cca2}") {
@@ -199,12 +204,40 @@ private fun Overview(
     }
 }
 
+/** The Health tab: the outbreak status, WHO's reports, then health advice. */
+@Composable
+private fun Health(state: CountryGuideUiState) {
+    val now = rememberMinuteTicker()
+    val formatDay = rememberDayFormatter()
+    LazyColumn(contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp)) {
+        item {
+            val health = state.travelStatuses(now, formatDay).filter { it.kind == TravelStatus.Kind.HEALTH }
+            GuideSection("Status") { health.forEach { TravelStatusRow(it) } }
+        }
+        if (state.outbreakReports.isNotEmpty()) item { OutbreaksSection(state.outbreakReports) }
+        item {
+            Column {
+                TravelAdviceContent(
+                    topic = GuideTopic.HEALTH,
+                    guide = state.destinationGuide,
+                    advisoryStatus = state.advisoryStatus,
+                    isLoading = state.isLoadingDestinationGuide,
+                    loadFailed = state.advisoryLoadFailed,
+                )
+            }
+        }
+        state.destinationGuide?.let { guide -> item { GuideAdviceSource(guide) } }
+    }
+}
+
 /** The Entry tab: visa status for the passport, then the advisory and entry advice. */
 @Composable
 private fun Entry(state: CountryGuideUiState) {
+    val now = rememberMinuteTicker()
+    val formatDay = rememberDayFormatter()
     LazyColumn(contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp)) {
         item {
-            val visa = state.travelStatuses.filter { it.kind == TravelStatus.Kind.VISA }
+            val visa = state.travelStatuses(now, formatDay).filter { it.kind == TravelStatus.Kind.VISA }
             GuideSection(
                 header = "Status",
                 footer = if (state.admissoryStatus == null) {

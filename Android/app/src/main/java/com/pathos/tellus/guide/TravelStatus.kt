@@ -7,28 +7,37 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.pathos.tellus.countries.Country
 import com.pathos.tellus.guide.advisories.AdvisoryStatus
+import com.pathos.tellus.guide.outbreaks.OutbreakReport
 import com.pathos.tellus.guide.passport.AdmissoryStatus
 import com.pathos.tellus.ui.theme.StatusColors
+import java.time.Duration
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /**
  * One of the things summed up by the dots on the map card's guide button and
- * shown in full in the guide, ported from iOS `TravelStatus`. Health and
- * natural disaster statuses arrive with the outbreak and disaster issues.
+ * shown in full in the guide, ported from iOS `TravelStatus`. The natural
+ * disaster status arrives with the disaster issue.
  */
 data class TravelStatus(val kind: Kind, val colors: StatusColors, val title: String, val value: String) {
 
     enum class Kind(val topic: GuideTopic) {
         ADVISORY(GuideTopic.ENTRY),
         VISA(GuideTopic.ENTRY),
+        HEALTH(GuideTopic.HEALTH),
     }
 
     companion object {
@@ -44,6 +53,28 @@ data class TravelStatus(val kind: Kind, val colors: StatusColors, val title: Str
             if (days != null && days > 0) value += " · up to $days days"
             val title = passport?.name?.common?.let { "Visa · $it passport" } ?: "Visa"
             return TravelStatus(Kind.VISA, colors, title, value)
+        }
+
+        /** How long a WHO report counts as a current outbreak, and how long as a recent one. */
+        val CURRENT_OUTBREAK_AGE: Duration = Duration.ofDays(30)
+        private val RECENT_OUTBREAK_AGE = Duration.ofDays(180)
+
+        /**
+         * From WHO's outbreak reports for the country: orange for one in the
+         * last 30 days, blue for one in the last six months. [formatDay]
+         * writes a report's date as day and abbreviated month.
+         */
+        fun health(reports: List<OutbreakReport>, now: Instant, formatDay: (Instant) -> String): TravelStatus {
+            val title = "Disease outbreaks"
+            val latest = reports.maxByOrNull { it.published }
+                ?: return TravelStatus(Kind.HEALTH, StatusColors.SECURE, title, "No WHO outbreak reports")
+            val age = Duration.between(latest.published, now)
+            val reported = "${latest.disease}, reported ${formatDay(latest.published)}"
+            return when {
+                age <= CURRENT_OUTBREAK_AGE -> TravelStatus(Kind.HEALTH, StatusColors.CAUTION, title, reported)
+                age <= RECENT_OUTBREAK_AGE -> TravelStatus(Kind.HEALTH, StatusColors.SEMISECURE, title, reported)
+                else -> TravelStatus(Kind.HEALTH, StatusColors.SECURE, title, "No WHO reports in the last six months")
+            }
         }
 
         /** Each word's first letter in upper case, like Foundation's `capitalized` ("visa-free" → "Visa-Free"). */
@@ -76,6 +107,17 @@ val AdmissoryStatus.colors: StatusColors?
         AdmissoryStatus.Status.COVID_BAN, AdmissoryStatus.Status.NO_ADMISSION -> StatusColors.DANGER
         null -> null
     }
+
+/** A report's date as day and abbreviated month in the user's locale ("13 Nov", "Nov 13"). */
+@Composable
+fun rememberDayFormatter(): (Instant) -> String {
+    val locale = LocalConfiguration.current.locales[0]
+    return remember(locale) {
+        val formatter = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "dMMM"), locale)
+            .withZone(ZoneId.systemDefault())
+        formatter::format
+    }
+}
 
 /** A status's colour as a gradient dot, like iOS `CircularStatusView`. */
 @Composable

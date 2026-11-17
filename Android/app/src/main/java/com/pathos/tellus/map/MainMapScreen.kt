@@ -66,10 +66,13 @@ import coil3.compose.AsyncImage
 import com.pathos.tellus.countries.Country
 import com.pathos.tellus.countries.CountryBorder
 import com.pathos.tellus.countries.CountrySelectionBar
+import com.pathos.tellus.guide.CardAlert
 import com.pathos.tellus.guide.CountryGuideSheet
 import com.pathos.tellus.guide.CountryGuideViewModel
 import com.pathos.tellus.guide.CountrySummaryCard
 import com.pathos.tellus.guide.GuideTopic
+import com.pathos.tellus.guide.rememberDayFormatter
+import com.pathos.tellus.guide.weather.rememberMinuteTicker
 import com.pathos.tellus.guide.passport.NationalityPicker
 
 /** The world map with country selection. Layers are added on top of this. */
@@ -84,7 +87,9 @@ fun MainMapScreen(
     var isPickingCountry by rememberSaveable { mutableStateOf(false) }
     var guideTopic by rememberSaveable { mutableStateOf<GuideTopic?>(null) }
     var isPickingPassport by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(state.current) { guideViewModel.setDestination(state.current) }
+    LaunchedEffect(state.current) { guideViewModel.setDestination(state.current, state.countries) }
+    val now = rememberMinuteTicker()
+    val formatDay = rememberDayFormatter()
     val haptics = LocalHapticFeedback.current
     // Zoomed out to the whole world, like iOS's `MKCoordinateRegion(.world)`.
     val cameraPositionState = rememberCameraPositionState {
@@ -127,9 +132,9 @@ fun MainMapScreen(
                 country = country,
                 weather = guideState.weather,
                 exchangeRate = guideState.exchangeRates.firstOrNull(),
-                onOpenGuide = { guideTopic = GuideTopic.OVERVIEW },
-                hasOngoingOutage = guideState.internetOutages.any { it.isOngoing },
-                statuses = guideState.travelStatuses,
+                onOpenGuide = { guideTopic = it },
+                alert = CardAlert.from(guideState, now),
+                statuses = guideState.travelStatuses(now, formatDay),
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .statusBarsPadding(),
