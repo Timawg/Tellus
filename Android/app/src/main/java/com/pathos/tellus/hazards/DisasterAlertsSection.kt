@@ -35,7 +35,7 @@ fun DisasterAlertsSection(alerts: List<DisasterAlert>) {
         alerts.forEach { alert ->
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(alert.kind.symbol)
+                    HazardSymbol(alert.kind, tint = alert.level.color)
                     Text(alert.name, fontWeight = FontWeight.SemiBold)
                 }
                 alert.severity?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }

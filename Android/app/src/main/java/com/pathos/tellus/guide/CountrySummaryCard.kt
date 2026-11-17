@@ -37,6 +37,8 @@ import com.pathos.tellus.guide.weather.DestinationWeather
 import com.pathos.tellus.guide.weather.WeatherCondition
 import com.pathos.tellus.guide.weather.rememberMinuteTicker
 import com.pathos.tellus.guide.weather.rememberWeatherFormat
+import com.pathos.tellus.hazards.DisasterAlert
+import com.pathos.tellus.hazards.HazardSymbol
 import com.pathos.tellus.hazards.color
 import com.pathos.tellus.ui.theme.AlertOrange
 import com.pathos.tellus.ui.theme.DisruptionPurple
@@ -135,13 +137,21 @@ private fun GuideButton(statuses: List<TravelStatus>, onClick: () -> Unit) {
  * card: an active disaster, an ongoing internet disruption, or a WHO
  * outbreak report from the last 30 days, in that order as on iOS.
  */
-data class CardAlert(val title: String, val symbol: String, val color: Color, val accessibility: String, val topic: GuideTopic) {
+data class CardAlert(
+    val title: String,
+    val symbol: String,
+    val color: Color,
+    val accessibility: String,
+    val topic: GuideTopic,
+    /** For disasters, so the banner can draw the kind's own symbol. */
+    val hazardKind: DisasterAlert.Kind? = null,
+) {
     companion object {
         fun from(state: CountryGuideUiState, now: Instant): CardAlert? {
             state.disasterAlerts.firstOrNull { it.isUrgent }?.let { alert ->
                 return CardAlert(
                     alert.name, alert.kind.symbol, alert.level.color,
-                    "${alert.level.title} alert: ${alert.name}", GuideTopic.CLIMATE,
+                    "${alert.level.title} alert: ${alert.name}", GuideTopic.CLIMATE, alert.kind,
                 )
             }
             if (state.internetOutages.any { it.isOngoing }) {
@@ -172,13 +182,15 @@ private fun AlertBanner(alert: CardAlert, onClick: () -> Unit) {
             onClick(label = "Open the country guide") { onClick(); true }
         },
     ) {
-        Text(
-            "${alert.symbol} ${alert.title}",
+        Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            style = MaterialTheme.typography.labelLarge,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            val kind = alert.hazardKind
+            if (kind != null) HazardSymbol(kind, size = 16.dp) else Text(alert.symbol, style = MaterialTheme.typography.labelLarge)
+            Text(alert.title, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
     }
 }
 

@@ -1,6 +1,7 @@
 package com.pathos.tellus.hazards
 
 import com.pathos.tellus.core.network.NetworkService
+import com.pathos.tellus.map.Coordinate
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.KSerializer
@@ -10,7 +11,11 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.CacheControl
@@ -41,7 +46,8 @@ data class DisasterAlert(
 ) {
     enum class Kind(val code: String?, val title: String, val symbol: String) {
         CYCLONE("TC", "Tropical cyclone", "🌀"),
-        EARTHQUAKE("EQ", "Earthquake", "🏚️"),
+        // Drawn as a seismograph trace where it matters; see HazardSymbol.
+        EARTHQUAKE("EQ", "Earthquake", "〰️"),
         FLOOD("FL", "Flood", "🌊"),
         VOLCANO("VO", "Volcano", "🌋"),
         DROUGHT("DR", "Drought", "☀️"),
@@ -68,13 +74,26 @@ data class DisasterAlert(
 data class GdacsEventList(val features: List<Feature>) {
 
     @Serializable
-    data class Feature(val properties: Properties)
+    data class Feature(val properties: Properties, val geometry: Geometry? = null)
+
+    /** Events in the list are points: their centre, as [longitude, latitude]. */
+    @Serializable
+    data class Geometry(val coordinates: JsonElement? = null) {
+        val point: Coordinate?
+            get() {
+                val pair = (coordinates as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.doubleOrNull } ?: return null
+                if (pair.size < 2 || pair[1] !in -90.0..90.0 || pair[0] !in -180.0..180.0) return null
+                return Coordinate(pair[1], pair[0])
+            }
+    }
 
     @Serializable
     data class Properties(
         val eventtype: String,
         val eventid: Long,
+        val episodeid: Long? = null,
         val name: String? = null,
+        val country: String? = null,
         val alertlevel: String,
         @Serializable(with = FlexibleBooleanSerializer::class) val iscurrent: Boolean? = null,
         val fromdate: String? = null,
@@ -85,7 +104,7 @@ data class GdacsEventList(val features: List<Feature>) {
     )
 
     @Serializable
-    data class Country(val iso2: String? = null)
+    data class Country(val iso2: String? = null, val countryname: String? = null)
 
     @Serializable
     data class Severity(val severitytext: String? = null)
@@ -124,7 +143,7 @@ data class GdacsEventList(val features: List<Feature>) {
     // Not private: the serialization plugin adds serializer() to this companion.
     companion object {
         /** GDACS dates are UTC without a zone, e.g. "2026-05-21T00:00:00". */
-        private fun parseDate(text: String): Instant? = try {
+        internal fun parseDate(text: String): Instant? = try {
             LocalDateTime.parse(text, DateTimeFormatter.ISO_LOCAL_DATE_TIME).toInstant(ZoneOffset.UTC)
         } catch (_: DateTimeParseException) {
             null
