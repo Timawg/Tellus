@@ -116,6 +116,7 @@ fun MainMapScreen(
                 weather = guideState.weather,
                 exchangeRate = guideState.exchangeRates.firstOrNull(),
                 onOpenGuide = { guideTopic = GuideTopic.OVERVIEW },
+                hasOngoingOutage = guideState.internetOutages.any { it.isOngoing },
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .statusBarsPadding(),

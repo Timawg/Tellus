@@ -8,6 +8,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 /** Material 3 theme that follows the system light/dark setting. */
@@ -26,3 +27,6 @@ fun TellusTheme(
     }
     MaterialTheme(colorScheme = colorScheme, content = content)
 }
+
+/** The iOS system purple, used for internet disruption alerts on both platforms. */
+val DisruptionPurple = Color(0xFFAF52DE)

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
@@ -16,8 +17,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -30,14 +33,16 @@ import com.pathos.tellus.guide.weather.DestinationWeather
 import com.pathos.tellus.guide.weather.WeatherCondition
 import com.pathos.tellus.guide.weather.rememberMinuteTicker
 import com.pathos.tellus.guide.weather.rememberWeatherFormat
+import com.pathos.tellus.ui.theme.DisruptionPurple
 import com.pathos.tellus.ui.theme.TellusTheme
 import java.time.ZoneId
 
 /**
  * The selected country at the top of the map: its name and capital, the
  * weather and local time there, the exchange rate, and the button that opens
- * the guide. Ported from iOS `CountrySummaryView`; the status dots and alert
- * banner arrive with the advisory, outbreak and disaster issues.
+ * the guide. Ported from iOS `CountrySummaryView`. The alert banner shows an
+ * ongoing internet disruption for now; disasters and outbreaks, which iOS
+ * ranks above it, and the status dots arrive with their own issues.
  */
 @Composable
 fun CountrySummaryCard(
@@ -46,6 +51,7 @@ fun CountrySummaryCard(
     exchangeRate: ExchangeRate?,
     onOpenGuide: () -> Unit,
     modifier: Modifier = Modifier,
+    hasOngoingOutage: Boolean = false,
 ) {
     val name = country.name?.common ?: return
     Surface(
@@ -79,11 +85,32 @@ fun CountrySummaryCard(
                 }
             }
             LiveInfoStrip(weather, exchangeRate)
+            if (hasOngoingOutage) AlertBanner("Internet disruption detected", onClick = onOpenGuide)
             FilledTonalButton(onClick = onOpenGuide) {
                 Icon(Icons.Filled.Info, contentDescription = null)
                 Text("Country guide", Modifier.padding(start = 8.dp))
             }
         }
+    }
+}
+
+/** One banner for the most pressing thing happening in the country. Tapping it opens the guide. */
+@Composable
+private fun AlertBanner(title: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = DisruptionPurple.copy(alpha = 0.85f),
+        contentColor = Color.White,
+        modifier = Modifier.semantics { onClick(label = "Open the country guide") { onClick(); true } },
+    ) {
+        Text(
+            "📶 $title",
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

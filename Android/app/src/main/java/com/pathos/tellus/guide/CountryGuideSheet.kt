@@ -25,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -33,9 +34,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -44,7 +45,11 @@ import androidx.compose.ui.unit.dp
 import com.pathos.tellus.countries.Country
 import com.pathos.tellus.countries.FlagImage
 import com.pathos.tellus.guide.democracy.DemocracySafetyContent
+import com.pathos.tellus.guide.electricity.ElectricityContent
+import com.pathos.tellus.guide.events.RecentEventsSection
 import com.pathos.tellus.guide.exchangerates.ExchangeRate
+import com.pathos.tellus.guide.outages.OutagesSection
+import com.pathos.tellus.guide.prices.CostOfLivingContent
 import com.pathos.tellus.guide.profile.CountryProfileSections
 import com.pathos.tellus.guide.weather.WeatherSection
 import com.pathos.tellus.guide.weather.rememberWeatherFormat
@@ -66,27 +71,45 @@ fun CountryGuideSheet(
     onDismiss: () -> Unit,
 ) {
     var topic by rememberSaveable { mutableStateOf(initialTopic) }
-    var showsDemocracySafety by rememberSaveable { mutableStateOf(false) }
-    BackHandler(enabled = showsDemocracySafety) { showsDemocracySafety = false }
+    var detail by rememberSaveable { mutableStateOf<GuideDetail?>(null) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        // The sheet would close on Back before a detail page could handle it.
+        properties = ModalBottomSheetProperties(shouldDismissOnBackPress = false),
     ) {
+        BackHandler {
+            if (detail != null) detail = null else onDismiss()
+        }
         Column(Modifier.fillMaxSize()) {
-            if (showsDemocracySafety) {
-                DetailTopBar("Democracy & Safety", onBack = { showsDemocracySafety = false })
+            val shownDetail = detail
+            if (shownDetail != null) {
+                DetailTopBar(shownDetail.title, onBack = { detail = null })
                 Column(
                     Modifier
                         .verticalScroll(rememberScrollState())
                         .navigationBarsPadding(),
                 ) {
-                    DemocracySafetyContent(
-                        cca3 = country.cca3,
-                        cca2 = country.cca2,
-                        loadDemocracy = viewModel::loadDemocracyProfile,
-                        loadHomicides = viewModel::loadHomicideTrend,
-                    )
+                    val name = country.name?.common.orEmpty()
+                    when (shownDetail) {
+                        GuideDetail.DEMOCRACY_SAFETY -> DemocracySafetyContent(
+                            cca3 = country.cca3,
+                            cca2 = country.cca2,
+                            loadDemocracy = viewModel::loadDemocracyProfile,
+                            loadHomicides = viewModel::loadHomicideTrend,
+                        )
+                        GuideDetail.COST_OF_LIVING -> CostOfLivingContent(
+                            countryCode = country.cca2.orEmpty(),
+                            countryName = name.ifEmpty { country.cca2.orEmpty() },
+                            load = viewModel::loadPriceLevels,
+                        )
+                        GuideDetail.ELECTRICITY -> ElectricityContent(
+                            countryCode = country.cca3.orEmpty(),
+                            countryName = name.ifEmpty { country.cca3.orEmpty() },
+                            load = viewModel::loadElectricityProfile,
+                        )
+                    }
                 }
             } else {
                 Row(
@@ -113,7 +136,7 @@ fun CountryGuideSheet(
                         state = state,
                         neighbours = neighbours,
                         viewModel = viewModel,
-                        onOpenDemocracySafety = { showsDemocracySafety = true },
+                        onOpenDetail = { detail = it },
                         onSelectNeighbour = {
                             onSelectCountry(it)
                             onDismiss()
@@ -144,30 +167,46 @@ private fun Overview(
     state: CountryGuideUiState,
     neighbours: List<Country>,
     viewModel: CountryGuideViewModel,
-    onOpenDemocracySafety: () -> Unit,
+    onOpenDetail: (GuideDetail) -> Unit,
     onSelectNeighbour: (Country) -> Unit,
 ) {
     LazyColumn(contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp)) {
-        item {
-            GuideSection(header = null) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(role = Role.Button, onClick = onOpenDemocracySafety),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("Democracy & Safety", Modifier.weight(1f))
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
-                }
-            }
-        }
+        item { GuideSection(header = null) { DetailRow(GuideDetail.DEMOCRACY_SAFETY, onOpenDetail) } }
         item(key = "profile-${country.cca2}") {
             CountryProfileSections(country.cca2, viewModel::loadCountryProfile)
         }
+        if (country.cca2 != null) {
+            item { GuideSection("Prices") { DetailRow(GuideDetail.COST_OF_LIVING, onOpenDetail) } }
+        }
+        if (country.cca3 != null) {
+            item { GuideSection("Energy") { DetailRow(GuideDetail.ELECTRICITY, onOpenDetail) } }
+        }
+        state.recentEvents?.takeIf { it.events.isNotEmpty() }?.let { events -> item { RecentEventsSection(events) } }
+        if (state.internetOutages.isNotEmpty()) item { OutagesSection(state.internetOutages) }
         state.weather?.let { weather -> item { WeatherSection(weather) } }
         if (state.exchangeRates.isNotEmpty()) item { MoneySection(state.exchangeRates) }
         item { AtAGlanceSection(country) }
         if (neighbours.isNotEmpty()) item { NeighboursSection(neighbours, onSelectNeighbour) }
+    }
+}
+
+/** Pages the Overview links to, shown in place of the tabs. */
+enum class GuideDetail(val title: String) {
+    DEMOCRACY_SAFETY("Democracy & Safety"),
+    COST_OF_LIVING("Cost of living"),
+    ELECTRICITY("Electricity profile"),
+}
+
+@Composable
+private fun DetailRow(detail: GuideDetail, onOpen: (GuideDetail) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button) { onOpen(detail) },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(detail.title, Modifier.weight(1f))
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
     }
 }
 
