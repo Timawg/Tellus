@@ -3,28 +3,33 @@ package com.pathos.tellus.map
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -48,9 +53,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.JointType
@@ -62,18 +70,26 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Polygon
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.pathos.tellus.R
-import coil3.compose.AsyncImage
 import com.pathos.tellus.countries.Country
 import com.pathos.tellus.countries.CountryBorder
 import com.pathos.tellus.countries.CountrySelectionBar
+import com.pathos.tellus.flights.FlightDetailsSheet
+import com.pathos.tellus.flights.FlightsLayer
+import com.pathos.tellus.flights.LiveFlightsUiState
+import com.pathos.tellus.flights.LiveFlightsViewModel
 import com.pathos.tellus.guide.CardAlert
 import com.pathos.tellus.guide.CountryGuideSheet
 import com.pathos.tellus.guide.CountryGuideViewModel
 import com.pathos.tellus.guide.CountrySummaryCard
 import com.pathos.tellus.guide.GuideTopic
+import com.pathos.tellus.guide.passport.NationalityPicker
 import com.pathos.tellus.guide.rememberDayFormatter
 import com.pathos.tellus.guide.weather.rememberMinuteTicker
-import com.pathos.tellus.guide.passport.NationalityPicker
+import java.text.NumberFormat
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 /** The world map with country selection. Layers are added on top of this. */
 @Composable
@@ -81,9 +97,16 @@ fun MainMapScreen(
     modifier: Modifier = Modifier,
     viewModel: MainMapViewModel = hiltViewModel(),
     guideViewModel: CountryGuideViewModel = hiltViewModel(),
+    flightsViewModel: LiveFlightsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val guideState by guideViewModel.state.collectAsStateWithLifecycle()
+    val flightsState by flightsViewModel.state.collectAsStateWithLifecycle()
+    // Flights poll only while the map is on screen.
+    LifecycleStartEffect(flightsViewModel) {
+        flightsViewModel.setMapActive(true)
+        onStopOrDispose { flightsViewModel.setMapActive(false) }
+    }
     var isPickingCountry by rememberSaveable { mutableStateOf(false) }
     var guideTopic by rememberSaveable { mutableStateOf<GuideTopic?>(null) }
     var isPickingPassport by rememberSaveable { mutableStateOf(false) }
@@ -108,6 +131,17 @@ fun MainMapScreen(
             val fit = state.cameraRequest?.target?.fit(aspectRatio) ?: return@LaunchedEffect
             cameraPositionState.moveTo(fit, heightDp)
         }
+        // A moving camera pauses flight polling; once it settles, the new view is polled.
+        LaunchedEffect(cameraPositionState.isMoving, isMapLoaded) {
+            if (!isMapLoaded) return@LaunchedEffect
+            if (cameraPositionState.isMoving) {
+                flightsViewModel.viewportWillChange()
+            } else {
+                cameraPositionState.projection?.visibleRegion?.latLngBounds?.let { bounds ->
+                    flightsViewModel.updateViewport(mercatorRect(bounds.southwest, bounds.northeast))
+                }
+            }
+        }
 
         GoogleMap(
             modifier = Modifier
@@ -125,6 +159,15 @@ fun MainMapScreen(
             },
         ) {
             state.selectedBorder?.let { CountryOutline(it) }
+            if (flightsState.showsFlights) {
+                FlightsLayer(
+                    markers = flightsState.markers,
+                    selectedId = flightsState.selection?.id,
+                    route = flightsState.selectedRoute.takeIf { flightsState.selection != null },
+                    flights = flightsState.flights,
+                    onSelect = flightsViewModel::select,
+                )
+            }
         }
 
         state.current?.let { country ->
@@ -163,15 +206,27 @@ fun MainMapScreen(
                 .imePadding(),
         ) {
             AnimatedVisibility(visible = !isPickingCountry, enter = fadeIn(), exit = fadeOut()) {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
                     FilledTonalIconButton(onClick = viewModel::selectRandomCountry, modifier = Modifier.size(56.dp)) {
                         Icon(
                             painter = painterResource(R.drawable.ic_globe),
                             contentDescription = stringResource(R.string.random_country),
                         )
                     }
-                    Spacer(Modifier.weight(1f))
-                    PassportButton(passport = guideState.passport, onClick = { isPickingPassport = true })
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.BottomCenter) {
+                        FlightsNotice(flightsState)
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        LayersButton(
+                            showsFlights = flightsState.showsFlights,
+                            onShowsFlightsChange = flightsViewModel::setShowsFlights,
+                        )
+                        PassportButton(passport = guideState.passport, onClick = { isPickingPassport = true })
+                    }
                 }
             }
             CountrySelectionBar(
@@ -201,6 +256,14 @@ fun MainMapScreen(
         )
     }
 
+    flightsState.selection?.let { selection ->
+        FlightDetailsSheet(
+            flightId = selection.id,
+            state = flightsState,
+            onDismiss = { flightsViewModel.select(null) },
+        )
+    }
+
     if (isPickingPassport) {
         NationalityPicker(
             countries = state.countries,
@@ -226,6 +289,71 @@ fun MainMapScreen(
             },
         )
     }
+}
+
+/** Switches map layers on and off, like iOS's layers menu. */
+@Composable
+private fun LayersButton(showsFlights: Boolean, onShowsFlightsChange: (Boolean) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        FilledTonalIconButton(onClick = { expanded = true }, modifier = Modifier.size(56.dp)) {
+            Icon(painterResource(R.drawable.ic_layers), contentDescription = stringResource(R.string.map_layers))
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.live_flights)) },
+                leadingIcon = { Text("✈️") },
+                trailingIcon = { Checkbox(checked = showsFlights, onCheckedChange = null) },
+                onClick = { onShowsFlightsChange(!showsFlights) },
+                modifier = Modifier.semantics { stateDescription = if (showsFlights) "On" else "Off" },
+            )
+        }
+    }
+}
+
+/**
+ * Explains why some or all aircraft are missing from the map: OpenSky is
+ * rate limiting us, or there are more flights than are drawn at once.
+ */
+@Composable
+private fun FlightsNotice(state: LiveFlightsUiState) {
+    val pausedUntil = state.pausedUntil
+    val text = when {
+        !state.showsFlights -> null
+        pausedUntil != null -> {
+            // OpenSky's daily quota can pause us until the next day.
+            val zone = ZoneId.systemDefault()
+            val sameDay = pausedUntil.atZone(zone).toLocalDate() == LocalDate.now(zone)
+            val format = if (sameDay) DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT) else DateTimeFormatter.ofPattern("EEEE HH:mm")
+            "Live flights paused until ${format.withZone(zone).format(pausedUntil)}"
+        }
+        state.isShowingSubsetOfFlights -> {
+            val number = NumberFormat.getIntegerInstance()
+            "${number.format(state.markers.size)} of ${number.format(state.totalFlightCount)} flights\nZoom in for more"
+        }
+        else -> null
+    } ?: return
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f),
+        tonalElevation = 3.dp,
+        modifier = Modifier.semantics(mergeDescendants = true) {},
+    ) {
+        Text(
+            "✈️ $text",
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** The Mercator rect a map's visible bounds cover, wrapping past the date line when needed. */
+private fun mercatorRect(southwest: LatLng, northeast: LatLng): MercatorRect {
+    val sw = MercatorPoint.of(Coordinate(southwest.latitude, southwest.longitude))
+    val ne = MercatorPoint.of(Coordinate(northeast.latitude, northeast.longitude))
+    val maxX = if (ne.x < sw.x) ne.x + 1 else ne.x
+    return MercatorRect(sw.x, ne.y, maxX, sw.y)
 }
 
 /** Opens the passport picker, with the chosen passport's flag as a badge, like iOS's passport button. */

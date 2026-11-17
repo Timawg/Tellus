@@ -13,4 +13,6 @@
     <string name="ok">OK</string>
     <string name="your_passport">Your passport</string>
     <string name="not_set">Not set</string>
+    <string name="map_layers">Map layers</string>
+    <string name="live_flights">Live flights</string>
 </resources>

@@ -88,4 +88,22 @@ object MapRegionCalculator {
         val width = latitudeDelta * 2 / 360
         return MapFit(center, min(max(bottom - top, width / aspectRatio), 1.0))
     }
+
+    /**
+     * The latitude and longitude ranges a viewport covers, as iOS
+     * `MapRegionCalculator.bounds(of:)` reads them from `MKCoordinateRegion`:
+     * the region's centre plus and minus half its span. Longitudes can run
+     * past ±180 near the date line, as on iOS.
+     */
+    fun bounds(viewport: MercatorRect): Pair<ClosedFloatingPointRange<Double>, ClosedFloatingPointRange<Double>> {
+        var midX = viewport.midX % 1.0
+        if (midX < 0) midX += 1.0
+        val center = MercatorPoint(midX, viewport.midY.coerceIn(0.0, 1.0)).coordinate
+        val top = MercatorPoint(0.0, viewport.minY.coerceIn(0.0, 1.0)).coordinate.latitude
+        val bottom = MercatorPoint(0.0, viewport.maxY.coerceIn(0.0, 1.0)).coordinate.latitude
+        val latitudeDelta = top - bottom
+        val longitudeDelta = min(viewport.width, 1.0) * 360
+        return (center.latitude - latitudeDelta / 2)..(center.latitude + latitudeDelta / 2) to
+            (center.longitude - longitudeDelta / 2)..(center.longitude + longitudeDelta / 2)
+    }
 }
