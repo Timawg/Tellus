@@ -18,6 +18,8 @@ import com.pathos.tellus.guide.exchangerates.ExchangeRateService
 import com.pathos.tellus.guide.exchangerates.ExchangeRates
 import com.pathos.tellus.guide.outages.InternetOutage
 import com.pathos.tellus.guide.outages.InternetOutageService
+import com.pathos.tellus.guide.outbreaks.OutbreakReport
+import com.pathos.tellus.guide.outbreaks.OutbreakService
 import com.pathos.tellus.guide.passport.AdmissoryService
 import com.pathos.tellus.guide.passport.AdmissoryStatus
 import com.pathos.tellus.guide.prices.EurostatPriceLevels
@@ -130,6 +132,12 @@ class CountryGuideViewModelTest {
         ),
     )
 
+    private object NoOutbreaks : OutbreakService {
+        override suspend fun getReports() = emptyList<OutbreakReport>()
+    }
+
+    private val day = { _: Instant -> "1 Nov" }
+
     private object NoProfiles : CountryProfileService, DemocracyProfiles {
         override suspend fun getProfile(countryCode: String) = emptyList<CountryIndicatorObservation>()
         override suspend fun getHomicideTrend(countryCode: String) = emptyList<AnnualObservation>()
@@ -148,8 +156,9 @@ class CountryGuideViewModelTest {
         locale: Locale = Locale.GERMANY,
         events: FakeEvents = FakeEvents(),
         advisories: FakeAdvisories = FakeAdvisories(),
+        outbreaks: OutbreakService = NoOutbreaks,
     ) = CountryGuideViewModel(
-        weather, rates, NoProfiles, advisories, advisories, events, events, NoPrices, NoPrices, NoProfiles,
+        weather, rates, NoProfiles, advisories, advisories, events, events, outbreaks, NoPrices, NoPrices, NoProfiles,
         preferences, json, locale, dispatcher,
     )
 
@@ -218,8 +227,8 @@ class CountryGuideViewModelTest {
         val state = viewModel.state.value
 
         assertEquals("tel:112", (state.destinationGuide!!.emergency.single() as AdviceSection.Block.Paragraph).text.links.single().url)
-        assertEquals(listOf(TravelStatus.Kind.ADVISORY), state.travelStatuses.map { it.kind })
-        assertEquals(StatusColors.SECURE, state.travelStatuses.single().colors)
+        assertEquals(listOf(TravelStatus.Kind.ADVISORY), state.travelStatuses(Instant.EPOCH, day).filter { it.kind != TravelStatus.Kind.HEALTH }.map { it.kind })
+        assertEquals(StatusColors.SECURE, state.travelStatuses(Instant.EPOCH, day).first().colors)
     }
 
     @Test
@@ -234,8 +243,28 @@ class CountryGuideViewModelTest {
 
         assertEquals("NOR", viewModel.state.value.passport?.cca3)
         assertEquals("visa-free", viewModel.state.value.admissoryStatus?.category)
-        assertEquals(TravelStatus.Kind.VISA, viewModel.state.value.travelStatuses.single().kind)
+        assertEquals(listOf(TravelStatus.Kind.VISA, TravelStatus.Kind.HEALTH), viewModel.state.value.travelStatuses(Instant.EPOCH, day).map { it.kind })
         assertEquals("NOR", json.decodeFromString<Country>(preferences.nationalityJson.first()!!).cca3)
+    }
+
+    @Test
+    fun outbreakReportsAreMatchedToTheDestinationOnce() = runTest(dispatcher) {
+        var downloads = 0
+        val outbreaks = object : OutbreakService {
+            override suspend fun getReports(): List<OutbreakReport> {
+                downloads++
+                // The test countries are named by their codes.
+                return listOf(OutbreakReport("1", "Measles", "SWE and NOR", Instant.EPOCH, "", null))
+            }
+        }
+        val countries = listOf(country("SWE", "SEK"), country("NOR", "NOK"), country("FIN", "EUR"))
+        val viewModel = viewModel(outbreaks = outbreaks)
+        viewModel.setDestination(countries[0], countries)
+        assertEquals(listOf("Measles"), viewModel.state.value.outbreakReports.map { it.disease })
+
+        viewModel.setDestination(countries[2], countries)
+        assertEquals(emptyList<OutbreakReport>(), viewModel.state.value.outbreakReports)
+        assertEquals(1, downloads)
     }
 
     @Test

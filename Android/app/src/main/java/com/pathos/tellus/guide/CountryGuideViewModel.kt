@@ -19,6 +19,9 @@ import com.pathos.tellus.guide.exchangerates.ExchangeRate
 import com.pathos.tellus.guide.exchangerates.ExchangeRateService
 import com.pathos.tellus.guide.outages.InternetOutage
 import com.pathos.tellus.guide.outages.InternetOutageService
+import com.pathos.tellus.guide.outbreaks.OutbreakCountryMatcher
+import com.pathos.tellus.guide.outbreaks.OutbreakReport
+import com.pathos.tellus.guide.outbreaks.OutbreakService
 import com.pathos.tellus.guide.passport.AdmissoryService
 import com.pathos.tellus.guide.passport.AdmissoryStatus
 import com.pathos.tellus.guide.prices.EurostatPriceLevels
@@ -37,8 +40,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import java.time.Instant
 import java.util.Currency
 import java.util.Locale
 import javax.inject.Inject
@@ -64,10 +70,16 @@ data class CountryGuideUiState(
     val isLoadingDestinationGuide: Boolean = false,
     /** Visa rules for the passport at the destination. */
     val admissoryStatus: AdmissoryStatus? = null,
+    /** WHO outbreak reports about the destination, newest per disease. */
+    val outbreakReports: List<OutbreakReport> = emptyList(),
 ) {
-    /** Advisory and visa statuses, in the order the card's dots show them. */
-    val travelStatuses: List<TravelStatus>
-        get() = listOfNotNull(TravelStatus.advisory(advisoryStatus), TravelStatus.visa(admissoryStatus, passport))
+    /** Advisory, visa and health statuses, in the order the card's dots show them. */
+    fun travelStatuses(now: Instant, formatDay: (Instant) -> String): List<TravelStatus> =
+        listOfNotNull(
+            TravelStatus.advisory(advisoryStatus),
+            TravelStatus.visa(admissoryStatus, passport),
+            TravelStatus.health(outbreakReports, now, formatDay),
+        )
 }
 
 /**
@@ -84,6 +96,7 @@ class CountryGuideViewModel @Inject constructor(
     private val admissoryService: AdmissoryService,
     private val recentEventsService: RecentEventsService,
     private val outageService: InternetOutageService,
+    private val outbreakService: OutbreakService,
     private val priceLevelService: PriceLevelService,
     private val electricityService: ElectricityService,
     private val democracyProfiles: DemocracyProfiles,
@@ -97,6 +110,10 @@ class CountryGuideViewModel @Inject constructor(
     val state: StateFlow<CountryGuideUiState> = _state.asStateFlow()
 
     private var destinationJob: Job? = null
+
+    /** Reports per country, built once from WHO's list. */
+    private var outbreakIndex: Map<String, List<OutbreakReport>>? = null
+    private val outbreakMutex = Mutex()
     private var passportJob: Job? = null
 
     init {
@@ -116,7 +133,8 @@ class CountryGuideViewModel @Inject constructor(
         }
     }
 
-    fun setDestination(country: Country?) {
+    /** [countries] is the full list, used to work out which countries WHO's reports are about. */
+    fun setDestination(country: Country?, countries: List<Country> = emptyList()) {
         if (country?.cca3 == _state.value.destination?.cca3) return
         _state.update {
             it.copy(
@@ -124,6 +142,7 @@ class CountryGuideViewModel @Inject constructor(
                 weather = null,
                 recentEvents = null,
                 internetOutages = emptyList(),
+                outbreakReports = emptyList(),
                 advisoryStatus = null,
                 advisoryLoadFailed = false,
                 destinationGuide = null,
@@ -142,6 +161,7 @@ class CountryGuideViewModel @Inject constructor(
                     updateDestination(destination) { it.copy(recentEvents = events) }
                 }
                 launch { updateAdvisory(destination) }
+                launch { updateOutbreakReports(destination, countries) }
                 launch {
                     val code = destination.cca2 ?: return@launch
                     val outages = loadOrNull { outageService.getOutages(code) }.orEmpty()
@@ -168,6 +188,20 @@ class CountryGuideViewModel @Inject constructor(
         val guide = withContext(parseDispatcher) { DestinationGuide.from(status.data.eng) }
         // Another country may have been chosen while parsing.
         updateDestination(destination) { it.copy(destinationGuide = guide, isLoadingDestinationGuide = false) }
+    }
+
+    private suspend fun updateOutbreakReports(destination: Country, countries: List<Country>) {
+        val code = destination.cca2 ?: return
+        // Held while building, so a quick second selection waits for this
+        // build instead of starting its own. If this selection's job is
+        // cancelled first, the next one builds the index.
+        val index = outbreakMutex.withLock {
+            outbreakIndex ?: loadOrNull { outbreakService.getReports() }?.let { reports ->
+                withContext(parseDispatcher) { OutbreakCountryMatcher.index(reports, countries) }
+                    .also { outbreakIndex = it }
+            }
+        }
+        updateDestination(destination) { it.copy(outbreakReports = index?.get(code).orEmpty()) }
     }
 
     /** Saves the passport the user travels on, which drives visa rules and the home currency. */

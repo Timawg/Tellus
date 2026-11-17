@@ -18,6 +18,8 @@ import com.pathos.tellus.guide.events.RecentEventsService
 import com.pathos.tellus.guide.events.WikipediaRecentEventsService
 import com.pathos.tellus.guide.outages.InternetOutageService
 import com.pathos.tellus.guide.outages.IodaInternetOutageService
+import com.pathos.tellus.guide.outbreaks.OutbreakService
+import com.pathos.tellus.guide.outbreaks.WhoOutbreakService
 import com.pathos.tellus.guide.passport.AdmissoryService
 import com.pathos.tellus.guide.passport.PassportIndexAdmissoryService
 import com.pathos.tellus.guide.prices.EurostatPriceService
@@ -50,6 +52,9 @@ abstract class GuideModule {
 
     @Binds
     abstract fun bindAdmissoryService(service: PassportIndexAdmissoryService): AdmissoryService
+
+    @Binds
+    abstract fun bindOutbreakService(service: WhoOutbreakService): OutbreakService
 
     @Binds
     abstract fun bindInternetOutageService(service: IodaInternetOutageService): InternetOutageService

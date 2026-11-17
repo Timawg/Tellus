@@ -30,3 +30,6 @@ fun TellusTheme(
 
 /** The iOS system purple, used for internet disruption alerts on both platforms. */
 val DisruptionPurple = Color(0xFFAF52DE)
+
+/** The iOS system orange, used for orange disaster and outbreak alerts. */
+val AlertOrange = Color(0xFFFF9500)

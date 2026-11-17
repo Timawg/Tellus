@@ -37,8 +37,10 @@ import com.pathos.tellus.guide.weather.DestinationWeather
 import com.pathos.tellus.guide.weather.WeatherCondition
 import com.pathos.tellus.guide.weather.rememberMinuteTicker
 import com.pathos.tellus.guide.weather.rememberWeatherFormat
+import com.pathos.tellus.ui.theme.AlertOrange
 import com.pathos.tellus.ui.theme.DisruptionPurple
 import com.pathos.tellus.ui.theme.TellusTheme
+import java.time.Instant
 import java.time.ZoneId
 
 /**
@@ -53,9 +55,9 @@ fun CountrySummaryCard(
     country: Country,
     weather: DestinationWeather?,
     exchangeRate: ExchangeRate?,
-    onOpenGuide: () -> Unit,
+    onOpenGuide: (GuideTopic) -> Unit,
     modifier: Modifier = Modifier,
-    hasOngoingOutage: Boolean = false,
+    alert: CardAlert? = null,
     statuses: List<TravelStatus> = emptyList(),
 ) {
     val name = country.name?.common ?: return
@@ -90,8 +92,8 @@ fun CountrySummaryCard(
                 }
             }
             LiveInfoStrip(weather, exchangeRate)
-            if (hasOngoingOutage) AlertBanner("Internet disruption detected", onClick = onOpenGuide)
-            GuideButton(statuses, onOpenGuide)
+            alert?.let { AlertBanner(it, onClick = { onOpenGuide(it.topic) }) }
+            GuideButton(statuses, onClick = { onOpenGuide(GuideTopic.OVERVIEW) })
         }
     }
 }
@@ -127,18 +129,45 @@ private fun GuideButton(statuses: List<TravelStatus>, onClick: () -> Unit) {
     }
 }
 
-/** One banner for the most pressing thing happening in the country. Tapping it opens the guide. */
+/**
+ * The most pressing thing happening in the country, as one banner on the
+ * card: an ongoing internet disruption, or a WHO outbreak report from the
+ * last 30 days. iOS ranks an active disaster first; that arrives with the
+ * disaster issue.
+ */
+data class CardAlert(val title: String, val symbol: String, val color: Color, val accessibility: String, val topic: GuideTopic) {
+    companion object {
+        fun from(state: CountryGuideUiState, now: Instant): CardAlert? {
+            if (state.internetOutages.any { it.isOngoing }) {
+                return CardAlert("Internet disruption detected", "📶", DisruptionPurple, "Internet disruption detected", GuideTopic.OVERVIEW)
+            }
+            val report = state.outbreakReports.firstOrNull()
+            if (report != null && report.published.isAfter(now.minus(TravelStatus.CURRENT_OUTBREAK_AGE))) {
+                return CardAlert(
+                    "Outbreak: ${report.disease}", "🦠", AlertOrange,
+                    "Recent outbreak report: ${report.disease}", GuideTopic.HEALTH,
+                )
+            }
+            return null
+        }
+    }
+}
+
+/** The card's alert banner. Tapping it opens the guide at the tab that explains it. */
 @Composable
-private fun AlertBanner(title: String, onClick: () -> Unit) {
+private fun AlertBanner(alert: CardAlert, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = CircleShape,
-        color = DisruptionPurple.copy(alpha = 0.85f),
+        color = alert.color.copy(alpha = 0.85f),
         contentColor = Color.White,
-        modifier = Modifier.semantics { onClick(label = "Open the country guide") { onClick(); true } },
+        modifier = Modifier.semantics {
+            contentDescription = alert.accessibility
+            onClick(label = "Open the country guide") { onClick(); true }
+        },
     ) {
         Text(
-            "📶 $title",
+            "${alert.symbol} ${alert.title}",
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             style = MaterialTheme.typography.labelLarge,
             maxLines = 1,
