@@ -6,7 +6,10 @@ import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
+import okhttp3.ResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
+import okio.Buffer
+import okio.BufferedSource
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -43,6 +46,29 @@ class OkHttpNetworkServiceTest {
         }
         fail("Expected an HttpError")
         error("unreachable")
+    }
+
+    @Test
+    fun bodyIsReadOffTheCallersThread() = runTest {
+        // Android rejects socket reads on the main thread, which is where
+        // view models call from, so the body must be read in OkHttp's callback.
+        var readingThread: Thread? = null
+        val body = object : ResponseBody() {
+            override fun contentType() = null
+            override fun contentLength() = 5L
+            override fun source(): BufferedSource {
+                readingThread = Thread.currentThread()
+                return Buffer().writeUtf8("hello")
+            }
+        }
+        val client = OkHttpClient.Builder()
+            .addInterceptor(Interceptor { chain ->
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("").body(body).build()
+            })
+            .build()
+
+        assertArrayEquals("hello".toByteArray(), OkHttpNetworkService(client).send(request))
+        assertTrue(readingThread != null && readingThread != Thread.currentThread())
     }
 
     @Test

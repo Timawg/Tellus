@@ -8,7 +8,6 @@ import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
 import javax.inject.Inject
-import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /** Sends HTTP requests for the feature services. Mirrors iOS `NetworkServiceProtocol`. */
@@ -28,17 +27,41 @@ class OkHttpNetworkService @Inject constructor(
     private val client: OkHttpClient,
 ) : NetworkService {
 
-    override suspend fun send(request: Request): ByteArray =
-        client.newCall(request).await().use { response ->
+    // The whole response, body included, is read on OkHttp's thread in the
+    // callback. Reading the body after resuming ran it on the caller's
+    // thread, which is the main thread for view models, and Android rejects
+    // that with NetworkOnMainThreadException.
+    override suspend fun send(request: Request): ByteArray = suspendCancellableCoroutine { continuation ->
+        val call = client.newCall(request)
+        continuation.invokeOnCancellation { call.cancel() }
+        call.enqueue(object : Callback {
+            override fun onResponse(call: Call, response: Response) {
+                val result = try {
+                    response.use { Result.success(bodyOrError(it)) }
+                } catch (error: IOException) {
+                    Result.failure(error)
+                } catch (error: HttpError) {
+                    Result.failure(error)
+                }
+                continuation.resumeWith(result)
+            }
+
+            override fun onFailure(call: Call, e: IOException) {
+                continuation.resumeWithException(e)
+            }
+        })
+    }
+
+    private companion object {
+        fun bodyOrError(response: Response): ByteArray {
             val body = response.body.bytes()
-            when {
+            return when {
                 response.code == 429 -> throw HttpError.RateLimited(retryAfterSeconds(response))
                 !response.isSuccessful -> throw HttpError.InvalidStatus(response.code, body)
                 else -> body
             }
         }
 
-    private companion object {
         /**
          * Seconds the server asked us to wait, from the standard `Retry-After`
          * header (seconds form) or OpenSky's `X-Rate-Limit-Retry-After-Seconds`.
@@ -48,18 +71,4 @@ class OkHttpNetworkService @Inject constructor(
                 ?.trim()
                 ?.toDoubleOrNull()
     }
-}
-
-/** Enqueues the call and suspends until it completes; cancelling the coroutine cancels the call. */
-private suspend fun Call.await(): Response = suspendCancellableCoroutine { continuation ->
-    continuation.invokeOnCancellation { cancel() }
-    enqueue(object : Callback {
-        override fun onResponse(call: Call, response: Response) {
-            continuation.resume(response) { _, value, _ -> value.close() }
-        }
-
-        override fun onFailure(call: Call, e: IOException) {
-            continuation.resumeWithException(e)
-        }
-    })
 }

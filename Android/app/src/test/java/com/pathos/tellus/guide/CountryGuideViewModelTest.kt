@@ -30,6 +30,8 @@ import com.pathos.tellus.guide.profile.CountryProfileService
 import com.pathos.tellus.guide.weather.DestinationWeather
 import com.pathos.tellus.guide.weather.WeatherCondition
 import com.pathos.tellus.guide.weather.WeatherService
+import com.pathos.tellus.hazards.DisasterAlert
+import com.pathos.tellus.hazards.DisasterAlertService
 import com.pathos.tellus.ui.theme.StatusColors
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -132,6 +134,10 @@ class CountryGuideViewModelTest {
         ),
     )
 
+    private object NoDisasters : DisasterAlertService {
+        override suspend fun getAlerts(countryCode: String) = emptyList<DisasterAlert>()
+    }
+
     private object NoOutbreaks : OutbreakService {
         override suspend fun getReports() = emptyList<OutbreakReport>()
     }
@@ -158,7 +164,7 @@ class CountryGuideViewModelTest {
         advisories: FakeAdvisories = FakeAdvisories(),
         outbreaks: OutbreakService = NoOutbreaks,
     ) = CountryGuideViewModel(
-        weather, rates, NoProfiles, advisories, advisories, events, events, outbreaks, NoPrices, NoPrices, NoProfiles,
+        weather, rates, NoProfiles, advisories, advisories, events, events, outbreaks, NoDisasters, NoPrices, NoPrices, NoProfiles,
         preferences, json, locale, dispatcher,
     )
 
@@ -227,7 +233,7 @@ class CountryGuideViewModelTest {
         val state = viewModel.state.value
 
         assertEquals("tel:112", (state.destinationGuide!!.emergency.single() as AdviceSection.Block.Paragraph).text.links.single().url)
-        assertEquals(listOf(TravelStatus.Kind.ADVISORY), state.travelStatuses(Instant.EPOCH, day).filter { it.kind != TravelStatus.Kind.HEALTH }.map { it.kind })
+        assertEquals(listOf(TravelStatus.Kind.ADVISORY), state.travelStatuses(Instant.EPOCH, day).map { it.kind }.filter { it == TravelStatus.Kind.ADVISORY || it == TravelStatus.Kind.VISA })
         assertEquals(StatusColors.SECURE, state.travelStatuses(Instant.EPOCH, day).first().colors)
     }
 
@@ -243,7 +249,7 @@ class CountryGuideViewModelTest {
 
         assertEquals("NOR", viewModel.state.value.passport?.cca3)
         assertEquals("visa-free", viewModel.state.value.admissoryStatus?.category)
-        assertEquals(listOf(TravelStatus.Kind.VISA, TravelStatus.Kind.HEALTH), viewModel.state.value.travelStatuses(Instant.EPOCH, day).map { it.kind })
+        assertEquals(listOf(TravelStatus.Kind.VISA, TravelStatus.Kind.HEALTH, TravelStatus.Kind.DISASTERS), viewModel.state.value.travelStatuses(Instant.EPOCH, day).map { it.kind })
         assertEquals("NOR", json.decodeFromString<Country>(preferences.nationalityJson.first()!!).cca3)
     }
 

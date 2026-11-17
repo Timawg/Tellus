@@ -21,6 +21,7 @@ import com.pathos.tellus.countries.Country
 import com.pathos.tellus.guide.advisories.AdvisoryStatus
 import com.pathos.tellus.guide.outbreaks.OutbreakReport
 import com.pathos.tellus.guide.passport.AdmissoryStatus
+import com.pathos.tellus.hazards.DisasterAlert
 import com.pathos.tellus.ui.theme.StatusColors
 import java.time.Duration
 import java.time.Instant
@@ -29,8 +30,7 @@ import java.time.format.DateTimeFormatter
 
 /**
  * One of the things summed up by the dots on the map card's guide button and
- * shown in full in the guide, ported from iOS `TravelStatus`. The natural
- * disaster status arrives with the disaster issue.
+ * shown in full in the guide, ported from iOS `TravelStatus`.
  */
 data class TravelStatus(val kind: Kind, val colors: StatusColors, val title: String, val value: String) {
 
@@ -38,6 +38,7 @@ data class TravelStatus(val kind: Kind, val colors: StatusColors, val title: Str
         ADVISORY(GuideTopic.ENTRY),
         VISA(GuideTopic.ENTRY),
         HEALTH(GuideTopic.HEALTH),
+        DISASTERS(GuideTopic.CLIMATE),
     }
 
     companion object {
@@ -75,6 +76,23 @@ data class TravelStatus(val kind: Kind, val colors: StatusColors, val title: Str
                 age <= RECENT_OUTBREAK_AGE -> TravelStatus(Kind.HEALTH, StatusColors.SEMISECURE, title, reported)
                 else -> TravelStatus(Kind.HEALTH, StatusColors.SECURE, title, "No WHO reports in the last six months")
             }
+        }
+
+        /**
+         * From GDACS alerts for the country: red or orange by the worst urgent
+         * alert, blue when only a drought is listed.
+         */
+        fun disasters(alerts: List<DisasterAlert>): TravelStatus {
+            val title = "Natural disasters"
+            val urgent = alerts.filter { it.isUrgent }
+            urgent.firstOrNull { it.level == DisasterAlert.Level.RED }?.let {
+                return TravelStatus(Kind.DISASTERS, StatusColors.DANGER, title, "Red alert: ${it.name}")
+            }
+            urgent.firstOrNull()?.let {
+                return TravelStatus(Kind.DISASTERS, StatusColors.CAUTION, title, "Orange alert: ${it.name}")
+            }
+            alerts.firstOrNull()?.let { return TravelStatus(Kind.DISASTERS, StatusColors.SEMISECURE, title, it.name) }
+            return TravelStatus(Kind.DISASTERS, StatusColors.SECURE, title, "No active alerts")
         }
 
         /** Each word's first letter in upper case, like Foundation's `capitalized` ("visa-free" → "Visa-Free"). */
