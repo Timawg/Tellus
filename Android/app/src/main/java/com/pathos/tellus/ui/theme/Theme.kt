@@ -33,3 +33,6 @@ val DisruptionPurple = Color(0xFFAF52DE)
 
 /** The iOS system orange, used for orange disaster and outbreak alerts. */
 val AlertOrange = Color(0xFFFF9500)
+
+/** The iOS system red, used for red disaster alerts. */
+val AlertRed = Color(0xFFFF3B30)

@@ -31,6 +31,8 @@ import com.pathos.tellus.guide.profile.CountryIndicatorObservation
 import com.pathos.tellus.guide.profile.CountryProfileService
 import com.pathos.tellus.guide.weather.DestinationWeather
 import com.pathos.tellus.guide.weather.WeatherService
+import com.pathos.tellus.hazards.DisasterAlert
+import com.pathos.tellus.hazards.DisasterAlertService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -72,13 +74,16 @@ data class CountryGuideUiState(
     val admissoryStatus: AdmissoryStatus? = null,
     /** WHO outbreak reports about the destination, newest per disease. */
     val outbreakReports: List<OutbreakReport> = emptyList(),
+    /** Current GDACS orange and red alerts for the destination. */
+    val disasterAlerts: List<DisasterAlert> = emptyList(),
 ) {
-    /** Advisory, visa and health statuses, in the order the card's dots show them. */
+    /** Advisory, visa, health and disaster statuses, in the order the card's dots show them. */
     fun travelStatuses(now: Instant, formatDay: (Instant) -> String): List<TravelStatus> =
         listOfNotNull(
             TravelStatus.advisory(advisoryStatus),
             TravelStatus.visa(admissoryStatus, passport),
             TravelStatus.health(outbreakReports, now, formatDay),
+            TravelStatus.disasters(disasterAlerts),
         )
 }
 
@@ -97,6 +102,7 @@ class CountryGuideViewModel @Inject constructor(
     private val recentEventsService: RecentEventsService,
     private val outageService: InternetOutageService,
     private val outbreakService: OutbreakService,
+    private val disasterAlertService: DisasterAlertService,
     private val priceLevelService: PriceLevelService,
     private val electricityService: ElectricityService,
     private val democracyProfiles: DemocracyProfiles,
@@ -143,6 +149,7 @@ class CountryGuideViewModel @Inject constructor(
                 recentEvents = null,
                 internetOutages = emptyList(),
                 outbreakReports = emptyList(),
+                disasterAlerts = emptyList(),
                 advisoryStatus = null,
                 advisoryLoadFailed = false,
                 destinationGuide = null,
@@ -162,6 +169,11 @@ class CountryGuideViewModel @Inject constructor(
                 }
                 launch { updateAdvisory(destination) }
                 launch { updateOutbreakReports(destination, countries) }
+                launch {
+                    val code = destination.cca2 ?: return@launch
+                    val alerts = loadOrNull { disasterAlertService.getAlerts(code) }.orEmpty()
+                    updateDestination(destination) { it.copy(disasterAlerts = alerts) }
+                }
                 launch {
                     val code = destination.cca2 ?: return@launch
                     val outages = loadOrNull { outageService.getOutages(code) }.orEmpty()

@@ -58,12 +58,12 @@ import com.pathos.tellus.guide.prices.CostOfLivingContent
 import com.pathos.tellus.guide.profile.CountryProfileSections
 import com.pathos.tellus.guide.weather.WeatherSection
 import com.pathos.tellus.guide.weather.rememberMinuteTicker
+import com.pathos.tellus.hazards.DisasterAlertsSection
 import com.pathos.tellus.guide.weather.rememberWeatherFormat
 
 /**
  * The country guide: a sheet with a tab per topic, ported from iOS
- * `DestinationGuideView`. Every tab but Climate is filled in so far; Climate
- * arrives with its own issue.
+ * `DestinationGuideView`.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,9 +152,7 @@ fun CountryGuideSheet(
                     GuideTopic.ENTRY -> Entry(state)
                     GuideTopic.HEALTH -> Health(state)
                     GuideTopic.LAWS -> Laws(state)
-                    else -> Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.TopCenter) {
-                        SecondaryText("${topic.title} isn’t available on Android yet.")
-                    }
+                    GuideTopic.CLIMATE -> Climate(state)
                 }
             }
         }
@@ -220,6 +218,21 @@ private fun LazyListScope.travelAdvice(topic: GuideTopic, state: CountryGuideUiS
         }
     }
     state.destinationGuide?.let { guide -> item { GuideAdviceSource(guide) } }
+}
+
+/** The Climate tab: the disaster status, GDACS alerts, then disaster and climate advice. */
+@Composable
+private fun Climate(state: CountryGuideUiState) {
+    val now = rememberMinuteTicker()
+    val formatDay = rememberDayFormatter()
+    LazyColumn(contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp)) {
+        item {
+            val disasters = state.travelStatuses(now, formatDay).filter { it.kind == TravelStatus.Kind.DISASTERS }
+            GuideSection("Status") { disasters.forEach { TravelStatusRow(it) } }
+        }
+        if (state.disasterAlerts.isNotEmpty()) item { DisasterAlertsSection(state.disasterAlerts) }
+        travelAdvice(GuideTopic.CLIMATE, state)
+    }
 }
 
 /** The Laws tab: only the laws and culture advice, as on iOS. */

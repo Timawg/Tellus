@@ -37,6 +37,7 @@ import com.pathos.tellus.guide.weather.DestinationWeather
 import com.pathos.tellus.guide.weather.WeatherCondition
 import com.pathos.tellus.guide.weather.rememberMinuteTicker
 import com.pathos.tellus.guide.weather.rememberWeatherFormat
+import com.pathos.tellus.hazards.color
 import com.pathos.tellus.ui.theme.AlertOrange
 import com.pathos.tellus.ui.theme.DisruptionPurple
 import com.pathos.tellus.ui.theme.TellusTheme
@@ -131,13 +132,18 @@ private fun GuideButton(statuses: List<TravelStatus>, onClick: () -> Unit) {
 
 /**
  * The most pressing thing happening in the country, as one banner on the
- * card: an ongoing internet disruption, or a WHO outbreak report from the
- * last 30 days. iOS ranks an active disaster first; that arrives with the
- * disaster issue.
+ * card: an active disaster, an ongoing internet disruption, or a WHO
+ * outbreak report from the last 30 days, in that order as on iOS.
  */
 data class CardAlert(val title: String, val symbol: String, val color: Color, val accessibility: String, val topic: GuideTopic) {
     companion object {
         fun from(state: CountryGuideUiState, now: Instant): CardAlert? {
+            state.disasterAlerts.firstOrNull { it.isUrgent }?.let { alert ->
+                return CardAlert(
+                    alert.name, alert.kind.symbol, alert.level.color,
+                    "${alert.level.title} alert: ${alert.name}", GuideTopic.CLIMATE,
+                )
+            }
             if (state.internetOutages.any { it.isOngoing }) {
                 return CardAlert("Internet disruption detected", "📶", DisruptionPurple, "Internet disruption detected", GuideTopic.OVERVIEW)
             }
