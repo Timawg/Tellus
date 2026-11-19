@@ -16,4 +16,5 @@
     <string name="map_layers">Map layers</string>
     <string name="live_flights">Live flights</string>
     <string name="natural_hazards">Natural hazards</string>
+    <string name="undersea_cables">Undersea cables</string>
 </resources>
