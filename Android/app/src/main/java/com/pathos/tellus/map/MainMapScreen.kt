@@ -70,6 +70,9 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Polygon
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.pathos.tellus.R
+import com.pathos.tellus.cables.CableDetailsSheet
+import com.pathos.tellus.cables.CableLayerViewModel
+import com.pathos.tellus.cables.CablesLayer
 import com.pathos.tellus.countries.Country
 import com.pathos.tellus.countries.CountryBorder
 import com.pathos.tellus.countries.CountrySelectionBar
@@ -93,6 +96,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import kotlin.math.pow
 
 /** The world map with country selection. Layers are added on top of this. */
 @Composable
@@ -102,11 +106,13 @@ fun MainMapScreen(
     guideViewModel: CountryGuideViewModel = hiltViewModel(),
     flightsViewModel: LiveFlightsViewModel = hiltViewModel(),
     hazardsViewModel: HazardLayerViewModel = hiltViewModel(),
+    cablesViewModel: CableLayerViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val guideState by guideViewModel.state.collectAsStateWithLifecycle()
     val flightsState by flightsViewModel.state.collectAsStateWithLifecycle()
     val hazardsState by hazardsViewModel.state.collectAsStateWithLifecycle()
+    val cablesState by cablesViewModel.state.collectAsStateWithLifecycle()
     // Flights and hazards refresh only while the map is on screen.
     LifecycleStartEffect(flightsViewModel, hazardsViewModel) {
         flightsViewModel.setMapActive(true)
@@ -161,13 +167,21 @@ fun MainMapScreen(
             uiSettings = remember { MapUiSettings(zoomControlsEnabled = false, mapToolbarEnabled = false) },
             onMapLoaded = { isMapLoaded = true },
             // Marker taps don't reach here, so they never change the country.
+            // A tap near a cable selects it instead, as on iOS.
             onMapClick = { latLng ->
-                viewModel.selectCountryAt(Coordinate(latLng.latitude, latLng.longitude)) {
-                    haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                val coordinate = Coordinate(latLng.latitude, latLng.longitude)
+                val zoom = cameraPositionState.position.zoom
+                if (!cablesViewModel.tap(MercatorPoint.of(coordinate), tapTolerance(22, zoom), tapTolerance(12, zoom))) {
+                    viewModel.selectCountryAt(coordinate) {
+                        haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    }
                 }
             },
         ) {
             state.selectedBorder?.let { CountryOutline(it) }
+            cablesState.dataset?.let { dataset ->
+                CablesLayer(dataset, cablesState.selected, cablesState.selectedLandingPoint)
+            }
             if (hazardsState.isEnabled) {
                 HazardsLayer(hazardsState.hazards, hazardsState.tracks, onSelect = hazardsViewModel::select)
             }
@@ -238,6 +252,8 @@ fun MainMapScreen(
                             onShowsFlightsChange = flightsViewModel::setShowsFlights,
                             showsHazards = hazardsState.isEnabled,
                             onShowsHazardsChange = hazardsViewModel::setEnabled,
+                            showsCables = cablesState.isEnabled,
+                            onShowsCablesChange = cablesViewModel::setEnabled,
                         )
                         PassportButton(passport = guideState.passport, onClick = { isPickingPassport = true })
                     }
@@ -272,6 +288,16 @@ fun MainMapScreen(
 
     hazardsState.selected?.let { hazard ->
         HazardDetailsSheet(hazard, onDismiss = { hazardsViewModel.select(null) })
+    }
+
+    cablesState.selected?.let { cable ->
+        CableDetailsSheet(
+            cable = cable,
+            details = cablesState.selectedDetails,
+            detailsFailed = cablesState.detailsFailed,
+            onRetry = cablesViewModel::retryDetails,
+            onDismiss = { cablesViewModel.select(null) },
+        )
     }
 
     flightsState.selection?.let { selection ->
@@ -316,6 +342,8 @@ private fun LayersButton(
     onShowsFlightsChange: (Boolean) -> Unit,
     showsHazards: Boolean,
     onShowsHazardsChange: (Boolean) -> Unit,
+    showsCables: Boolean,
+    onShowsCablesChange: (Boolean) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box {
@@ -325,6 +353,7 @@ private fun LayersButton(
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             LayerItem(stringResource(R.string.live_flights), "✈️", showsFlights, onShowsFlightsChange)
             LayerItem(stringResource(R.string.natural_hazards), "⚠️", showsHazards, onShowsHazardsChange)
+            LayerItem(stringResource(R.string.undersea_cables), "🔌", showsCables, onShowsCablesChange)
         }
     }
 }
@@ -376,6 +405,13 @@ private fun FlightsNotice(state: LiveFlightsUiState) {
         )
     }
 }
+
+/**
+ * A tap tolerance of [dp] in world widths. At zoom z the Maps SDK draws the
+ * world 256 × 2^z dp wide. Cables use iOS's 22 points; landing points 12 dp,
+ * a finger's reach around their 8 dp dot.
+ */
+internal fun tapTolerance(dp: Int, zoom: Float): Double = dp / (256 * 2.0.pow(zoom.toDouble()))
 
 /** The Mercator rect a map's visible bounds cover, wrapping past the date line when needed. */
 private fun mercatorRect(southwest: LatLng, northeast: LatLng): MercatorRect {
